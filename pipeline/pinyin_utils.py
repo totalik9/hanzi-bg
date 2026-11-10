@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -62,10 +63,12 @@ def syllable_to_tones(syl: str) -> str:
     syl = _normalise_vowels(syl)
     tone = 0
     for ch in syl:
-        if ch.isdigit():
+        # ASCII digits only: str.isdigit() is also true for superscripts
+        # ("²"), which would raise on int().
+        if ch in "0123456789":
             tone = int(ch)
             break
-    syl = "".join(c for c in syl if not c.isdigit())
+    syl = "".join(c for c in syl if c not in "0123456789")
     if tone in (0, 5) or not syl:
         return syl
 
@@ -450,3 +453,115 @@ def is_hanzi(ch: str) -> bool:
 
 def has_hanzi(text: str) -> bool:
     return any(is_hanzi(c) for c in text)
+
+
+# --------------------------------------------------------------------------
+# Sentence pinyin
+# --------------------------------------------------------------------------
+
+# A syllable in Tatoeba's numeric transcription is letters followed by a
+# tone digit. The transcription writes a whole sentence as whitespace-
+# separated WORDS, and each word may pack several syllables together
+# ("mei2you3ren2" = mei2 you3 ren2).
+_NUMERIC_SYLLABLE = re.compile(r"([a-zA-ZüÜ]+)([1-5])")
+
+# Punctuation is written attached to the word it follows ("Cuo4."), and the
+# trailing dot is not part of the syllable.
+_EDGE_PUNCT = ".,!?;:()[]\"«»…、，。！？；：“”‘’"
+
+
+def _strip_edge_punct(token: str) -> str:
+    """Remove punctuation glued to the front or back of a token."""
+    return token.strip(_EDGE_PUNCT)
+
+
+def split_numeric_syllables(text: str) -> list[str]:
+    """Split a numeric-tone pinyin run into individual syllables.
+
+    Tatoeba writes a sentence as whitespace-separated words, and a word can
+    pack several syllables without a space ("mei2you3ren2"). Every syllable
+    carries exactly one tone digit, so the digits give the boundaries for
+    free -- no dictionary matching is needed.
+
+    >>> split_numeric_syllables("mei2you3ren2")
+    ['mei2', 'you3', 'ren2']
+    >>> split_numeric_syllables("ni3 hao3")
+    ['ni3', 'hao3']
+
+    Punctuation glued to a word is dropped: "Cuo4." is one syllable, "cuo4".
+    Tokens that are not a syllable at all are returned unchanged so the
+    caller can decide what to do with them.
+    """
+    out: list[str] = []
+    for token in text.split():
+        token = _strip_edge_punct(token)
+        if not token:
+            continue
+        parts = _NUMERIC_SYLLABLE.findall(token)
+        if parts and "".join(a + b for a, b in parts) == token:
+            out.extend(a + b for a, b in parts)
+        else:
+            out.append(token)
+    return out
+
+
+def split_transcription_syllables(text: str) -> list[str]:
+    """Split a Tatoeba transcription into syllables, numeric form.
+
+    Handles both transcription styles found in the corpus: numeric
+    ("ni3 hao3") and tone-marked ("nǐ hǎo"). Tone-marked words that pack
+    several syllables together are split with the syllable inventory.
+
+    Punctuation tokens are dropped -- the pinyin of a sentence is the
+    pinyin of its characters, not of its commas.
+    """
+    out: list[str] = []
+    for token in text.split():
+        token = _strip_edge_punct(token)
+        if not token:
+            continue
+        if not token[:1].isalpha():
+            # punctuation and other non-syllable tokens
+            continue
+        if any(c in "0123456789" for c in token):
+            out.extend(split_numeric_syllables(token))
+        else:
+            # tone-marked: split with the syllable inventory, then convert
+            syls = split_pinyin_syllables(token)
+            out.extend(tone_marked_to_number(s) for s in syls)
+    return out
+
+
+def sentence_pinyin(
+    zh: str,
+    transcription: str | None,
+    char_readings: dict[str, list[str]],
+) -> str:
+    """Build the tone-marked pinyin for a Chinese sentence.
+
+    Prefers Tatoeba's own transcription, which is written by humans and
+    therefore gets polyphonic characters right in context. The fallback
+    reads each character individually, which is wrong for polyphonic
+    characters but never worse than having no pinyin at all.
+
+    The two sources are reconciled by SYLLABLE COUNT: a transcription whose
+    syllable count does not match the number of characters in the sentence
+    cannot be trusted, so it is discarded rather than silently mismatched.
+
+    Returns a space-separated tone-marked pinyin string, or "" when neither
+    source can produce one.
+    """
+    chars = [c for c in zh if is_hanzi(c)]
+
+    if transcription:
+        syls = split_transcription_syllables(transcription)
+        if syls and len(syls) == len(chars):
+            return " ".join(syllable_to_tones(s) for s in syls)
+
+    # Fallback: read each character on its own.
+    parts = []
+    for ch in chars:
+        readings = char_readings.get(ch)
+        if readings:
+            parts.append(readings[0])
+    return " ".join(parts)

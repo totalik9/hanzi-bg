@@ -38,6 +38,7 @@ from pinyin_utils import (  # noqa: E402
     DATA,
     RAW,
     is_hanzi,
+    sentence_pinyin,
     split_pinyin_by_chars,
     split_pinyin_syllables,
     tone_marked_to_number,
@@ -107,7 +108,13 @@ def load_audio_ids(path: str) -> dict[int, int]:
 
 
 def load_transcriptions(path: str) -> dict[int, str]:
-    """Load Tatoeba's own pinyin transcriptions: {sentence_id: pinyin}."""
+    """Load Tatoeba's own pinyin transcriptions: {sentence_id: pinyin}.
+
+    The file has one row per (sentence, script) pair: "Latn" holds the
+    romanised pinyin, while "Hans" and "Hant" hold the Chinese text itself.
+    Only the "Latn" rows are pinyin -- taking the others puts Chinese
+    characters into the pinyin field.
+    """
     out: dict[int, str] = {}
     if not os.path.exists(path):
         return out
@@ -115,6 +122,8 @@ def load_transcriptions(path: str) -> dict[int, str]:
         for line in fh:
             parts = line.rstrip("\n").split("\t")
             if len(parts) < 5:
+                continue
+            if parts[2] != "Latn":
                 continue
             try:
                 sid = int(parts[0])
@@ -188,18 +197,7 @@ def main() -> int:
             not_covered += 1
             continue
 
-        pinyin = ""
-        tr = transcriptions.get(sid)
-        if tr:
-            # Tatoeba transcriptions are numeric-tone pinyin ("ni3 hao3")
-            pinyin = tr
-        else:
-            parts = []
-            for c in text:
-                if is_hanzi(c):
-                    readings = char_readings.get(c)
-                    parts.append(readings[0] if readings else "")
-            pinyin = " ".join(p for p in parts if p)
+        pinyin = sentence_pinyin(text, transcriptions.get(sid), char_readings)
 
         translations_en = []
         for tid in eng_links.get(sid, []):

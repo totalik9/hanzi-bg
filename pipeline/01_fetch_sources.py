@@ -130,6 +130,16 @@ SOURCES = [
         "CC BY 2.0 FR (Tatoeba)",
         "bz2",
     ),
+    # --- Tatoeba (English) - the per-language cmn export carries links to
+    # English sentence ids but not their text, so the English texts have to
+    # come from the English export. Without this file every sentence has an
+    # empty translations_en list.
+    (
+        "eng_sentences.tsv",
+        "https://downloads.tatoeba.org/exports/per_language/eng/eng_sentences.tsv.bz2",
+        "CC BY 2.0 FR (Tatoeba)",
+        "bz2",
+    ),
     # --- Tatoeba global audio index (audio file -> sentence id) ------------
     (
         "sentences_with_audio.csv",
