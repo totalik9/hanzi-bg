@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,11 +24,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bg.hanzi.learn.R
 import bg.hanzi.learn.ui.theme.LangType
 
 /**
@@ -48,6 +52,7 @@ fun PracticeScreen(
 
         when (state.mode) {
             PracticeMode.PRODUCTION -> ProductionPanel(state, viewModel)
+            PracticeMode.LISTENING -> ListeningPanel(state, viewModel)
             PracticeMode.WORD_ORDER -> WordOrderPanel(state, viewModel)
             PracticeMode.WRITING -> WritingPanel(state, viewModel)
         }
@@ -163,6 +168,111 @@ private fun ProductionPanel(state: PracticeUiState, viewModel: PracticeViewModel
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun ListeningPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
+    val exercise = state.listening
+    if (exercise == null) {
+        Text(
+            text = "Няма думи с аудио. Стартирай 06_build_audio.py.",
+            modifier = Modifier.padding(16.dp),
+        )
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Card {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "Чуй думата и избери правилната:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FilledTonalButton(
+                    onClick = { viewModel.playAudio(exercise.word.audio.orEmpty()) },
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Text("🔊 " + stringResource(R.string.card_play_audio))
+                }
+            }
+        }
+
+        exercise.options.forEach { option ->
+            val isRight = option.hanzi == exercise.word.hanzi
+            val highlighted = exercise.answered && isRight
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = when {
+                        highlighted -> MaterialTheme.colorScheme.primaryContainer
+                        exercise.answered && option.hanzi == state.listening?.word?.hanzi -> {
+                            MaterialTheme.colorScheme.errorContainer
+                        }
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = option.hanzi,
+                        style = LangType.scaled(
+                            MaterialTheme.typography.headlineSmall,
+                            LangType.Kind.TARGET,
+                        ),
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        text = option.pinyin,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (!exercise.answered) {
+                    TextButton(
+                        onClick = { viewModel.onListeningAnswer(option) },
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    ) {
+                        Text("Това е думата")
+                    }
+                }
+            }
+        }
+
+        if (exercise.answered) {
+            Text(
+                text = if (exercise.correct) {
+                    "Правилно!"
+                } else {
+                    "Правилният отговор е ${exercise.word.hanzi} (${exercise.word.pinyin})"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = if (exercise.correct) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            TextButton(onClick = viewModel::nextListening) {
+                Text("Следваща дума")
+            }
+        }
     }
 }
 

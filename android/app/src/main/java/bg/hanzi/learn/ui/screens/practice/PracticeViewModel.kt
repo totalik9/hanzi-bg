@@ -2,6 +2,7 @@ package bg.hanzi.learn.ui.screens.practice
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import bg.hanzi.learn.audio.AudioPlayer
 import bg.hanzi.learn.data.content.CharacterEntry
 import bg.hanzi.learn.data.content.ContentRepository
 import bg.hanzi.learn.data.content.ImeIndex
@@ -18,12 +19,21 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.random.Random
 
-/** The three exercises the A2 simulation says are missing. */
+/** The four exercises the A2 simulation says are missing. */
 enum class PracticeMode(val label: String) {
     PRODUCTION("Производство"),
+    LISTENING("Слушане"),
     WORD_ORDER("Подреждане"),
     WRITING("Писане"),
 }
+
+/** A listening exercise: hear the word, pick the right one. */
+data class ListeningExercise(
+    val word: WordEntry,
+    val options: List<WordEntry>,
+    val answered: Boolean = false,
+    val correct: Boolean = false,
+)
 
 /** A word-order exercise: the tokens to arrange and the right answer. */
 data class WordOrderExercise(
@@ -51,6 +61,7 @@ data class PracticeUiState(
     val loading: Boolean = true,
     val mode: PracticeMode = PracticeMode.PRODUCTION,
     val production: ProductionExercise? = null,
+    val listening: ListeningExercise? = null,
     val wordOrder: WordOrderExercise? = null,
     val writing: WritingExercise? = null,
     val finished: Boolean = false,
@@ -63,12 +74,13 @@ data class PracticeUiState(
  *
  * The simulation is blunt about this: the vocabulary can be reached and
  * the grammar can be read, but PRODUCTION is 0/20 because nothing in the
- * app ever asks the learner to produce Chinese. These three modes are
+ * app ever asks the learner to produce Chinese. These four modes are
  * the answer to that finding.
  */
 @HiltViewModel
 class PracticeViewModel @Inject constructor(
     private val content: ContentRepository,
+    private val audioPlayer: AudioPlayer,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PracticeUiState())
@@ -80,6 +92,13 @@ class PracticeViewModel @Inject constructor(
     private var usedWords = mutableSetOf<String>()
     private var usedSentences = mutableSetOf<Long>()
     private val random = Random(42)
+
+    /** Plays the pronunciation of a word. */
+    fun playAudio(fileName: String) {
+        if (fileName.isNotBlank()) {
+            audioPlayer.play("audio/$fileName")
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -105,9 +124,50 @@ class PracticeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(mode = mode, finished = false)
         when (mode) {
             PracticeMode.PRODUCTION -> nextProduction()
+            PracticeMode.LISTENING -> nextListening()
             PracticeMode.WORD_ORDER -> nextWordOrder()
             PracticeMode.WRITING -> nextWriting()
         }
+    }
+
+    /**
+     * The next listening exercise.
+     *
+     * Only words that HAVE a pronunciation clip can be used, otherwise
+     * the exercise would ask the learner to listen to silence. The three
+     * distractors are drawn from the same pool, so they are equally
+     * likely to be familiar.
+     */
+    fun nextListening() {
+        val pool = wordPool.filter { it.audio != null && it.hanzi !in usedWords }
+        if (pool.isEmpty()) {
+            _uiState.value = _uiState.value.copy(finished = true, listening = null)
+            return
+        }
+        val word = pool[random.nextInt(pool.size)]
+        usedWords += word.hanzi
+
+        val distractors = wordPool
+            .filter { it.hanzi != word.hanzi && it.hanzi !in usedWords }
+            .shuffled(random)
+            .take(3)
+        val options = (distractors + word).shuffled(random)
+
+        _uiState.value = _uiState.value.copy(
+            listening = ListeningExercise(word = word, options = options),
+            finished = false,
+        )
+    }
+
+    /** The learner picked an option in the listening exercise. */
+    fun onListeningAnswer(picked: WordEntry) {
+        val current = _uiState.value.listening ?: return
+        val correct = picked.hanzi == current.word.hanzi
+        _uiState.value = _uiState.value.copy(
+            listening = current.copy(answered = true, correct = correct),
+            correctCount = _uiState.value.correctCount + if (correct) 1 else 0,
+            totalCount = _uiState.value.totalCount + 1,
+        )
     }
 
     /** The learner typed pinyin; refresh the candidates. */
