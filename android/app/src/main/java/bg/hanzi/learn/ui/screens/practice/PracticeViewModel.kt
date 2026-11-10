@@ -16,21 +16,53 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 import kotlin.random.Random
 
-/** The four exercises the A2 simulation says are missing. */
+/** The five exercises the A2 simulation says are missing. */
 enum class PracticeMode(val label: String) {
     PRODUCTION("Производство"),
     LISTENING("Слушане"),
     WORD_ORDER("Подреждане"),
     WRITING("Писане"),
+    GRAMMAR_QUIZ("Граматика"),
 }
 
 /** A listening exercise: hear the word, pick the right one. */
 data class ListeningExercise(
     val word: WordEntry,
     val options: List<WordEntry>,
+    val answered: Boolean = false,
+    val correct: Boolean = false,
+)
+
+/** One example that came with a grammar point. */
+data class GrammarExample(
+    val pointTitle: String,
+    val level: String,
+    val zh: String,
+    val pinyin: String,
+    val en: String,
+)
+
+/**
+ * A grammar quiz: the learner sees a Chinese example and has to pick its
+ * meaning.
+ *
+ * The simulation found that the grammar is REACHED by every student but
+ * only as reference text -- nothing tests it. The 3 286 examples that
+ * came with the grammar points are the material for that test.
+ */
+data class GrammarQuizExercise(
+    val pointTitle: String,
+    val level: String,
+    val exampleZh: String,
+    val examplePinyin: String,
+    val options: List<String>,
+    val correctAnswer: String,
     val answered: Boolean = false,
     val correct: Boolean = false,
 )
@@ -64,6 +96,7 @@ data class PracticeUiState(
     val listening: ListeningExercise? = null,
     val wordOrder: WordOrderExercise? = null,
     val writing: WritingExercise? = null,
+    val grammarQuiz: GrammarQuizExercise? = null,
     val finished: Boolean = false,
     val correctCount: Int = 0,
     val totalCount: Int = 0,
@@ -89,6 +122,9 @@ class PracticeViewModel @Inject constructor(
     private var imeIndex: ImeIndex = ImeIndex(emptyMap(), emptyMap(), emptyMap())
     private var wordPool: List<WordEntry> = emptyList()
     private var sentencePool: List<SentenceEntry> = emptyList()
+    // (point title, level, chinese, pinyin, english) for every example
+    // that came with a grammar point.
+    private var grammarExamples: List<GrammarExample> = emptyList()
     private var usedWords = mutableSetOf<String>()
     private var usedSentences = mutableSetOf<Long>()
     private val random = Random(42)
@@ -110,14 +146,53 @@ class PracticeViewModel @Inject constructor(
                 val words = content.wordsForLevel("1", limit = 300) +
                     content.wordsForLevel("2", limit = 200)
                 val sentences = content.sentencesWithBulgarian(limit = 60)
-                Triple(index, words, sentences)
+                val examples = parseGrammarExamples(content.grammarWithExamples())
+                Triple(index, words, sentences) to examples
             }
-            imeIndex = loaded.first
-            wordPool = loaded.second.filter { it.glossBg.isNotBlank() }
-            sentencePool = loaded.third
+            imeIndex = loaded.first.first
+            wordPool = loaded.first.second.filter { it.glossBg.isNotBlank() }
+            sentencePool = loaded.first.third
+            grammarExamples = loaded.second
             _uiState.value = _uiState.value.copy(loading = false)
             nextProduction()
         }
+    }
+
+    /**
+     * Flatten the grammar points into a list of examples.
+     *
+     * The examples come from the wiki as JSON inside the grammar table.
+     * They are the material for the grammar quiz: the simulation found
+     * that the grammar is reached by every student but never tested.
+     */
+    private fun parseGrammarExamples(
+        points: List<bg.hanzi.learn.data.content.GrammarEntry>,
+    ): List<GrammarExample> {
+        val out = mutableListOf<GrammarExample>()
+        for (point in points) {
+            if (point.examples.isBlank()) continue
+            val parsed = runCatching {
+                kotlinx.serialization.json.Json.parseToJsonElement(point.examples).jsonArray
+            }.getOrNull() ?: continue
+            for (element in parsed) {
+                val obj = element.jsonObject
+                val zh = obj["zh"]?.jsonPrimitive?.content.orEmpty()
+                val pinyin = obj["pinyin"]?.jsonPrimitive?.content.orEmpty()
+                val en = obj["en"]?.jsonPrimitive?.content.orEmpty()
+                if (zh.isNotBlank() && en.isNotBlank()) {
+                    out.add(
+                        GrammarExample(
+                            pointTitle = point.title,
+                            level = point.level,
+                            zh = zh,
+                            pinyin = pinyin,
+                            en = en,
+                        ),
+                    )
+                }
+            }
+        }
+        return out
     }
 
     fun setMode(mode: PracticeMode) {
@@ -127,7 +202,56 @@ class PracticeViewModel @Inject constructor(
             PracticeMode.LISTENING -> nextListening()
             PracticeMode.WORD_ORDER -> nextWordOrder()
             PracticeMode.WRITING -> nextWriting()
+            PracticeMode.GRAMMAR_QUIZ -> nextGrammarQuiz()
         }
+    }
+
+    /**
+     * The next grammar question.
+     *
+     * The learner sees a Chinese example and picks its meaning. The
+     * distractors are other examples' translations, so they are about the
+     * same length and equally plausible -- a distractor that is obviously
+     * wrong teaches nothing.
+     */
+    fun nextGrammarQuiz() {
+        val pool = grammarExamples.filter { it.en.isNotBlank() }
+        if (pool.isEmpty()) {
+            _uiState.value = _uiState.value.copy(finished = true, grammarQuiz = null)
+            return
+        }
+        val index = random.nextInt(pool.size)
+        val example = pool[index]
+
+        val distractors = pool
+            .filterIndexed { i, e -> i != index && e.en != example.en }
+            .shuffled(random)
+            .take(3)
+            .map { it.en }
+        val options = (distractors + example.en).shuffled(random)
+
+        _uiState.value = _uiState.value.copy(
+            grammarQuiz = GrammarQuizExercise(
+                pointTitle = example.pointTitle,
+                level = example.level,
+                exampleZh = example.zh,
+                examplePinyin = example.pinyin,
+                options = options,
+                correctAnswer = example.en,
+            ),
+            finished = false,
+        )
+    }
+
+    /** The learner picked an answer in the grammar quiz. */
+    fun onGrammarAnswer(picked: String) {
+        val current = _uiState.value.grammarQuiz ?: return
+        val correct = picked == current.correctAnswer
+        _uiState.value = _uiState.value.copy(
+            grammarQuiz = current.copy(answered = true, correct = correct),
+            correctCount = _uiState.value.correctCount + if (correct) 1 else 0,
+            totalCount = _uiState.value.totalCount + 1,
+        )
     }
 
     /**

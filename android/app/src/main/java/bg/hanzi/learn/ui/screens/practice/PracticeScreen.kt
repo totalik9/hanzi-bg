@@ -55,6 +55,7 @@ fun PracticeScreen(
             PracticeMode.LISTENING -> ListeningPanel(state, viewModel)
             PracticeMode.WORD_ORDER -> WordOrderPanel(state, viewModel)
             PracticeMode.WRITING -> WritingPanel(state, viewModel)
+            PracticeMode.GRAMMAR_QUIZ -> GrammarQuizPanel(state, viewModel)
         }
     }
 }
@@ -271,6 +272,97 @@ private fun ListeningPanel(state: PracticeUiState, viewModel: PracticeViewModel)
             )
             TextButton(onClick = viewModel::nextListening) {
                 Text("Следваща дума")
+            }
+        }
+    }
+}
+
+@Composable
+private fun GrammarQuizPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
+    val exercise = state.grammarQuiz
+    if (exercise == null) {
+        Text("Няма примери за тест.", modifier = Modifier.padding(16.dp))
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = exercise.pointTitle,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = exercise.level,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    text = exercise.exampleZh,
+                    style = LangType.scaled(
+                        MaterialTheme.typography.headlineSmall,
+                        LangType.Kind.TARGET,
+                    ),
+                )
+                if (exercise.examplePinyin.isNotBlank()) {
+                    Text(
+                        text = exercise.examplePinyin,
+                        style = LangType.scaled(
+                            MaterialTheme.typography.bodyMedium,
+                            LangType.Kind.TRANSLITERATION,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        Text("Какво означава?", style = MaterialTheme.typography.labelMedium)
+
+        exercise.options.forEach { option ->
+            val isRight = option == exercise.correctAnswer
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = when {
+                        exercise.answered && isRight -> MaterialTheme.colorScheme.primaryContainer
+                        exercise.answered -> MaterialTheme.colorScheme.surfaceVariant
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                TextButton(
+                    onClick = { viewModel.onGrammarAnswer(option) },
+                    enabled = !exercise.answered,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = option,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+
+        if (exercise.answered) {
+            Text(
+                text = if (exercise.correct) "Правилно!" else "Правилният отговор е: ${exercise.correctAnswer}",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (exercise.correct) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            TextButton(onClick = viewModel::nextGrammarQuiz) {
+                Text("Следващ въпрос")
             }
         }
     }
