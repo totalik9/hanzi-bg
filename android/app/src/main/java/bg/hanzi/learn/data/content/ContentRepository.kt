@@ -47,6 +47,34 @@ data class LessonEntry(
 )
 
 /**
+ * A character with its stroke-order data.
+ *
+ * [medians] holds the centre-line of each stroke as a JSON array of
+ * [x, y] pairs in a 1024x1024 coordinate system. Drawing them in order
+ * is how the writing mode animates the correct stroke sequence.
+ */
+data class CharacterEntry(
+    val char: String,
+    val strokes: Int,
+    val radical: String,
+    val definition: String,
+    val medians: String,
+)
+
+/**
+ * The pinyin IME index, loaded once and kept in memory.
+ *
+ * A pinyin IME has to answer on every keystroke, so the index cannot be
+ * queried from SQLite each time. It is a few thousand entries, which is
+ * a few hundred kilobytes.
+ */
+data class ImeIndex(
+    val syllableToWords: Map<String, List<String>>,
+    val wordToPinyin: Map<String, String>,
+    val wordToGloss: Map<String, String>,
+)
+
+/**
  * Read-only access to the bundled content database. All reads are cursor
  * based and close their cursors; nothing is cached in memory beyond the
  * SQLite page cache, which keeps the footprint small on 8 GB devices.
@@ -288,7 +316,167 @@ class ContentRepository @Inject constructor(
             if (c.moveToFirst()) c.getString(0) else null
         }
     }
+
+    /**
+     * The syllables the IME index knows, and the words each one appears in.
+     *
+     * The whole index is a few thousand rows, so it is loaded once and
+     * kept in memory: a pinyin IME has to answer on every keystroke.
+     */
+    fun imeIndex(): ImeIndex = read { db ->
+        val syllableToWords = mutableMapOf<String, MutableList<String>>()
+        db.rawQuery("SELECT syllable, hanzi FROM ime", null).use { c ->
+            while (c.moveToNext()) {
+                syllableToWords.getOrPut(c.str("syllable")) { mutableListOf() }
+                    .add(c.str("hanzi"))
+            }
+        }
+
+        val wordToPinyin = mutableMapOf<String, String>()
+        val wordToGloss = mutableMapOf<String, String>()
+        db.rawQuery(
+            "SELECT hanzi, pinyin_plain, pinyin, gloss_bg, gloss_en FROM words",
+            null,
+        ).use { c ->
+            while (c.moveToNext()) {
+                val hanzi = c.str("hanzi")
+                // The IME matches against the TONELESS pinyin: the learner
+                // types letters, not tone marks.
+                wordToPinyin[hanzi] = c.str("pinyin_plain").ifBlank { c.str("pinyin") }
+                wordToGloss[hanzi] = c.str("gloss_bg").ifBlank { c.str("gloss_en") }
+            }
+        }
+
+        ImeIndex(syllableToWords, wordToPinyin, wordToGloss)
+    } ?: ImeIndex(emptyMap(), emptyMap(), emptyMap())
+
+    /** A character with its stroke-order data, for the writing mode. */
+    fun character(char: String): CharacterEntry? = read { db ->
+        db.rawQuery(
+            "SELECT char, strokes, radical, definition, medians FROM characters WHERE char = ? LIMIT 1",
+            arrayOf(char),
+        ).use { c ->
+            if (!c.moveToFirst()) return@read null
+            CharacterEntry(
+                char = c.str("char"),
+                strokes = c.int("strokes"),
+                radical = c.str("radical"),
+                definition = c.str("definition"),
+                medians = c.str("medians"),
+            )
+        }
+    }
+
+    /**
+     * The words that start with a given pinyin, for the production mode.
+     *
+     * The learner types pinyin; the candidates are the words whose pinyin
+     * begins with what they typed. The order is by frequency, so the
+     * commonest word comes first -- the same rule a real IME follows.
+     */
+    fun wordsStartingWithPinyin(prefix: String, limit: Int = 12): List<WordEntry> =
+        read { db ->
+            val plain = prefix.trim().lowercase()
+            if (plain.isEmpty()) return@read emptyList()
+            db.rawQuery(
+                """
+                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
+                FROM words
+                WHERE pinyin_tones LIKE ?
+                ORDER BY (freq IS NULL), freq, hanzi
+                LIMIT $limit
+                """.trimIndent(),
+                arrayOf("$plain%"),
+            ).use { c ->
+                buildList {
+                    while (c.moveToNext()) {
+                        add(c.toWordEntry())
+                    }
+                }
+            }
+        } ?: emptyList()
+
+    /**
+     * Sentences that carry a Bulgarian translation, shortest first.
+     *
+     * Short sentences are the ones a learner can actually reorder and
+     * reproduce, so the word-order mode works on this list.
+     */
+    fun sentencesWithBulgarian(limit: Int = 50): List<SentenceEntry> = read { db ->
+        db.rawQuery(
+            """
+            SELECT s.id, s.hanzi, s.pinyin, s.translation_en, s.translation_bg, s.audio_path
+            FROM sentences s
+            WHERE s.translation_bg != ''
+            ORDER BY LENGTH(s.hanzi), s.id
+            LIMIT $limit
+            """.trimIndent(),
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(c.toSentenceEntry())
+                }
+            }
+        }
+    } ?: emptyList()
+
+    /**
+     * The grammar points of a level, with their examples.
+     *
+     * The grammar mode needs the example sentences to quiz the learner on;
+     * without them the grammar screen can only be read, which the
+     * simulation shows is not learning.
+     */
+    fun grammarWithExamples(level: String? = null): List<GrammarEntry> = read { db ->
+        val sql = if (level == null) {
+            "SELECT id, title, title_bg, level, category, summary, body, examples FROM grammar ORDER BY level, id"
+        } else {
+            "SELECT id, title, title_bg, level, category, summary, body, examples FROM grammar WHERE level = ? ORDER BY id"
+        }
+        val args = level?.let { arrayOf(it) } ?: emptyArray()
+        db.rawQuery(sql, args).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(
+                        GrammarEntry(
+                            id = c.getLong("id"),
+                            title = c.str("title"),
+                            titleBg = c.str("title_bg"),
+                            level = c.str("level"),
+                            category = c.str("category"),
+                            summary = c.str("summary"),
+                            body = c.str("body"),
+                            examples = c.str("examples"),
+                        ),
+                    )
+                }
+            }
+        }
+    } ?: emptyList()
 }
+
+private fun Cursor.toWordEntry() = WordEntry(
+    hanzi = str("hanzi"),
+    pinyin = str("pinyin"),
+    pinyinTones = str("pinyin_tones"),
+    pos = str("pos"),
+    glossEn = str("gloss_en"),
+    glossBg = str("gloss_bg"),
+    hskLevel = str("hsk_level"),
+    isVerb = int("is_verb") == 1,
+    freq = if (isNull("freq")) null else getInt("freq"),
+    audio = strOrNull("audio"),
+)
+
+private fun Cursor.toSentenceEntry() = SentenceEntry(
+    id = getLong("id"),
+    hanzi = str("hanzi"),
+    pinyin = str("pinyin"),
+    translationEn = str("translation_en"),
+    translationBg = str("translation_bg"),
+    audioPath = strOrNull("audio_path"),
+)
 
 private fun Cursor.str(name: String): String = getString(getColumnIndexOrThrow(name)) ?: ""
 

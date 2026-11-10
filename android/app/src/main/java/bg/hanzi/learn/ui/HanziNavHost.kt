@@ -2,6 +2,7 @@ package bg.hanzi.learn.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -26,6 +27,7 @@ import bg.hanzi.learn.R
 import bg.hanzi.learn.ui.screens.dictionary.DictionaryScreen
 import bg.hanzi.learn.ui.screens.grammar.GrammarScreen
 import bg.hanzi.learn.ui.screens.home.HomeScreen
+import bg.hanzi.learn.ui.screens.practice.PracticeScreen
 import bg.hanzi.learn.ui.screens.review.ReviewScreen
 
 private sealed class Destination(
@@ -35,6 +37,7 @@ private sealed class Destination(
 ) {
     data object Home : Destination("home", Icons.Filled.Home, R.string.nav_learn)
     data object Review : Destination("review", Icons.Filled.Refresh, R.string.nav_review)
+    data object Practice : Destination("practice", Icons.Filled.Edit, R.string.nav_practice)
     data object Dictionary : Destination("dictionary", Icons.Filled.Search, R.string.nav_dict)
     data object Grammar : Destination("grammar", Icons.Filled.List, R.string.nav_grammar)
 }
@@ -42,6 +45,7 @@ private sealed class Destination(
 private val bottomDestinations = listOf(
     Destination.Home,
     Destination.Review,
+    Destination.Practice,
     Destination.Dictionary,
     Destination.Grammar,
 )
@@ -84,6 +88,7 @@ fun HanziNavHost() {
         ) {
             composable(Destination.Home.route) { HomeScreen(navController) }
             composable(Destination.Review.route) { ReviewScreen() }
+            composable(Destination.Practice.route) { PracticeScreen() }
             composable(Destination.Dictionary.route) { DictionaryScreen() }
             composable(Destination.Grammar.route) { GrammarScreen() }
         }

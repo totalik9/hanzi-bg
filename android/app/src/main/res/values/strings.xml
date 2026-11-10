@@ -5,6 +5,7 @@
     <!-- Navigation -->
     <string name="nav_learn">Учене</string>
     <string name="nav_review">Повторение</string>
+    <string name="nav_practice">Упражнения</string>
     <string name="nav_dict">Речник</string>
     <string name="nav_grammar">Граматика</string>
 

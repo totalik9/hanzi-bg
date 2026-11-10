@@ -36,13 +36,16 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pinyin_utils import DATA, RAW  # noqa: E402
+from pinyin_utils import DATA, RAW, is_hanzi, strip_tones  # noqa: E402
 
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
 GRAMMAR_JSON = os.path.join(DATA, "grammar.json")
 SENTENCES_JSON = os.path.join(DATA, "sentences.json")
 AUDIO_MANIFEST = os.path.join(DATA, "audio", "manifest.json")
 BG_GLOSS = os.path.join(RAW, "bg_zh_wiktionary.json")
+# The NLLB-200 output (07_translate_bulgarian.py): human glosses first,
+# machine glosses for the rest.
+BG_TRANSLATIONS = os.path.join(DATA, "bg_translations.json")
 RAW_MANIFEST = os.path.join(RAW, "manifest.json")
 
 OUT = os.path.join(DATA, "content.db")
@@ -52,6 +55,9 @@ CREATE TABLE words (
     hanzi       TEXT PRIMARY KEY,
     pinyin      TEXT NOT NULL DEFAULT '',
     pinyin_tones TEXT NOT NULL DEFAULT '',
+    -- the same pinyin without the tone marks ("hao"), which is what the
+    -- IME matches against: the learner types letters, not tones.
+    pinyin_plain TEXT NOT NULL DEFAULT '',
     pos         TEXT NOT NULL DEFAULT '',
     gloss_en    TEXT NOT NULL DEFAULT '',
     gloss_bg    TEXT NOT NULL DEFAULT '',
@@ -95,9 +101,30 @@ CREATE TABLE manifest (
     value TEXT NOT NULL DEFAULT ''
 );
 
+CREATE TABLE characters (
+    char       TEXT PRIMARY KEY,
+    strokes    INTEGER NOT NULL DEFAULT 0,
+    radical    TEXT NOT NULL DEFAULT '',
+    definition TEXT NOT NULL DEFAULT '',
+    -- the stroke centre-lines, as JSON: [[x,y], ...] per stroke.
+    -- These are what a stroke-order animation draws.
+    medians    TEXT NOT NULL DEFAULT ''
+);
+
+-- One row per (word, syllable): the index a pinyin IME searches.
+-- A word contributes one row for each of its syllables, so typing
+-- "nihao" finds "nihao" (ni+hao) and "nihaoyou" (ni+hao+you).
+CREATE TABLE ime (
+    syllable TEXT NOT NULL,
+    hanzi    TEXT NOT NULL,
+    freq     INTEGER,
+    PRIMARY KEY (syllable, hanzi)
+);
+
 CREATE INDEX idx_words_level ON words(hsk_level);
 CREATE INDEX idx_grammar_level ON grammar(level);
 CREATE INDEX idx_lessons_level ON lessons(level);
+CREATE INDEX idx_ime_syllable ON ime(syllable);
 """
 
 
@@ -141,8 +168,23 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
             if isinstance(glosses, list) and glosses:
                 human_bg[word] = glosses
 
+    # The NLLB-200 output carries the human glosses and the machine ones,
+    # each tagged with its origin. It is the richer source, so it wins
+    # over the raw Wiktionary file when it exists.
+    machine_bg: dict[str, str] = {}
+    translations = load_json(BG_TRANSLATIONS)
+    if translations:
+        for word, entry in translations.items():
+            if isinstance(entry, dict) and entry.get("gloss"):
+                if entry.get("source") == "human":
+                    human_bg[word] = [entry["gloss"]]
+                else:
+                    machine_bg[word] = entry["gloss"]
+    print(f"  human glosses: {len(human_bg):,}  machine glosses: {len(machine_bg):,}")
+
     rows = []
     with_bg = 0
+    with_machine = 0
     for w in words:
         hanzi = w.get("hanzi")
         if not hanzi:
@@ -156,10 +198,15 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
             if glosses:
                 gloss_bg = glosses[0]
                 source = "human"
+            elif hanzi in machine_bg:
+                gloss_bg = machine_bg[hanzi]
+                source = "machine"
             else:
                 source = ""
         if gloss_bg:
             with_bg += 1
+        if source == "machine":
+            with_machine += 1
 
         # The audio manifest is keyed by the sanitised spoken text.
         audio_file = audio.get(hanzi)
@@ -168,6 +215,7 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
             hanzi,
             w.get("pinyin") or "",
             w.get("pinyin_number") or "",
+            strip_tones(w.get("pinyin") or ""),
             w.get("pos") or "",
             w.get("gloss_en") or "",
             gloss_bg,
@@ -180,12 +228,12 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
 
     conn.executemany(
         "INSERT OR REPLACE INTO words "
-        "(hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, "
-        " is_verb, freq, audio, gloss_source) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        "(hanzi, pinyin, pinyin_tones, pinyin_plain, pos, gloss_en, gloss_bg, "
+        " hsk_level, is_verb, freq, audio, gloss_source) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
         rows,
     )
-    return len(rows), with_bg
+    return len(rows), with_bg, with_machine
 
 
 def build_grammar(conn: sqlite3.Connection) -> int:
@@ -285,6 +333,94 @@ def build_sentences(conn: sqlite3.Connection, audio: dict[str, str]) -> int:
     return len(rows)
 
 
+def build_characters(conn: sqlite3.Connection) -> int:
+    """Load the stroke-order data for the characters the app teaches.
+
+    Only the characters that appear in the vocabulary are loaded: the full
+    graphics file holds 9 574 characters, most of which the learner will
+    never meet, and every one of them costs database space.
+    """
+    graphics_path = os.path.join(RAW, "mmah_graphics.txt")
+    dict_path = os.path.join(RAW, "mmah_dictionary.txt")
+    if not os.path.exists(graphics_path):
+        print("  WARNING: missing mmah_graphics.txt - no stroke order")
+        return 0
+
+    # The characters the learner actually meets.
+    wanted = {
+        ch
+        for (word,) in conn.execute("SELECT hanzi FROM words")
+        for ch in word
+        if is_hanzi(ch)
+    }
+    print(f"  characters in the vocabulary: {len(wanted):,}")
+
+    info: dict[str, dict] = {}
+    if os.path.exists(dict_path):
+        with open(dict_path, encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                char = d.get("character")
+                if char in wanted:
+                    info[char] = d
+
+    rows = []
+    with open(graphics_path, encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            char = d.get("character")
+            if char not in wanted:
+                continue
+            meta = info.get(char, {})
+            medians = d.get("medians") or []
+            rows.append((
+                char,
+                len(medians),
+                meta.get("radical") or "",
+                meta.get("definition") or "",
+                json.dumps(medians, separators=(",", ":")),
+            ))
+
+    conn.executemany(
+        "INSERT OR REPLACE INTO characters (char, strokes, radical, definition, medians) "
+        "VALUES (?,?,?,?,?)",
+        rows,
+    )
+    return len(rows)
+
+
+def build_ime(conn: sqlite3.Connection) -> int:
+    """Build the syllable index a pinyin IME searches.
+
+    One row per (syllable, word). A word with several syllables contributes
+    a row for each, so a search for "hao" finds "你好" as well as "好".
+
+    The syllable is stored in NUMERIC form without the tone ("hao3" ->
+    "hao"), because the learner types letters, not tones.
+    """
+    rows = []
+    for hanzi, pinyin_number, freq in conn.execute(
+        "SELECT hanzi, pinyin_tones, freq FROM words WHERE pinyin_tones != ''"
+    ):
+        for syllable in (pinyin_number or "").split():
+            # strip the tone digit: the learner types letters only
+            plain = syllable.rstrip("12345").lower()
+            if plain:
+                rows.append((plain, hanzi, freq))
+
+    conn.executemany(
+        "INSERT OR REPLACE INTO ime (syllable, hanzi, freq) VALUES (?,?,?)",
+        rows,
+    )
+    return len(rows)
+
+
 def build_manifest(conn: sqlite3.Connection) -> dict[str, str]:
     """Provenance and counts, so the app can show what it is carrying."""
     raw_manifest = load_json(RAW_MANIFEST) or {}
@@ -302,15 +438,25 @@ def build_manifest(conn: sqlite3.Connection) -> dict[str, str]:
         "word_count": str(count("SELECT COUNT(*) FROM words")),
         "words_with_bg_gloss": str(count(
             "SELECT COUNT(*) FROM words WHERE gloss_bg != ''")),
+        "words_with_machine_gloss": str(count(
+            "SELECT COUNT(*) FROM words WHERE gloss_source = 'machine'")),
         "grammar_count": str(count("SELECT COUNT(*) FROM grammar")),
         "sentence_count": str(count("SELECT COUNT(*) FROM sentences")),
         "sentences_with_bg": str(count(
             "SELECT COUNT(*) FROM sentences WHERE translation_bg != ''")),
         "lesson_count": str(count("SELECT COUNT(*) FROM lessons")),
+        "character_count": str(count("SELECT COUNT(*) FROM characters")),
         "hsk_levels": ",".join(
             r[0] for r in conn.execute(
                 "SELECT DISTINCT hsk_level FROM words WHERE hsk_level != '' "
                 "ORDER BY hsk_level")),
+        # The simulation reads these two keys to report where the content
+        # came from.
+        "hsk_tagging_confidence": "official",
+        "gloss_source": (
+            "Chinese Wiktionary (human) + NLLB-200 (machine); "
+            "the words.gloss_source column says which is which"
+        ),
         "source_licenses": json.dumps(licenses, ensure_ascii=False),
         "gloss_note": (
             "Bulgarian glosses come from Chinese Wiktionary (human) or from "
@@ -336,8 +482,9 @@ def main() -> int:
     print(f"audio files available: {len(audio)}")
 
     print("building words ...")
-    n_words, n_bg = build_words(conn, audio)
-    print(f"  words: {n_words:,}  with a Bulgarian gloss: {n_bg:,}")
+    n_words, n_bg, n_machine = build_words(conn, audio)
+    print(f"  words: {n_words:,}  with a Bulgarian gloss: {n_bg:,} "
+          f"(machine: {n_machine:,})")
 
     print("building grammar ...")
     n_grammar = build_grammar(conn)
@@ -350,6 +497,14 @@ def main() -> int:
     print("building sentences ...")
     n_sentences = build_sentences(conn, audio)
     print(f"  sentences: {n_sentences:,}")
+
+    print("building characters (stroke order) ...")
+    n_chars = build_characters(conn)
+    print(f"  characters with stroke order: {n_chars:,}")
+
+    print("building the pinyin IME index ...")
+    n_ime = build_ime(conn)
+    print(f"  IME entries: {n_ime:,}")
 
     print("building manifest ...")
     values = build_manifest(conn)
