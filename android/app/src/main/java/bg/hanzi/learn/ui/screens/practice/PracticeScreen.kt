@@ -327,10 +327,13 @@ private fun GrammarQuizPanel(state: PracticeUiState, viewModel: PracticeViewMode
 
         exercise.options.forEach { option ->
             val isRight = option == exercise.correctAnswer
+            val wasPicked = exercise.answered && isRight
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = when {
-                        exercise.answered && isRight -> MaterialTheme.colorScheme.primaryContainer
+                        // The right answer stays highlighted after the
+                        // answer, so the learner can see which one it was.
+                        wasPicked -> MaterialTheme.colorScheme.primaryContainer
                         exercise.answered -> MaterialTheme.colorScheme.surfaceVariant
                         else -> MaterialTheme.colorScheme.surfaceVariant
                     },

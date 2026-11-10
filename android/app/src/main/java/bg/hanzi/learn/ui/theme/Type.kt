@@ -19,13 +19,24 @@ object LangType {
 
     enum class Kind { TARGET, TRANSLITERATION, NATIVE, UI }
 
+    /**
+     * Scale a style for a given script.
+     *
+     * The LINE HEIGHT has to be scaled as well. Scaling only the font size
+     * leaves the line box at its original height, and the CJK glyphs then
+     * overflow it and overlap the next line -- which is what the grammar
+     * quiz looked like on the emulator.
+     */
     fun scaled(style: TextStyle, kind: Kind): TextStyle {
         val factor = when (kind) {
             Kind.TARGET -> TARGET_SCALE
             Kind.TRANSLITERATION -> TRANSLITERATION_SCALE
             Kind.NATIVE, Kind.UI -> 1.0f
         }
-        return style.copy(fontSize = (style.fontSize.value * factor).sp)
+        return style.copy(
+            fontSize = (style.fontSize.value * factor).sp,
+            lineHeight = (style.lineHeight.value * factor).sp,
+        )
     }
 }
 
