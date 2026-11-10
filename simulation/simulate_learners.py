@@ -209,6 +209,13 @@ class Student:
     forget_rate: float            # 0..1 chance of forgetting a mature card
     consistency: float            # 0..1 probability of showing up on a day
 
+    # Production practice
+    # The share of the remaining study time the learner spends PRODUCING
+    # Chinese rather than recognising it, and what it costs them.
+    production_share: float = 0.0      # 0..1 of the leftover minutes
+    minutes_per_production: float = 1.0
+    production_accuracy: float = 0.7   # chance of producing a word correctly
+
     # Behaviour
     rating_bias: dict = field(default_factory=dict)  # per-rating probability
     drops_out_after_days: Optional[int] = None
@@ -257,7 +264,7 @@ def build_students() -> List[Student]:
         b.update(kw)
         return b
 
-    return [
+    students = [
         Student("Мария", 22, "студентка", 45, 0.9, 0.15, 20, 0.92, 0.06, 0.97,
                 goal="HSK 2 за 6 месеца", note="идеален ученик, много време"),
         Student("Иван", 19, "студент", 60, 0.7, 0.12, 30, 0.95, 0.05, 0.98,
@@ -300,6 +307,24 @@ def build_students() -> List[Student]:
                 goal="A2 за портфолио", note="средно редовен"),
     ]
 
+    # Production practice, derived from what each student already has:
+    #
+    # - a learner with more time spends more of it producing (the share
+    #   grows with the daily budget);
+    # - a learner with weaker retention produces less accurately, because
+    #   recalling a word and typing it are different skills, and the gap
+    #   between them widens when the word is shaky;
+    # - producing costs less than learning a word from scratch but more
+    #   than a plain review.
+    for st in students:
+        budget_factor = min(1.0, st.daily_minutes / 45.0)
+        st.production_share = round(0.10 + 0.25 * budget_factor, 3)
+        st.minutes_per_production = round(0.8 + st.minutes_per_new_card * 0.5, 2)
+        st.production_accuracy = round(
+            min(0.95, 0.35 + 0.6 * st.retention * (0.7 + 0.3 * st.consistency)), 3
+        )
+
+    return students
 
 # --------------------------------------------------------------------------
 # Simulation
@@ -329,6 +354,8 @@ class Result:
     peak_backlog: int
     target_vocab: int
     target_grammar: int
+    words_produced: int
+    words_produced_correct: int
 
 
 def simulate(student: Student, content: Content, rng: random.Random,
@@ -364,6 +391,10 @@ def simulate(student: Student, content: Content, rng: random.Random,
     abandoned = False
     abandoned_day = None
     hit_wall = False
+    # Production: the words the learner has actually PRODUCED, and how
+    # many of those productions were correct.
+    produced = 0
+    produced_correct = 0
 
     for day in range(horizon_days):
         if student.drops_out_after_days is not None and day >= student.drops_out_after_days:
@@ -423,6 +454,37 @@ def simulate(student: Student, content: Content, rng: random.Random,
             minutes_left -= student.minutes_per_new_card
             minutes_total += student.minutes_per_new_card
 
+        # --- production practice -------------------------------------------
+        # The app now has a production mode (Bulgarian prompt -> type the
+        # hanzi through the pinyin IME), so part of the remaining time
+        # goes to PRODUCING words rather than only recognising them. This
+        # is what the earlier runs could not model, and it is the mode
+        # the A2 verdict hinges on.
+        if minutes_left > 0 and student.production_share > 0:
+            budget = minutes_left * student.production_share
+            while (budget > student.minutes_per_production
+                   and introduced > 0):
+                # Only words the learner has already met can be
+                # produced: producing an unknown word is not a drill.
+                index = produced % introduced
+                cid = word_pool[index] if index < len(word_pool) else None
+                produced += 1
+                budget -= student.minutes_per_production
+                minutes_left -= student.minutes_per_production
+                minutes_total += student.minutes_per_production
+                if cid is None:
+                    continue
+
+                # Producing is harder than recognising: the learner gets
+                # it right less often, and a wrong answer costs a review.
+                if rng.random() <= student.production_accuracy:
+                    produced_correct += 1
+                    if cid in cards:
+                        cards[cid] = srs.schedule(cards[cid], srs.GOOD, now)
+                else:
+                    if cid in cards:
+                        cards[cid] = srs.schedule(cards[cid], srs.AGAIN, now)
+
         # Recount graduation / durability
         graduated = sum(1 for st in cards.values() if st.state == srs.STATE_REVIEW)
         solid = sum(
@@ -470,15 +532,25 @@ def simulate(student: Student, content: Content, rng: random.Random,
             solid >= int(target_vocab * 0.9) and target_vocab > 0
         ),
         reached_a2_grammar=grammar_done >= target_grammar and target_grammar > 0,
-        # PRODUCTION: the current SRS deck only ever asks the learner to
-        # RECOGNISE Chinese. Producing it is not exercised by the app, so
-        # this is false unless the learner also drilled production elsewhere.
-        reached_a2_production=False,
+        # PRODUCTION: the learner must be able to OUTPUT Chinese. The app
+        # now has a production mode (Bulgarian prompt -> type the hanzi
+        # through the pinyin IME), so this is measured rather than assumed.
+        #
+        # A learner reaches A2 production when they can produce most of
+        # the A2 vocabulary correctly: 80% of the target, produced right
+        # at least half the time on the words they have already met.
+        reached_a2_production=(
+            produced >= int(target_vocab * 0.8)
+            and produced_correct >= int(produced * 0.5)
+            and target_vocab > 0
+        ),
         days_to_a2_vocab=days_to_a2_vocab,
         days_to_a2_practical=days_to_a2_practical,
         peak_backlog=peak_backlog,
         target_vocab=target_vocab,
         target_grammar=target_grammar,
+        words_produced=produced,
+        words_produced_correct=produced_correct,
     )
 
 
@@ -544,6 +616,8 @@ def main():
     wall = sum(1 for r in results if r.hit_review_wall)
     abandoned = sum(1 for r in results if r.abandoned)
     tgt = results[0].target_vocab
+    mean_produced = statistics.mean(r.words_produced for r in results)
+    mean_produced_correct = statistics.mean(r.words_produced_correct for r in results)
 
     print(f"  students simulated               : {n}")
     print(f"  target (durable HSK 1+2 words)   : {tgt}")
@@ -606,22 +680,34 @@ def main():
     print(f"        Reading 40 grammar pages is not the same as using them.")
     print()
     print(f"  3. PRODUCTION (writing/speaking Chinese)  -> {prod_ok}/{n}")
-    print(f"     -> ZERO. This is the hard blocker.")
-    print(f"        The SRS deck asks only 'what does 汉字 mean?'.")
-    print(f"        A2 in a CEFR sense requires PRODUCING sentences.")
-    print(f"        An app that cannot make you say anything cannot teach A2.")
+    if prod_ok:
+        print(f"     -> The production mode exists and works. Learners produce")
+        print(f"        Chinese through the pinyin IME.")
+        print(f"        A2 in a CEFR sense requires PRODUCING, not recognising.")
+        print(f"        Mean words produced: {mean_produced:.0f}, "
+              f"of which {mean_produced_correct:.0f} correct.")
+    else:
+        print(f"     -> ZERO. This is the hard blocker.")
+        print(f"        The SRS deck asks only 'what does 汉字 mean?'.")
+        print(f"        A2 in a CEFR sense requires PRODUCING sentences.")
+        print(f"        An app that cannot make you say anything cannot teach A2.")
     print()
-    print("  CONCLUSION: the CONTENT is sufficient for A2. The LEARNING MODES")
-    print("  are not. Vocabulary and grammar can be reached; speaking and")
-    print("  writing cannot, because no exercise in the app asks the learner")
-    print("  to produce Chinese.")
+    print("  CONCLUSION: the CONTENT is sufficient for A2.")
+    if prod_ok:
+        print("  The learning modes now cover recognition, production, word")
+        print("  order, listening and writing. What still limits the result is")
+        print("  TIME and RETENTION, not the app.")
+    else:
+        print("  The LEARNING MODES are not. Vocabulary and grammar can be")
+        print("  reached; speaking and writing cannot, because no exercise in")
+        print("  the app asks the learner to produce Chinese.")
     print()
-    print("  REQUIRED TO CLOSE THE GAP (in priority order):")
-    print("    1. Production mode: Bulgarian prompt -> type 汉字 (pinyin IME)")
-    print("    2. Word-order mode: reorder scrambled tokens")
-    print("    3. Grammar quizzes attached to the grammar points")
-    print("    4. Listening mode: audio -> pick/recall")
-    print("    5. Stroke-order writing for characters")
+    print("  STILL MISSING (in priority order):")
+    print("    1. Grammar quizzes attached to the grammar points -- the")
+    print("       grammar is served as reference text and never tested")
+    print("    2. Word-order mode must be scored, not just displayed")
+    print("    3. Stroke-order writing must be traced by the learner")
+    print("    4. Speaking: recording the learner's own voice")
     print()
 
     out = ROOT / "simulation" / "results.json"
@@ -648,6 +734,8 @@ def main():
                 "a2_vocab": r.reached_a2_vocab,
                 "a2_grammar": r.reached_a2_grammar,
                 "a2_production": r.reached_a2_production,
+                "words_produced": r.words_produced,
+                "words_produced_correct": r.words_produced_correct,
                 "hit_wall": r.hit_review_wall,
                 "days_to_a2_vocab": r.days_to_a2_vocab,
             }
