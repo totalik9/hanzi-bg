@@ -90,9 +90,9 @@ fun StrokeOrderView(
  * Parse the JSON median data into lists of [x, y] pairs.
  *
  * The data come from the pipeline as a JSON string, so they are parsed
- * once per character and remembered.
+ * once per character and remembered. Shared with the tracing view.
  */
-private fun parseMedians(json: String): List<List<List<Float>>> {
+internal fun parseMedians(json: String): List<List<List<Float>>> {
     if (json.isBlank()) return emptyList()
     return runCatching {
         val root = kotlinx.serialization.json.Json.parseToJsonElement(json)

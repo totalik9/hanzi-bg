@@ -22,6 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -400,33 +403,97 @@ private fun WordOrderPanel(state: PracticeUiState, viewModel: PracticeViewModel)
             }
         }
 
-        Text("Токени:", style = MaterialTheme.typography.labelMedium)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(exercise.shuffled) { token ->
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ),
-                ) {
-                    Text(
-                        text = token,
-                        style = LangType.scaled(
-                            MaterialTheme.typography.titleLarge,
-                            LangType.Kind.TARGET,
+        // The answer the learner is building. Tapping a token removes it.
+        Text("Твоят отговор:", style = MaterialTheme.typography.labelMedium)
+        if (exercise.picked.isEmpty()) {
+            Text(
+                text = "Натисни токените долу в правилния ред.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(exercise.picked.size) { index ->
+                    val token = exercise.picked[index]
+                    val isWrong = exercise.answered && token != exercise.tokens.getOrNull(index)
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = when {
+                                isWrong -> MaterialTheme.colorScheme.errorContainer
+                                exercise.answered -> MaterialTheme.colorScheme.primaryContainer
+                                else -> MaterialTheme.colorScheme.secondaryContainer
+                            },
                         ),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    )
+                    ) {
+                        TextButton(onClick = { viewModel.onWordOrderRemove(index) }) {
+                            Text(
+                                text = token,
+                                style = LangType.scaled(
+                                    MaterialTheme.typography.titleLarge,
+                                    LangType.Kind.TARGET,
+                                ),
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        Text(
-            text = "Правилният ред е: ${exercise.tokens.joinToString("")}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        TextButton(onClick = viewModel::nextWordOrder) {
-            Text("Следващо изречение")
+        // The tray of tokens to pick from.
+        Text("Токени:", style = MaterialTheme.typography.labelMedium)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(exercise.shuffled) { token ->
+                val used = exercise.picked.count { it == token } >=
+                    exercise.shuffled.count { it == token }
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (used) {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        },
+                    ),
+                ) {
+                    TextButton(
+                        onClick = { viewModel.onWordOrderPick(token) },
+                        enabled = !used && !exercise.answered,
+                    ) {
+                        Text(
+                            text = token,
+                            style = LangType.scaled(
+                                MaterialTheme.typography.titleLarge,
+                                LangType.Kind.TARGET,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
+        if (exercise.answered) {
+            Text(
+                text = if (exercise.correct) {
+                    "Правилно!"
+                } else {
+                    "Правилният ред е: ${exercise.tokens.joinToString("")}"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = if (exercise.correct) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            TextButton(onClick = viewModel::nextWordOrder) {
+                Text("Следващо изречение")
+            }
+        } else {
+            TextButton(
+                onClick = viewModel::onWordOrderSubmit,
+                enabled = exercise.picked.isNotEmpty(),
+            ) {
+                Text("Провери")
+            }
         }
     }
 }
@@ -438,6 +505,9 @@ private fun WritingPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
         Text("Няма повече знаци.", modifier = Modifier.padding(16.dp))
         return
     }
+
+    var traced by remember(exercise.word.hanzi) { mutableStateOf(0) }
+    var tracedTotal by remember(exercise.word.hanzi) { mutableStateOf(0) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -477,6 +547,32 @@ private fun WritingPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
                         character = exercise.character,
                         strokes = exercise.character.strokes,
                         modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+
+            item {
+                Column {
+                    Text(
+                        text = "Проследи знака с пръст:",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    StrokeTraceView(
+                        character = exercise.character,
+                        modifier = Modifier.fillMaxWidth(),
+                        onProgress = { drawn, total ->
+                            traced = drawn
+                            tracedTotal = total
+                        },
+                    )
+                    Text(
+                        text = if (tracedTotal > 0) {
+                            "Правилни щрихи: $traced / $tracedTotal"
+                        } else {
+                            "Пусни пръст по контура на знака."
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

@@ -72,6 +72,10 @@ data class WordOrderExercise(
     val sentence: SentenceEntry,
     val tokens: List<String>,
     val shuffled: List<String>,
+    /** The tokens the learner has placed so far, in the order they placed them. */
+    val picked: List<String> = emptyList(),
+    val answered: Boolean = false,
+    val correct: Boolean = false,
 )
 
 /** A production exercise: show the meaning, the learner types the pinyin. */
@@ -335,6 +339,47 @@ class PracticeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             production = ProductionExercise(word = word),
             finished = false,
+        )
+    }
+
+    /**
+     * The learner picked a token for the word-order answer.
+     *
+     * Tapping a token in the tray appends it to the answer; tapping a
+     * token in the answer removes it again. The exercise is SCORED: the
+     * simulation named "word order must be scored, not just displayed"
+     * as a gap.
+     */
+    fun onWordOrderPick(token: String) {
+        val current = _uiState.value.wordOrder ?: return
+        if (current.answered) return
+        if (current.picked.count { it == token } >= current.shuffled.count { it == token }) {
+            // That token is already used up.
+            return
+        }
+        _uiState.value = _uiState.value.copy(
+            wordOrder = current.copy(picked = current.picked + token),
+        )
+    }
+
+    /** The learner removed a token from the answer. */
+    fun onWordOrderRemove(index: Int) {
+        val current = _uiState.value.wordOrder ?: return
+        if (current.answered) return
+        _uiState.value = _uiState.value.copy(
+            wordOrder = current.copy(picked = current.picked.filterIndexed { i, _ -> i != index }),
+        )
+    }
+
+    /** The learner submitted the word-order answer. */
+    fun onWordOrderSubmit() {
+        val current = _uiState.value.wordOrder ?: return
+        if (current.answered || current.picked.isEmpty()) return
+        val correct = current.picked == current.tokens
+        _uiState.value = _uiState.value.copy(
+            wordOrder = current.copy(answered = true, correct = correct),
+            correctCount = _uiState.value.correctCount + if (correct) 1 else 0,
+            totalCount = _uiState.value.totalCount + 1,
         )
     }
 
