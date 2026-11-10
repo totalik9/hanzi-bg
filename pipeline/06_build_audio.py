@@ -57,6 +57,11 @@ _NON_SPEAKABLE = re.compile(r"[^一-鿿a-zA-Z0-9üÜà-ÿ\s]")
 # grows with the text, and a 40-character sentence is not study material.
 MAX_SENTENCE_CHARS = 24
 
+# A single TTS request must finish within this many seconds. edge-tts
+# sometimes leaves the stream open instead of ending it, and one such
+# request used to stop the whole run.
+REQUEST_TIMEOUT = 30
+
 
 def sanitize(text: str) -> str:
     """Reduce a text to the characters that will actually be spoken."""
@@ -84,7 +89,12 @@ def filename_for(text: str, label: str = "") -> str:
 
 
 async def synthesize(text: str, path: str, voice: str) -> bool:
-    """Fetch one clip from Edge TTS. Returns True on success."""
+    """Fetch one clip from Edge TTS. Returns True on success.
+
+    The stream is read under a timeout: edge-tts occasionally leaves a
+    request open forever instead of ending it, and without the timeout
+    the whole run stops on one word.
+    """
     import edge_tts
 
     last_error: Exception | None = None
@@ -93,10 +103,17 @@ async def synthesize(text: str, path: str, voice: str) -> bool:
             communicate = edge_tts.Communicate(text, voice)
             tmp = path + ".part"
             with open(tmp, "wb") as fh:
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        fh.write(chunk["data"])
-            if os.path.getsize(tmp) == 0:
+
+                async def pump() -> int:
+                    n = 0
+                    async for chunk in communicate.stream():
+                        if chunk["type"] == "audio":
+                            fh.write(chunk["data"])
+                            n += 1
+                    return n
+
+                written = await asyncio.wait_for(pump(), timeout=REQUEST_TIMEOUT)
+            if written == 0 or os.path.getsize(tmp) == 0:
                 os.remove(tmp)
                 raise RuntimeError("empty audio stream")
             os.replace(tmp, path)
@@ -150,6 +167,10 @@ async def run(texts: list[tuple[str, str]], voice: str, limit: int | None) -> tu
         if i % 25 == 0:
             print(f"    {i}/{len(unique)} clips ({done} ok, {failed} failed)")
             await asyncio.sleep(0.2)
+            # Write the manifest as we go: a run that is interrupted
+            # (or stalls on one word) must still leave a manifest that
+            # matches the files on disk.
+            write_manifest(spoken)
     return done, failed, spoken
 
 
@@ -192,7 +213,12 @@ def collect_sentence_texts() -> list[tuple[str, str]]:
 
 
 def write_manifest(spoken: dict[str, str]) -> int:
-    """Record which text each file holds, for traceability."""
+    """Record which text each file holds, for traceability.
+
+    The manifest is the only place that says what a file contains: the
+    file name is a hash. Anything already on disk is kept, so a resumed
+    run does not lose the clips it already has.
+    """
     previous: dict[str, str] = {}
     if os.path.exists(MANIFEST):
         try:
@@ -200,6 +226,12 @@ def write_manifest(spoken: dict[str, str]) -> int:
         except (OSError, ValueError):
             previous = {}
     previous.update(spoken)
+
+    # Drop entries whose file is gone, so the manifest never claims a
+    # clip that is not there.
+    present = {name for name in previous if os.path.exists(os.path.join(AUDIO_DIR, name))}
+    previous = {name: text for name, text in previous.items() if name in present}
+
     with open(MANIFEST, "w", encoding="utf-8") as fh:
         json.dump(previous, fh, ensure_ascii=False, indent=1, sort_keys=True)
     return len(previous)
