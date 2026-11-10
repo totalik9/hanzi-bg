@@ -301,51 +301,74 @@ PINYIN_LINE = re.compile(
 )
 ENGLISH_LINE = re.compile(r"^\s*([A-Za-z][A-Za-z\s,'\"\-\(\):;,.!?]+)\s*$")
 
+# The wiki writes an example on ONE line, with the pinyin and the English
+# translation in inline spans:
+#
+#   *米饭 <em>太</em> 多 <em>了</em> 。<span class="pinyin">Mǐfàn ...</span>
+#   <span class="trans">There is too much rice.</span>
+#
+# so the three-line pattern the older extractor looked for does not occur.
+_INLINE_EXAMPLE = re.compile(
+    rf"^\s*\*\s*(?P<zh>[{CJK}][^\n]*?)\s*"
+    r"<span\s+class=\"pinyin\"\s*>(?P<pinyin>.*?)</span>"
+    r"\s*<span\s+class=\"trans\"\s*>(?P<en>.*?)</span>",
+    re.DOTALL,
+)
+_INLINE_PY_ONLY = re.compile(
+    rf"^\s*\*\s*(?P<zh>[{CJK}][^\n]*?)\s*"
+    r"<span\s+class=\"pinyin\"\s*>(?P<pinyin>.*?)</span>",
+    re.DOTALL,
+)
+
+
+def _strip_markup(text: str) -> str:
+    """Remove the wiki's inline markup from a run of text.
+
+    <em>太</em> marks the part of the sentence the grammar point is about,
+    and it is worth keeping in the plain text -- the emphasis is the
+    teaching signal -- but the tags themselves are not.
+    """
+    text = re.sub(r"<[^>]+>", "", text)
+    text = text.replace("&nbsp;", " ").replace("&amp;", "&")
+    text = text.replace("&quot;", '"').replace("&#39;", "'")
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
 
 def extract_examples(wikitext: str, char_readings: dict[str, list[str]]) -> list[dict]:
     """Pull example sentences (Chinese + pinyin + English) out of a page.
 
-    The grammar wiki lists each example as three consecutive lines: the
-    Chinese sentence, its pinyin, then the English translation.
+    The examples live in a <div class="liju"> block, one per line, with the
+    pinyin and the translation in inline spans. Lines that do not follow
+    that shape are ignored rather than guessed at.
     """
     examples: list[dict] = []
-    lines = [ln.rstrip() for ln in wikitext.split("\n")]
 
-    # drop everything that is inside a template or table markup, keeping
-    # only the plain lines so the three-line pattern is visible
-    plain_lines: list[str] = []
-    for ln in lines:
-        if ln.strip().startswith("|") or ln.strip().startswith("{{") or ln.strip().startswith("}}"):
-            continue
-        plain_lines.append(ln)
-
-    i = 0
-    while i < len(plain_lines):
-        zh = None
-        m = EXAMPLE_LINE.match(plain_lines[i])
+    for line in wikitext.split("\n"):
+        m = _INLINE_EXAMPLE.match(line)
         if m:
-            cand = m.group(1)
-            # a real example has at least 2 characters and is not a bare word
-            if len(cand) >= 2 and has_hanzi(cand):
-                zh = cand
-        if zh:
-            py = ""
-            en = ""
-            if i + 1 < len(plain_lines):
-                pm = PINYIN_LINE.match(plain_lines[i + 1])
-                if pm:
-                    py = pm.group(1).strip()
-            if i + 2 < len(plain_lines):
-                em = ENGLISH_LINE.match(plain_lines[i + 2])
-                if em:
-                    en = em.group(1).strip()
-            if py or en:
-                if not py:
-                    py = guess_pinyin(zh, char_readings)
-                examples.append({"zh": zh, "pinyin": py, "en": en})
-                i += 3
-                continue
-        i += 1
+            zh = _strip_markup(m.group("zh"))
+            pinyin = _strip_markup(m.group("pinyin"))
+            en = _strip_markup(m.group("en"))
+            if len(zh) >= 2 and has_hanzi(zh):
+                examples.append({
+                    "zh": zh,
+                    "pinyin": pinyin or guess_pinyin(zh, char_readings),
+                    "en": en,
+                })
+            continue
+
+        # A line with the Chinese and the pinyin but no translation.
+        m = _INLINE_PY_ONLY.match(line)
+        if m:
+            zh = _strip_markup(m.group("zh"))
+            pinyin = _strip_markup(m.group("pinyin"))
+            if len(zh) >= 2 and has_hanzi(zh):
+                examples.append({
+                    "zh": zh,
+                    "pinyin": pinyin or guess_pinyin(zh, char_readings),
+                    "en": "",
+                })
 
     # de-duplicate, keeping the first occurrence
     seen = set()

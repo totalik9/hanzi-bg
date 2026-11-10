@@ -83,6 +83,45 @@ android {
     }
 }
 
+/**
+ * Copies the generated content artefacts into the APK assets.
+ *
+ * The content database is a build artefact: 08_build_content_db.py
+ * regenerates it from the pipeline, and it is far too large to keep in
+ * version control. The copy is skipped when the artefact is missing, so
+ * a fresh clone can still build the app -- it just ships without
+ * content, and the app shows its "run the extraction pipeline" state.
+ *
+ * The paths are resolved to plain Files at configuration time: the
+ * configuration cache cannot serialise a Gradle script object captured
+ * by a task predicate.
+ */
+val contentDbFile = rootProject.layout.projectDirectory.file("../data/content.db").asFile
+val contentAssetDir = layout.projectDirectory.dir("src/main/assets/content").asFile
+val audioSourceDir = rootProject.layout.projectDirectory.dir("../data/audio").asFile
+val audioAssetDir = layout.projectDirectory.dir("src/main/assets/audio").asFile
+
+val syncContentDb by tasks.registering(Copy::class) {
+    from(contentDbFile)
+    into(contentAssetDir)
+    // The predicate reads the task's own inputs rather than a script
+    // property: a lambda that captures the Gradle script cannot be
+    // serialised into the configuration cache.
+    onlyIf { task -> task.inputs.files.files.any { f -> f.exists() } }
+}
+
+val syncAudio by tasks.registering(Copy::class) {
+    from(audioSourceDir) {
+        include("*.mp3")
+    }
+    into(audioAssetDir)
+    onlyIf { task -> task.inputs.files.files.any { f -> f.exists() } }
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(syncContentDb, syncAudio)
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.splashscreen)
