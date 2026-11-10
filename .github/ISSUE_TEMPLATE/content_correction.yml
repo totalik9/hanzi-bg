@@ -1,0 +1,38 @@
+name: Content correction
+description: A word, gloss, pinyin, grammar point or sentence is wrong or missing
+labels: [content]
+body:
+  - type: input
+    id: chinese
+    attributes:
+      label: Chinese text
+      placeholder: "你好"
+    validations:
+      required: true
+  - type: input
+    id: pinyin
+    attributes:
+      label: Pinyin
+      placeholder: "nǐ hǎo"
+  - type: dropdown
+    id: level
+    attributes:
+      label: HSK level
+      options: [HSK 1, HSK 2, HSK 3, HSK 4, HSK 5, HSK 6, HSK 7-9, unknown]
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong
+      description: What the app currently shows, and what it should show instead.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: Where does the correct value come from? (dictionary, grammar wiki, native speaker, etc.)
+  - type: textarea
+    id: bg
+    attributes:
+      label: Correct Bulgarian
+      description: If the Bulgarian gloss is wrong or missing, give the correct one.

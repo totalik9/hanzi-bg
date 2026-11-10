@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ханзи BG</string>
+
+    <!-- Navigation -->
+    <string name="nav_learn">Учене</string>
+    <string name="nav_review">Повторение</string>
+    <string name="nav_dict">Речник</string>
+    <string name="nav_grammar">Граматика</string>
+
+    <!-- Home -->
+    <string name="home_title">Ханзи BG</string>
+    <string name="home_subtitle">Китайски от български</string>
+    <string name="home_level_label">Ниво %1$s</string>
+    <string name="home_progress">%1$d / %2$d думи</string>
+    <string name="home_start">Започни</string>
+    <string name="home_continue">Продължи</string>
+    <string name="home_due_today">%1$d за днес</string>
+    <string name="home_no_due">Няма за повторение</string>
+
+    <!-- Flashcard -->
+    <string name="card_show_answer">Покажи отговор</string>
+    <string name="card_next">Следваща</string>
+    <string name="card_heard">Чух го</string>
+    <string name="card_play_audio">Изслушай</string>
+    <string name="card_stroke_order">Напис на йероглифа</string>
+
+    <!-- Review -->
+    <string name="review_empty">Няма карти за преглед.</string>
+    <string name="review_done">Прегледът приключи.</string>
+
+    <!-- Dictionary -->
+    <string name="dict_search_hint">Търси китайски или латински</string>
+    <string name="dict_empty">Няма резултати.</string>
+
+    <!-- Grammar -->
+    <string name="grammar_empty">Все още няма граматични теми.</string>
+
+    <!-- Content -->
+    <string name="content_loading">Зареждане на речника…</string>
+    <string name="content_missing">Файлът с речник липсва. Стартирай извличането на данни.</string>
+    <string name="content_copy">Копиране на данните…</string>
+</resources>

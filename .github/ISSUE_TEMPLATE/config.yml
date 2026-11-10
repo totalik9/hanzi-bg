@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Content correction
+    url: https://github.com/totalik9/hanzi-bg/issues/new?template=content_correction.yml
+    about: Report a wrong word, gloss, pinyin or grammar point.
+  - name: Question or idea
+    url: https://github.com/totalik9/hanzi-bg/discussions
+    about: Ask a question or propose a feature.

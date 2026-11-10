@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+
+# Simulation output
+/results.json
+/expected_vectors.json
+/analysis_output.txt

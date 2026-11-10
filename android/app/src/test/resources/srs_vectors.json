@@ -1,0 +1,710 @@
+{
+  "straight_good": {
+    "ratings": [
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD"
+    ],
+    "steps": [
+      {
+        "rating": "GOOD",
+        "now": 1700000000000,
+        "dueAt": 1700086400000,
+        "stability": 1.4,
+        "difficulty": 5.0,
+        "reps": 1,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700086400000,
+        "dueAt": 1700308052300,
+        "stability": 1.96,
+        "difficulty": 4.85,
+        "reps": 2,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700172800000,
+        "dueAt": 1701310062549,
+        "stability": 3.8416,
+        "difficulty": 4.7,
+        "reps": 3,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700259200000,
+        "dueAt": 1707469830493,
+        "stability": 10.75648,
+        "difficulty": 4.55,
+        "reps": 4,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700345600000,
+        "dueAt": 1731881600000,
+        "stability": 30.118144,
+        "difficulty": 4.4,
+        "reps": 5,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700432000000,
+        "dueAt": 1731968000000,
+        "stability": 84.3308032,
+        "difficulty": 4.25,
+        "reps": 6,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700518400000,
+        "dueAt": 1732054400000,
+        "stability": 236.12624896,
+        "difficulty": 4.1,
+        "reps": 7,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700604800000,
+        "dueAt": 1732140800000,
+        "stability": 661.153497088,
+        "difficulty": 3.95,
+        "reps": 8,
+        "lapses": 0,
+        "state": 1
+      }
+    ]
+  },
+  "always_again": {
+    "ratings": [
+      "AGAIN",
+      "AGAIN",
+      "AGAIN",
+      "AGAIN",
+      "AGAIN",
+      "AGAIN"
+    ],
+    "steps": [
+      {
+        "rating": "AGAIN",
+        "now": 1700000000000,
+        "dueAt": 1700000600000,
+        "stability": 0.5,
+        "difficulty": 8.0,
+        "reps": 0,
+        "lapses": 1,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700086400000,
+        "dueAt": 1700087000000,
+        "stability": 0.4,
+        "difficulty": 8.6,
+        "reps": 0,
+        "lapses": 2,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700172800000,
+        "dueAt": 1700173400000,
+        "stability": 0.4,
+        "difficulty": 9.2,
+        "reps": 0,
+        "lapses": 3,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700259200000,
+        "dueAt": 1700259800000,
+        "stability": 0.4,
+        "difficulty": 9.8,
+        "reps": 0,
+        "lapses": 4,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700345600000,
+        "dueAt": 1700346200000,
+        "stability": 0.4,
+        "difficulty": 10.0,
+        "reps": 0,
+        "lapses": 5,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700432000000,
+        "dueAt": 1700432600000,
+        "stability": 0.4,
+        "difficulty": 10.0,
+        "reps": 0,
+        "lapses": 6,
+        "state": 2
+      }
+    ]
+  },
+  "mixed": {
+    "ratings": [
+      "GOOD",
+      "HARD",
+      "AGAIN",
+      "GOOD",
+      "EASY",
+      "GOOD",
+      "GOOD",
+      "HARD"
+    ],
+    "steps": [
+      {
+        "rating": "GOOD",
+        "now": 1700000000000,
+        "dueAt": 1700086400000,
+        "stability": 1.4,
+        "difficulty": 5.0,
+        "reps": 1,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "HARD",
+        "now": 1700086400000,
+        "dueAt": 1700087000000,
+        "stability": 1.54,
+        "difficulty": 5.3,
+        "reps": 2,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700172800000,
+        "dueAt": 1700173400000,
+        "stability": 0.77,
+        "difficulty": 5.9,
+        "reps": 0,
+        "lapses": 1,
+        "state": 2
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700259200000,
+        "dueAt": 1700345600000,
+        "stability": 1.001,
+        "difficulty": 5.75,
+        "reps": 1,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "EASY",
+        "now": 1700345600000,
+        "dueAt": 1700574249972,
+        "stability": 2.004002,
+        "difficulty": 5.35,
+        "reps": 2,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700432000000,
+        "dueAt": 1701642203932,
+        "stability": 4.016024016,
+        "difficulty": 5.2,
+        "reps": 3,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700518400000,
+        "dueAt": 1708191503615,
+        "stability": 11.244867245,
+        "difficulty": 5.05,
+        "reps": 4,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "HARD",
+        "now": 1700604800000,
+        "dueAt": 1712296012616,
+        "stability": 12.369353969,
+        "difficulty": 5.35,
+        "reps": 5,
+        "lapses": 1,
+        "state": 1
+      }
+    ]
+  },
+  "sloppy": {
+    "ratings": [
+      "AGAIN",
+      "AGAIN",
+      "HARD",
+      "GOOD",
+      "AGAIN",
+      "EASY",
+      "HARD",
+      "GOOD",
+      "GOOD"
+    ],
+    "steps": [
+      {
+        "rating": "AGAIN",
+        "now": 1700000000000,
+        "dueAt": 1700000600000,
+        "stability": 0.5,
+        "difficulty": 8.0,
+        "reps": 0,
+        "lapses": 1,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700086400000,
+        "dueAt": 1700087000000,
+        "stability": 0.4,
+        "difficulty": 8.6,
+        "reps": 0,
+        "lapses": 2,
+        "state": 2
+      },
+      {
+        "rating": "HARD",
+        "now": 1700172800000,
+        "dueAt": 1700173400000,
+        "stability": 0.6,
+        "difficulty": 8.9,
+        "reps": 1,
+        "lapses": 2,
+        "state": 2
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700259200000,
+        "dueAt": 1700345600000,
+        "stability": 1.0,
+        "difficulty": 8.75,
+        "reps": 2,
+        "lapses": 2,
+        "state": 1
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700345600000,
+        "dueAt": 1700346200000,
+        "stability": 0.5,
+        "difficulty": 9.35,
+        "reps": 0,
+        "lapses": 3,
+        "state": 2
+      },
+      {
+        "rating": "EASY",
+        "now": 1700432000000,
+        "dueAt": 1700518400000,
+        "stability": 1.4,
+        "difficulty": 8.95,
+        "reps": 1,
+        "lapses": 3,
+        "state": 1
+      },
+      {
+        "rating": "HARD",
+        "now": 1700518400000,
+        "dueAt": 1700676540370,
+        "stability": 1.54,
+        "difficulty": 9.25,
+        "reps": 2,
+        "lapses": 3,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700604800000,
+        "dueAt": 1701183697609,
+        "stability": 2.3716,
+        "difficulty": 9.1,
+        "reps": 3,
+        "lapses": 3,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700691200000,
+        "dueAt": 1703600248982,
+        "stability": 5.62448656,
+        "difficulty": 8.95,
+        "reps": 4,
+        "lapses": 3,
+        "state": 1
+      }
+    ]
+  },
+  "easy_streak": {
+    "ratings": [
+      "EASY",
+      "EASY",
+      "EASY",
+      "EASY",
+      "EASY",
+      "EASY",
+      "EASY"
+    ],
+    "steps": [
+      {
+        "rating": "EASY",
+        "now": 1700000000000,
+        "dueAt": 1700086400000,
+        "stability": 2.2,
+        "difficulty": 3.5,
+        "reps": 1,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "EASY",
+        "now": 1700086400000,
+        "dueAt": 1701591622694,
+        "stability": 7.7,
+        "difficulty": 3.1,
+        "reps": 2,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "EASY",
+        "now": 1700172800000,
+        "dueAt": 1717563858480,
+        "stability": 26.95,
+        "difficulty": 2.7,
+        "reps": 3,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "EASY",
+        "now": 1700259200000,
+        "dueAt": 1731795200000,
+        "stability": 94.325,
+        "difficulty": 2.3,
+        "reps": 4,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "EASY",
+        "now": 1700345600000,
+        "dueAt": 1731881600000,
+        "stability": 330.1375,
+        "difficulty": 1.9,
+        "reps": 5,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "EASY",
+        "now": 1700432000000,
+        "dueAt": 1731968000000,
+        "stability": 1155.48125,
+        "difficulty": 1.5,
+        "reps": 6,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "EASY",
+        "now": 1700518400000,
+        "dueAt": 1732054400000,
+        "stability": 4044.184375,
+        "difficulty": 1.1,
+        "reps": 7,
+        "lapses": 0,
+        "state": 1
+      }
+    ]
+  },
+  "recover": {
+    "ratings": [
+      "AGAIN",
+      "AGAIN",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD"
+    ],
+    "steps": [
+      {
+        "rating": "AGAIN",
+        "now": 1700000000000,
+        "dueAt": 1700000600000,
+        "stability": 0.5,
+        "difficulty": 8.0,
+        "reps": 0,
+        "lapses": 1,
+        "state": 2
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700086400000,
+        "dueAt": 1700087000000,
+        "stability": 0.4,
+        "difficulty": 8.6,
+        "reps": 0,
+        "lapses": 2,
+        "state": 2
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700172800000,
+        "dueAt": 1700259200000,
+        "stability": 1.0,
+        "difficulty": 8.45,
+        "reps": 1,
+        "lapses": 2,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700259200000,
+        "dueAt": 1700383948242,
+        "stability": 1.3,
+        "difficulty": 8.3,
+        "reps": 2,
+        "lapses": 2,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700345600000,
+        "dueAt": 1700705834351,
+        "stability": 1.69,
+        "difficulty": 8.15,
+        "reps": 3,
+        "lapses": 2,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700432000000,
+        "dueAt": 1701558465175,
+        "stability": 2.8561,
+        "difficulty": 8.0,
+        "reps": 4,
+        "lapses": 2,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700518400000,
+        "dueAt": 1706866996869,
+        "stability": 7.99708,
+        "difficulty": 7.85,
+        "reps": 5,
+        "lapses": 2,
+        "state": 1
+      }
+    ]
+  },
+  "harsh": {
+    "ratings": [
+      "HARD",
+      "HARD",
+      "HARD",
+      "HARD",
+      "HARD",
+      "GOOD"
+    ],
+    "steps": [
+      {
+        "rating": "HARD",
+        "now": 1700000000000,
+        "dueAt": 1700086400000,
+        "stability": 0.8,
+        "difficulty": 6.5,
+        "reps": 1,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "HARD",
+        "now": 1700086400000,
+        "dueAt": 1700087000000,
+        "stability": 0.88,
+        "difficulty": 6.8,
+        "reps": 2,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "HARD",
+        "now": 1700172800000,
+        "dueAt": 1700173400000,
+        "stability": 0.968,
+        "difficulty": 7.1,
+        "reps": 3,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "HARD",
+        "now": 1700259200000,
+        "dueAt": 1700259800000,
+        "stability": 1.0648,
+        "difficulty": 7.4,
+        "reps": 4,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "HARD",
+        "now": 1700345600000,
+        "dueAt": 1700346200000,
+        "stability": 1.17128,
+        "difficulty": 7.7,
+        "reps": 5,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700432000000,
+        "dueAt": 1701210268510,
+        "stability": 1.522664,
+        "difficulty": 7.55,
+        "reps": 6,
+        "lapses": 0,
+        "state": 1
+      }
+    ]
+  },
+  "late_good": {
+    "ratings": [
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "AGAIN",
+      "GOOD",
+      "GOOD",
+      "GOOD",
+      "GOOD"
+    ],
+    "steps": [
+      {
+        "rating": "GOOD",
+        "now": 1700000000000,
+        "dueAt": 1700086400000,
+        "stability": 1.4,
+        "difficulty": 5.0,
+        "reps": 1,
+        "lapses": 0,
+        "state": 0
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700086400000,
+        "dueAt": 1700308052300,
+        "stability": 1.96,
+        "difficulty": 4.85,
+        "reps": 2,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700172800000,
+        "dueAt": 1701310062549,
+        "stability": 3.8416,
+        "difficulty": 4.7,
+        "reps": 3,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700259200000,
+        "dueAt": 1707469830493,
+        "stability": 10.75648,
+        "difficulty": 4.55,
+        "reps": 4,
+        "lapses": 0,
+        "state": 1
+      },
+      {
+        "rating": "AGAIN",
+        "now": 1700345600000,
+        "dueAt": 1700346200000,
+        "stability": 5.37824,
+        "difficulty": 5.15,
+        "reps": 0,
+        "lapses": 1,
+        "state": 2
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700432000000,
+        "dueAt": 1700518400000,
+        "stability": 15.059072,
+        "difficulty": 5.0,
+        "reps": 1,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700518400000,
+        "dueAt": 1716790832547,
+        "stability": 42.1654016,
+        "difficulty": 4.85,
+        "reps": 2,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700604800000,
+        "dueAt": 1732140800000,
+        "stability": 118.06312448,
+        "difficulty": 4.7,
+        "reps": 3,
+        "lapses": 1,
+        "state": 1
+      },
+      {
+        "rating": "GOOD",
+        "now": 1700691200000,
+        "dueAt": 1732227200000,
+        "stability": 330.576748544,
+        "difficulty": 4.55,
+        "reps": 4,
+        "lapses": 1,
+        "state": 1
+      }
+    ]
+  }
+}

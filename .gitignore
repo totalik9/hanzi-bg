@@ -1,0 +1,53 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Generated content (regenerate with pipeline/) ----
+# The raw downloads are 130+ MB and every artefact is reproducible from
+# pipeline/. Only the code belongs in version control.
+/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.mp3
+*.sqlite
+*.sqlite3
+
+# ---- Android / Gradle ----
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.iml
+.idea/
+*.hprof
+
+# Kotlin
+.kotlin/
+
+# ---- Simulation output ----
+# results.json and analysis_output.txt are run outputs and are not tracked.
+/simulation/results.json
+/simulation/analysis_output.txt
+# expected_vectors.json IS tracked: CI diffs it against the Kotlin test
+# vectors to catch scheduler drift, and `git diff` on an untracked file
+# silently passes, which would make that check vacuous.
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

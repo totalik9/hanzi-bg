@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in the app is broken or behaves unexpectedly
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: what-expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the Review tab
+        2. Reveal the answer
+        3. Tap "Well"
+    validations:
+      required: true
+  - type: input
+    id: content
+    attributes:
+      label: Content involved
+      description: If a specific word, gloss, pinyin or grammar point is involved, give it here.
+      placeholder: "你好 / nǐ hǎo"
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      placeholder: "16"
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: "Redmi Note 14 Pro"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logcat output
+      description: Run `adb logcat -b crash -d -t 200` and paste it if the app crashed.
+      render: shell
