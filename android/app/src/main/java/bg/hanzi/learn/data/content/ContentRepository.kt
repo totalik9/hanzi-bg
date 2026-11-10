@@ -202,18 +202,27 @@ class ContentRepository @Inject constructor(
         }
     }
 
+    /**
+     * Search the dictionary.
+     *
+     * The pinyin is searched in its TONELESS form: a learner typing
+     * "hao" has no reason to know that the character is written "hǎo",
+     * and searching the tone-marked column would miss every such word.
+     * The tone-marked form is still matched, for anyone who does type it.
+     */
     fun search(query: String, limit: Int = 50): List<WordEntry> {
         if (query.isBlank()) return emptyList()
+        val like = "%$query%"
         return read { db ->
             db.rawQuery(
                 """
                 SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
                 FROM words
-                WHERE hanzi LIKE ? OR pinyin LIKE ? OR gloss_en LIKE ?
+                WHERE hanzi LIKE ? OR pinyin LIKE ? OR pinyin_plain LIKE ? OR gloss_en LIKE ? OR gloss_bg LIKE ?
                 ORDER BY (freq IS NULL), freq, hanzi
                 LIMIT $limit
                 """.trimIndent(),
-                arrayOf("%$query%", "%$query%", "%$query%"),
+                arrayOf(like, like, like, like, like),
             ).use { c ->
                 buildList {
                     while (c.moveToNext()) {
