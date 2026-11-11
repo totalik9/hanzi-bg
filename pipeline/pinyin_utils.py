@@ -44,8 +44,20 @@ for _vowel, _marks in _MARKS.items():
 
 
 def _normalise_vowels(syl: str) -> str:
-    """Turn CC-CEDICT's "u:" / "v" spelling of ü into the real character."""
-    return syl.replace("u:", "ü").replace("v", "ü")
+    """Turn CC-CEDICT's "u:" / "v" spelling of ü into the real character.
+
+    CC-CEDICT writes "lu:4"; other sources write "lv:4". The colon has to
+    go with the letter, otherwise "lv:4" becomes "lü:4" -- a syllable
+    that does not exist.
+
+    >>> _normalise_vowels("lu:4")
+    'lü4'
+    >>> _normalise_vowels("lv:4")
+    'lü4'
+    >>> _normalise_vowels("nv:3")
+    'nü3'
+    """
+    return syl.replace("u:", "ü").replace("v:", "ü").replace("v", "ü")
 
 
 def syllable_to_tones(syl: str) -> str:
@@ -222,6 +234,61 @@ def strip_tones(text: str) -> str:
     return _plain(text).replace("'", "").replace("’", "")
 
 
+def _has_initial(syllable: str) -> bool:
+    """True when a plain syllable begins with a consonant initial.
+
+    A Mandarin syllable is normally initial + final. The bare finals
+    ("a", "an", "e", "ang", ...) and the syllabic nasals ("m", "n", "ng")
+    have no initial, and they are the syllables that make a run-together
+    pinyin string ambiguous: "sange" parses as "san"+"ge" or "sang"+"e",
+    and only the first reading is a normal syllable.
+
+    >>> _has_initial("san")
+    True
+    >>> _has_initial("an")
+    False
+    >>> _has_initial("ng")
+    False
+    """
+    if syllable in _BARE_SYLLABLES:
+        return False
+    for initial in _INITIALS:
+        if syllable.startswith(initial):
+            return True
+    return False
+
+
+# Syllables that are a bare final or a syllabic nasal: no initial.
+_BARE_SYLLABLES = {
+    "a", "o", "e", "ê", "ai", "ei", "ao", "ou", "an", "en",
+    "ang", "eng", "er", "m", "n", "ng",
+}
+
+
+def _parse_score(lengths: list[int], plain: str) -> tuple[int, int]:
+    """Rank a syllable parse: more initials first, then a shorter first syllable.
+
+    The score is the number of syllables that carry an initial consonant
+    (higher is better) and, as the tie-break, the length of the first
+    syllable (shorter is better). Both are needed: "sange" has two
+    two-syllable readings -- "san"+"ge" (two initials) and "sang"+"e"
+    (one initial) -- and only the first is right.
+
+    >>> _parse_score([3, 2], "sange")
+    (2, -3)
+    >>> _parse_score([4, 1], "sange")
+    (1, -4)
+    """
+    syllables: list[str] = []
+    pos = 0
+    for length in lengths:
+        syllables.append(plain[pos:pos + length])
+        pos += length
+    initials = sum(1 for s in syllables if _has_initial(s))
+    first = lengths[0] if lengths else 0
+    return (initials, -first)
+
+
 def split_pinyin_by_chars(
     text: str,
     chars: str,
@@ -238,19 +305,17 @@ def split_pinyin_by_chars(
     given as plain (tone-stripped) pinyin. Returns the syllable list, or None
     when no consistent split exists.
 
-    >>> readings = {"三": ["san"], "个": ["ge"]}
+    >>> readings = {"三": ["sān"], "个": ["gè"]}
     >>> split_pinyin_by_chars("sāngè", "三个", readings)
     ['sān', 'gè']
+    >>> split_pinyin_by_chars("sāngè", "三", readings) is None
+    True
     """
     text = text.strip()
     if not text or " " in text:
         return None
-    if len(chars) != len(text):
-        # the pinyin length must match the character count for this to apply
-        return None
 
     plain = _plain(text)
-    inventory = _load_syllable_inventory()
     n = len(plain)
 
     # allowed plain syllable forms for each character position
@@ -258,41 +323,28 @@ def split_pinyin_by_chars(
     for ch in chars:
         forms = {strip_tones(r) for r in char_readings.get(ch, [])}
         allowed.append(forms)
+    if not all(allowed):
+        return None
 
-    # best[i][k] = syllable lengths that parse plain[i:] into k syllables
-    best: list[dict[int, list[int]]] = [dict() for _ in range(n + 1)]
-    best[n][0] = []
-    for i in range(n - 1, -1, -1):
-        for j in range(i + 1, n + 1):
-            piece = plain[i:j]
-            if piece not in inventory:
-                continue
-            for k, tail in best[j].items():
-                cand = [j - i] + tail
-                cur = best[i].get(k + 1)
-                if cur is None or _better_split(cand, cur):
-                    best[i][k + 1] = cand
-
-    # walk forward, choosing at each step a piece that is a legal reading of
-    # the character at that position
-    result: list[str] = []
-    pos = 0
-    char_pos = 0
-    while pos < n:
-        placed = False
-        for length in range(1, n - pos + 1):
-            piece = plain[pos:pos + length]
-            if char_pos >= len(allowed):
-                break
-            if piece in allowed[char_pos]:
-                result.append(text[pos:pos + length])
-                pos += length
-                char_pos += 1
-                placed = True
-                break
-        if not placed:
+    # Walk forward, choosing at each step a piece that is a legal reading of
+    # the character at that position. The search backtracks: the longest
+    # piece is tried first, but a piece that leaves the rest of the word
+    # unparseable is abandoned in favour of a shorter one.
+    def place(pos: int, char_pos: int) -> list[str] | None:
+        if char_pos == len(allowed):
+            return [] if pos == n else None
+        if pos >= n:
             return None
-    return result if char_pos == len(allowed) else None
+        for length in range(min(n - pos, 12), 0, -1):
+            piece = plain[pos:pos + length]
+            if piece not in allowed[char_pos]:
+                continue
+            tail = place(pos + length, char_pos + 1)
+            if tail is not None:
+                return [text[pos:pos + length]] + tail
+        return None
+
+    return place(0, 0)
 
 
 def _load_syllable_inventory() -> set[str]:
@@ -367,7 +419,7 @@ def split_pinyin_syllables(text: str, n_syllables: int | None = None) -> list[st
                     continue
                 cand = [j - i] + tail
                 cur = best[i].get(k + 1)
-                if cur is None or _better_split(cand, cur):
+                if cur is None or _better_split(cand, cur, plain[i:]):
                     best[i][k + 1] = cand
 
     # choose the parse to use
@@ -392,14 +444,22 @@ def split_pinyin_syllables(text: str, n_syllables: int | None = None) -> list[st
     return out
 
 
-def _better_split(candidate: list[int], current: list[int]) -> bool:
+def _better_split(candidate: list[int], current: list[int], plain: str) -> bool:
     """True if `candidate` is a better syllable split than `current`.
 
-    Both parses cover the same text, so they have the same syllable count;
-    the tie-break prefers longer syllables early, which matches how Mandarin
-    syllables are actually built.
+    Both parses cover the same text, so they have the same syllable count.
+    The tie-break prefers the parse whose syllables carry an initial
+    consonant, because a bare final ("an", "e", "ang") only turns up in
+    run-together pinyin as the tail of an ambiguous split: "sange" is
+    "san"+"ge", not "sang"+"e". The shorter first syllable breaks the
+    remaining ties.
+
+    >>> _better_split([3, 2], [4, 1], "sange")
+    True
+    >>> _better_split([4, 1], [3, 2], "sange")
+    False
     """
-    return candidate > current
+    return _parse_score(candidate, plain) > _parse_score(current, plain)
 
 
 def _greedy_split(text: str, plain: str) -> list[str]:
