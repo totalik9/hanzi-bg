@@ -1,6 +1,7 @@
 package bg.hanzi.learn.ui.screens.dictionary
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,12 +12,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -46,6 +49,26 @@ fun DictionaryScreen(
                 .fillMaxWidth()
                 .padding(16.dp),
         )
+
+        // The machine translation covers 95 % of the vocabulary, but it
+        // can be wrong. This switch shows only the glosses a person
+        // wrote.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.dict_human_only),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Switch(
+                checked = state.humanGlossesOnly,
+                onCheckedChange = { viewModel.setHumanGlossesOnly(it) },
+            )
+        }
 
         if (query.isNotBlank() && state.results.isEmpty() && !state.loading) {
             Text(
@@ -97,6 +120,13 @@ private fun WordRow(word: WordEntry) {
                     text = word.glossBg,
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                if (!word.isHumanGloss) {
+                    Text(
+                        text = stringResource(R.string.gloss_machine_note),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             if (word.glossEn.isNotBlank()) {
                 Text(

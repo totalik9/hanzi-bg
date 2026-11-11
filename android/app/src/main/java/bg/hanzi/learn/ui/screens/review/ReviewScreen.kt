@@ -121,6 +121,16 @@ fun ReviewScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 textAlign = TextAlign.Center,
                             )
+                            // The machine translation can be wrong, and a
+                            // learner who does not know that will trust it.
+                            if (!word.isHumanGloss) {
+                                Text(
+                                    text = stringResource(R.string.gloss_machine_note),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
                         }
                         if (word.glossEn.isNotBlank()) {
                             Text(

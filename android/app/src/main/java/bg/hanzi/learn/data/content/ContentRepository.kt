@@ -16,7 +16,20 @@ data class WordEntry(
     val isVerb: Boolean,
     val freq: Int?,
     val audio: String? = null,
-)
+    /**
+     * Where the Bulgarian gloss came from: "human" for the ones a person
+     * wrote, "machine" for the machine translation, "" when there is no
+     * Bulgarian gloss at all.
+     *
+     * The app shows this so the learner knows which glosses are worth
+     * trusting -- a machine translation can be wrong, and a learner who
+     * does not know that will trust it.
+     */
+    val glossSource: String = "",
+) {
+    /** True when the Bulgarian gloss was written by a person. */
+    val isHumanGloss: Boolean get() = glossSource == "human"
+}
 
 data class GrammarEntry(
     val id: Long,
@@ -114,7 +127,7 @@ class ContentRepository @Inject constructor(
             // argument as a string, which SQLite rejects for LIMIT.
             db.rawQuery(
                 """
-                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
+                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
                 FROM words
                 WHERE hsk_level = ?
                 ORDER BY (freq IS NULL), freq, hanzi
@@ -146,7 +159,7 @@ class ContentRepository @Inject constructor(
     fun verbsForLevel(level: String, limit: Int = 100): List<WordEntry> = read { db ->
         db.rawQuery(
             """
-            SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
+            SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
             FROM words
             WHERE hsk_level = ? AND is_verb = 1
             ORDER BY (freq IS NULL), freq, hanzi
@@ -168,6 +181,7 @@ class ContentRepository @Inject constructor(
                             isVerb = true,
                             freq = if (c.isNull("freq")) null else c.getInt("freq"),
                             audio = c.strOrNull("audio"),
+                            glossSource = c.str("gloss_source"),
                         ),
                     )
                 }
@@ -178,7 +192,7 @@ class ContentRepository @Inject constructor(
     fun wordByHanzi(hanzi: String): WordEntry? = read { db ->
         db.rawQuery(
             """
-            SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
+            SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
             FROM words WHERE hanzi = ? LIMIT 1
             """.trimIndent(),
             arrayOf(hanzi),
@@ -197,6 +211,7 @@ class ContentRepository @Inject constructor(
                     isVerb = c.int("is_verb") == 1,
                     freq = if (c.isNull("freq")) null else c.getInt("freq"),
                     audio = c.strOrNull("audio"),
+                    glossSource = c.str("gloss_source"),
                 )
             }
         }
@@ -216,7 +231,7 @@ class ContentRepository @Inject constructor(
         return read { db ->
             db.rawQuery(
                 """
-                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
+                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
                 FROM words
                 WHERE hanzi LIKE ? OR pinyin LIKE ? OR pinyin_plain LIKE ? OR gloss_en LIKE ? OR gloss_bg LIKE ?
                 ORDER BY (freq IS NULL), freq, hanzi
@@ -389,7 +404,7 @@ class ContentRepository @Inject constructor(
             if (plain.isEmpty()) return@read emptyList()
             db.rawQuery(
                 """
-                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio
+                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
                 FROM words
                 WHERE pinyin_tones LIKE ?
                 ORDER BY (freq IS NULL), freq, hanzi
@@ -476,6 +491,7 @@ private fun Cursor.toWordEntry() = WordEntry(
     isVerb = int("is_verb") == 1,
     freq = if (isNull("freq")) null else getInt("freq"),
     audio = strOrNull("audio"),
+    glossSource = str("gloss_source"),
 )
 
 private fun Cursor.toSentenceEntry() = SentenceEntry(

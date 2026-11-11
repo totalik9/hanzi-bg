@@ -375,7 +375,7 @@ class PracticeViewModel @Inject constructor(
     fun onWordOrderSubmit() {
         val current = _uiState.value.wordOrder ?: return
         if (current.answered || current.picked.isEmpty()) return
-        val correct = current.picked == current.tokens
+        val correct = scoreWordOrder(current.picked, current.tokens)
         _uiState.value = _uiState.value.copy(
             wordOrder = current.copy(answered = true, correct = correct),
             correctCount = _uiState.value.correctCount + if (correct) 1 else 0,
@@ -396,7 +396,7 @@ class PracticeViewModel @Inject constructor(
         // does not segment, so the sentence is split on the characters
         // that CC-CEDICT knows as words -- a single character is a word
         // too often in Chinese for this to be simple.
-        val tokens = segment(sentence.hanzi)
+        val tokens = segmentForWordOrder(sentence.hanzi)
         _uiState.value = _uiState.value.copy(
             wordOrder = WordOrderExercise(
                 sentence = sentence,
@@ -434,6 +434,4 @@ class PracticeViewModel @Inject constructor(
      * and the answer is the character order. Word-level segmentation would
      * need a dictionary the app does not carry.
      */
-    private fun segment(hanzi: String): List<String> =
-        hanzi.filter { it.code in 0x4E00..0x9FFF }.map { it.toString() }
 }

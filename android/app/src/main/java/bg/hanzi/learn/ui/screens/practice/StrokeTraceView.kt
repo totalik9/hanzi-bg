@@ -44,9 +44,17 @@ fun StrokeTraceView(
     val drawnPaths = remember(character.medians) { mutableStateListOf<List<Offset>>() }
     var currentStroke by remember { mutableStateOf<List<Offset>>(emptyList()) }
 
-    // The strokes the learner has completed correctly.
-    val completed = remember(drawnPaths.toList()) {
-        countMatchingStrokes(medians, drawnPaths, size = 1024f)
+    // The strokes the learner has completed correctly. The medians live
+    // in the 1024x1024 space and the learner's points are in canvas
+    // pixels, so the two are compared through a factor that is only
+    // known inside the Canvas.
+    var traceScale by remember { mutableStateOf(1f) }
+    val completed = remember(drawnPaths.toList(), traceScale) {
+        countMatchingStrokes(
+            medians = medians,
+            drawn = drawnPaths.map { stroke -> stroke.map { TracePoint(it.x, it.y) } },
+            scale = traceScale,
+        )
     }
     val total = medians.size
 
@@ -78,6 +86,9 @@ fun StrokeTraceView(
                 },
         ) {
             val scale = size.width / 1024f
+            // The scoring compares the learner's points with the medians,
+            // so it needs the same factor the drawing uses.
+            traceScale = scale
             fun project(p: List<Float>) = Offset(p[0] * scale, p[1] * scale)
 
             // The expected strokes, faintly.
@@ -116,46 +127,3 @@ fun StrokeTraceView(
     }
 }
 
-/**
- * Count how many of the learner's strokes match the expected ones.
- *
- * A drawn stroke matches an expected stroke when it starts near that
- * stroke's start point and ends near its end point. Matching is done in
- * order and each expected stroke is used at most once, so drawing the
- * right strokes in the WRONG order does not count.
- */
-private fun countMatchingStrokes(
-    medians: List<List<List<Float>>>,
-    drawn: List<List<Offset>>,
-    size: Float,
-): Int {
-    val scale = size / 1024f
-    val tolerance = 180f
-    val used = mutableSetOf<Int>()
-    var matched = 0
-
-    for (stroke in drawn) {
-        if (stroke.size < 2) continue
-        val start = stroke.first()
-        val end = stroke.last()
-
-        for (i in medians.indices) {
-            if (i in used) continue
-            val median = medians[i]
-            if (median.size < 2) continue
-            val expectedStart = Offset(median[0][0] * scale, median[0][1] * scale)
-            val expectedEnd = Offset(
-                median.last()[0] * scale,
-                median.last()[1] * scale,
-            )
-            val nearStart = (start - expectedStart).getDistance() < tolerance
-            val nearEnd = (end - expectedEnd).getDistance() < tolerance
-            if (nearStart && nearEnd) {
-                used += i
-                matched += 1
-                break
-            }
-        }
-    }
-    return matched
-}

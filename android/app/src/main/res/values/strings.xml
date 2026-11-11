@@ -26,6 +26,12 @@
     <string name="card_play_audio">Изслушай</string>
     <string name="card_stroke_order">Напис на йероглифа</string>
 
+    <!-- Gloss provenance -->
+    <!-- Shown under a Bulgarian gloss that came from the machine, so the
+         learner knows it may be wrong. -->
+    <string name="gloss_machine_note">машинен превод — може да е неточен</string>
+    <string name="gloss_human_note">сверен превод</string>
+
     <!-- Review -->
     <string name="review_empty">Няма карти за преглед.</string>
     <string name="review_done">Прегледът приключи.</string>
@@ -33,6 +39,8 @@
     <!-- Dictionary -->
     <string name="dict_search_hint">Търси китайски или латински</string>
     <string name="dict_empty">Няма резултати.</string>
+    <!-- Shows only the words whose Bulgarian gloss was written by a person. -->
+    <string name="dict_human_only">Само човешки сверени глоси</string>
 
     <!-- Grammar -->
     <string name="grammar_empty">Все още няма граматични теми.</string>
