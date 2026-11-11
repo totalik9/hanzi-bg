@@ -76,6 +76,40 @@ PARENTHETICAL = re.compile(
     re.IGNORECASE,
 )
 
+# A register note: it tells the reader HOW the word is used, not what it
+# means. Translated, "(coll.)" becomes "(разг.)", which the learner
+# cannot use and which clutters the gloss.
+#
+# The parentheticals that DO carry meaning -- "(of a fruit)", "(after a
+# verb)", "(used to express annoyance)" -- are deliberately left alone.
+REGISTER = re.compile(
+    r"\((?:coll|loanword|sl|ditto|form|arch|obs|interj|fig|Tw|Taiwan|"
+    r"Internet|Internet slang)\.\)",
+    re.IGNORECASE,
+)
+REGISTER_SHORT = re.compile(r"\((?:Tw|Internet|Internet slang|coll|loanword)\)")
+
+# "(it) hurts" -- the "(it)" is an italic marker, not a word.
+ITALIC = re.compile(r"\((?:it|Fig)\.\s*", re.IGNORECASE)
+
+# "fig. to pad out (writing with fancy phrases)" -- the marker tells the
+# reader which sense is meant. Translated, it becomes "Fig. за ..." or
+# "fig. to ..." and teaches nothing.
+LIT_FIG = re.compile(r"^(?:lit|fig)\.\s+", re.IGNORECASE)
+
+# "(CL: )" with nothing after it: the classifier the entry refers to is
+# gone, so the marker is empty. "(CL:個|个[ge4])" is handled by the
+# cross-reference rule; this is the leftover with nothing in it.
+EMPTY_CL = re.compile(r"\(\s*CL:\s*\)", re.IGNORECASE)
+
+# "(abbr.)" -- Taiwan (abbr.) is "Тайван (abbr.)" in Bulgarian.
+ABBR = re.compile(r"\(\s*abbr\.?\s*\)", re.IGNORECASE)
+
+# CC-CEDICT writes "sb" and "sth" for "somebody" and "something".
+# Left in, they end up in the Bulgarian gloss as "sb" and "sth".
+SOMEBODY = re.compile(r"\bsb\.?s?\b", re.IGNORECASE)
+SOMETHING = re.compile(r"\bsth\b", re.IGNORECASE)
+
 
 def clean_sense(sense: str) -> str | None:
     """Clean one English sense, or return None when it carries no meaning.
@@ -90,6 +124,20 @@ def clean_sense(sense: str) -> str | None:
     True
     >>> clean_sense("friend/CL:個|个[ge4],位[wei4]".split("/")[0])
     'friend'
+    >>> clean_sense("(coll.) to explain")
+    'to explain'
+    >>> clean_sense("to accept (sb or sth)")
+    'to accept (somebody or something)'
+    >>> clean_sense("(coll.) (of a fruit) squashy")
+    '(of a fruit) squashy'
+    >>> clean_sense("leaf (CL: )")
+    'leaf'
+    >>> clean_sense("Taiwan (abbr.)")
+    'Taiwan'
+    >>> clean_sense("fig. to pad out (writing with fancy phrases)")
+    'to pad out (writing with fancy phrases)'
+    >>> clean_sense("lit. to pile up (bricks)")
+    'to pile up (bricks)'
     """
     s = (sense or "").strip()
     if not s:
@@ -99,6 +147,14 @@ def clean_sense(sense: str) -> str | None:
     s = PARENTHETICAL.sub("", s)
     s = READING.sub("", s)
     s = HANZI.sub(" ", s)
+    s = REGISTER.sub("", s)
+    s = REGISTER_SHORT.sub("", s)
+    s = ITALIC.sub("", s)
+    s = EMPTY_CL.sub("", s)
+    s = ABBR.sub("", s)
+    s = SOMEBODY.sub("somebody", s)
+    s = SOMETHING.sub("something", s)
+    s = LIT_FIG.sub("", s)
     s = re.sub(r"\s{2,}", " ", s).strip(" ,;/|")
     if not s:
         return None
