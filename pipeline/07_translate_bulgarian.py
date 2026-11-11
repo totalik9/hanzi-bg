@@ -40,6 +40,7 @@ import argparse
 import json
 import os
 import re
+import sqlite3
 import sys
 import time
 
@@ -49,6 +50,8 @@ from pinyin_utils import DATA, RAW  # noqa: E402
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
 BG_GLOSS = os.path.join(RAW, "bg_zh_wiktionary.json")
 OUT = os.path.join(DATA, "bg_translations.json")
+CACHE = os.path.join(DATA, "bg_sense_cache.json")
+CONTENT_DB = os.path.join(DATA, "content.db")
 
 MODEL_ID = "facebook/nllb-200-distilled-600M"
 
@@ -104,6 +107,122 @@ def clean_translation(text: str) -> str:
     if re.fullmatch(r"[A-Za-z\s\-']+", text):
         return ""
     return text
+
+
+def load_cache(path: str) -> dict[str, str]:
+    """Read the English sense -> Bulgarian translation cache.
+
+    The cache is what makes a re-run cheap. A full translation of the
+    vocabulary is 16 135 senses and takes about 95 minutes on the CPU;
+    a re-run after a change to the English glosses only needs the senses
+    that are actually new.
+
+    >>> import tempfile, os
+    >>> path = os.path.join(tempfile.mkdtemp(), "cache.json")
+    >>> save_cache(path, {"water": "вода"})
+    >>> load_cache(path)
+    {'water': 'вода'}
+    """
+    data = load_json(path)
+    if not isinstance(data, dict):
+        return {}
+    return {str(k): str(v) for k, v in data.items()}
+
+
+def save_cache(path: str, cache: dict[str, str]) -> None:
+    """Write the cache atomically.
+
+    The write goes to a temporary file that is then moved into place, so
+    a run that is killed halfway never leaves a half-written cache
+    behind: the old one stays valid and the work is simply redone.
+
+    >>> import tempfile, os
+    >>> path = os.path.join(tempfile.mkdtemp(), "cache.json")
+    >>> save_cache(path, {"a": "а"})
+    >>> load_cache(path)
+    {'a': 'а'}
+    """
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(cache, fh, ensure_ascii=False, indent=1, sort_keys=True)
+    os.replace(tmp, path)
+
+
+def seed_cache_from_previous_run(
+    cache: dict[str, str],
+    db_path: str,
+    translations_path: str,
+) -> tuple[int, int]:
+    """Recover the sense cache from a previous run's two output files.
+
+    The previous run stored one Bulgarian gloss per WORD, joined with
+    " / ". The cache needs one translation per English SENSE. The two can
+    be lined up exactly when the word's gloss has as many parts as the
+    word has senses, because the assembler only drops a part when the
+    model returned nothing or a duplicate -- and then the counts differ.
+
+    The English senses come from content.db, which still holds the
+    gloss_en the previous run translated. So this has to run BEFORE
+    content.db is rebuilt.
+
+    Returns (seeded senses, words that could not be lined up).
+
+    >>> import json, sqlite3, tempfile, os
+    >>> tmp = tempfile.mkdtemp()
+    >>> db = os.path.join(tmp, "content.db")
+    >>> conn = sqlite3.connect(db)
+    >>> _ = conn.execute("CREATE TABLE words (hanzi TEXT, gloss_en TEXT, gloss_source TEXT)")
+    >>> _ = conn.execute("INSERT INTO words VALUES ('水', 'water/liquid', 'machine')")
+    >>> _ = conn.execute("INSERT INTO words VALUES ('错', 'wrong; mistake', 'machine')")
+    >>> conn.commit()
+    >>> conn.close()
+    >>> out = os.path.join(tmp, "bg.json")
+    >>> _ = json.dump({"水": {"gloss": "вода / течност", "source": "machine"}},
+    ...              open(out, "w", encoding="utf-8"))
+    >>> cache = {}
+    >>> seed_cache_from_previous_run(cache, db, out)
+    (2, 0)
+    >>> cache["water"]
+    'вода'
+    """
+    if not os.path.exists(db_path):
+        return 0, 0
+    translations = load_json(translations_path)
+    if not isinstance(translations, dict):
+        return 0, 0
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT hanzi, gloss_en FROM words WHERE gloss_source = 'machine'"
+        ).fetchall()
+    finally:
+        conn.close()
+
+    seeded = 0
+    skipped = 0
+    for row in rows:
+        entry = translations.get(row["hanzi"])
+        if not isinstance(entry, dict) or entry.get("source") != "machine":
+            continue
+        gloss = (entry.get("gloss") or "").strip()
+        if not gloss:
+            continue
+        parts = gloss.split(" / ")
+        # Rejoining must give the gloss back: that proves the split on
+        # " / " did not cut a part in half.
+        if " / ".join(parts) != gloss:
+            continue
+        senses = split_senses(row["gloss_en"] or "")
+        if len(senses) != len(parts):
+            skipped += 1
+            continue
+        for sense, part in zip(senses, parts):
+            if sense not in cache:
+                cache[sense] = part
+                seeded += 1
+    return seeded, skipped
 
 
 def main() -> int:
@@ -168,41 +287,57 @@ def main() -> int:
                 senses.append(p)
     print(f"distinct English senses to translate: {len(senses):,}")
 
-    print(f"loading {MODEL_ID} ...")
-    import torch
-    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    # The cache holds the senses that are already translated. A first run
+    # has to translate everything; a re-run after a change to the English
+    # glosses only translates the senses that are new.
+    cache = load_cache(CACHE)
+    if not cache:
+        seeded, skipped = seed_cache_from_previous_run(cache, CONTENT_DB, OUT)
+        if seeded:
+            save_cache(CACHE, cache)
+            print(f"  seeded the cache from the previous run: {seeded:,} senses "
+                  f"({skipped:,} words could not be lined up)")
+    todo_senses = [s for s in senses if s not in cache]
+    print(f"  already in the cache: {len(senses) - len(todo_senses):,} "
+          f"-> {len(todo_senses):,} to translate")
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, src_lang=SOURCE_LANG)
-    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
-    model.eval()
-    print(f"  device: cpu, threads: {torch.get_num_threads()}")
+    if todo_senses:
+        print(f"loading {MODEL_ID} ...")
+        import torch
+        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-    bos = tokenizer.convert_tokens_to_ids(TARGET_LANG)
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, src_lang=SOURCE_LANG)
+        model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
+        model.eval()
+        print(f"  device: cpu, threads: {torch.get_num_threads()}")
 
-    # sense -> Bulgarian
-    translated: dict[str, str] = {}
-    started = time.time()
-    for i in range(0, len(senses), args.batch):
-        chunk = senses[i:i + args.batch]
-        tokenizer.src_lang = SOURCE_LANG
-        encoded = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            generated = model.generate(
-                **encoded,
-                forced_bos_token_id=bos,
-                max_new_tokens=32,
-                num_beams=2,
-            )
-        decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
-        for source, out in zip(chunk, decoded):
-            translated[source] = clean_translation(out)
+        bos = tokenizer.convert_tokens_to_ids(TARGET_LANG)
 
-        done = i + len(chunk)
-        if done % (args.batch * 20) == 0 or done == len(senses):
-            rate = done / max(0.001, time.time() - started)
-            remaining = (len(senses) - done) / max(0.001, rate)
-            print(f"  {done}/{len(senses)} senses ({rate:.1f}/s, "
-                  f"~{remaining / 60:.0f} min left)")
+        started = time.time()
+        for i in range(0, len(todo_senses), args.batch):
+            chunk = todo_senses[i:i + args.batch]
+            tokenizer.src_lang = SOURCE_LANG
+            encoded = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
+            with torch.no_grad():
+                generated = model.generate(
+                    **encoded,
+                    forced_bos_token_id=bos,
+                    max_new_tokens=32,
+                    num_beams=2,
+                )
+            decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
+            for source, out in zip(chunk, decoded):
+                cache[source] = clean_translation(out)
+            # The cache is written after every batch: a run that is killed
+            # keeps the work it already did.
+            save_cache(CACHE, cache)
+
+            done = i + len(chunk)
+            if done % (args.batch * 20) == 0 or done == len(todo_senses):
+                rate = done / max(0.001, time.time() - started)
+                remaining = (len(todo_senses) - done) / max(0.001, rate)
+                print(f"  {done}/{len(todo_senses)} senses ({rate:.1f}/s, "
+                      f"~{remaining / 60:.0f} min left)")
 
     # Assemble a Bulgarian gloss per word, de-duplicating the senses.
     results: dict[str, dict] = {}
@@ -212,7 +347,7 @@ def main() -> int:
         bg_parts: list[str] = []
         seen_bg: set[str] = set()
         for p in parts:
-            t = translated.get(p, "")
+            t = cache.get(p, "")
             if not t:
                 continue
             if t.lower() in seen_bg:
