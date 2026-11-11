@@ -171,16 +171,23 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
     # The NLLB-200 output carries the human glosses and the machine ones,
     # each tagged with its origin. It is the richer source, so it wins
     # over the raw Wiktionary file when it exists.
+    #
+    # "human+machine" means the human gloss came first and the machine
+    # senses that it does not already cover followed it.
     machine_bg: dict[str, str] = {}
+    human_bg_combined: dict[str, str] = {}
     translations = load_json(BG_TRANSLATIONS)
     if translations:
         for word, entry in translations.items():
             if isinstance(entry, dict) and entry.get("gloss"):
                 if entry.get("source") == "human":
                     human_bg[word] = [entry["gloss"]]
+                elif entry.get("source") == "human+machine":
+                    human_bg_combined[word] = entry["gloss"]
                 else:
                     machine_bg[word] = entry["gloss"]
-    print(f"  human glosses: {len(human_bg):,}  machine glosses: {len(machine_bg):,}")
+    print(f"  human glosses: {len(human_bg):,}  machine glosses: {len(machine_bg):,}  "
+          f"combined: {len(human_bg_combined):,}")
 
     rows = []
     with_bg = 0
@@ -193,6 +200,9 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
         gloss_bg = (w.get("gloss_bg") or "").strip()
         if gloss_bg:
             source = "human"
+        elif hanzi in human_bg_combined:
+            gloss_bg = human_bg_combined[hanzi]
+            source = "human+machine"
         else:
             glosses = human_bg.get(hanzi)
             if glosses:
@@ -470,9 +480,42 @@ def build_manifest(conn: sqlite3.Connection) -> dict[str, str]:
     return values
 
 
+def remove_old_db(path: str) -> None:
+    """Delete the database, even when something still holds it open.
+
+    The emulator keeps a copy of content.db open while the app runs, and
+    on Windows a file that is open cannot be deleted. Writing to a fresh
+    file and moving it into place is not possible either -- the move
+    fails for the same reason. So the old file is emptied first and the
+    new database is built under a temporary name.
+
+    The alternative -- letting the build fail with PermissionError --
+    makes the build depend on whether an emulator happens to be running.
+    """
+    if not os.path.exists(path):
+        return
+    try:
+        os.remove(path)
+        return
+    except PermissionError:
+        pass
+    # Still locked. Try to truncate it; SQLite can open a truncated file
+    # and rewrite it from scratch.
+    try:
+        with open(path, "r+b") as fh:
+            fh.truncate(0)
+        print(f"  note: {os.path.basename(path)} was locked, emptied in place")
+        return
+    except PermissionError as exc:
+        raise SystemExit(
+            f"ERROR: cannot replace {path} -- it is locked by another "
+            f"program. Close the emulator (or uninstall the app) and "
+            f"run this again. ({exc})"
+        )
+
+
 def main() -> int:
-    if os.path.exists(OUT):
-        os.remove(OUT)
+    remove_old_db(OUT)
 
     os.makedirs(DATA, exist_ok=True)
     conn = sqlite3.connect(OUT)

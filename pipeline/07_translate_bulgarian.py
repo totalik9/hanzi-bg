@@ -46,6 +46,12 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import DATA, RAW  # noqa: E402
+from importlib import import_module  # noqa: E402
+
+# The cleaning of the English senses lives in 09_clean_glosses.py and is
+# used from here too: the translation must not see a sense the cleaning
+# has already thrown away, or one it has already tidied up.
+clean_sense = import_module("09_clean_glosses").clean_sense
 
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
 BG_GLOSS = os.path.join(RAW, "bg_zh_wiktionary.json")
@@ -63,12 +69,6 @@ TARGET_LANG = "bul_Cyrl"
 # a word; more turns the card into a dictionary entry.
 MAX_SENSES = 3
 
-# CC-CEDICT glosses carry noise that must not be translated.
-_GLOSS_NOISE = re.compile(
-    r"\b(?:CL:|abbr\. for|see also|variant of|old variant|surname|erhua)\b[^/]*",
-    re.IGNORECASE,
-)
-
 
 def load_json(path: str):
     if not os.path.exists(path):
@@ -82,19 +82,28 @@ def load_json(path: str):
 
 
 def split_senses(gloss_en: str) -> list[str]:
-    """Split a CC-CEDICT gloss into its individual senses."""
+    """Split a CC-CEDICT gloss into its individual senses.
+
+    The cleaning is the one from 09_clean_glosses.py, and that is not an
+    accident: two copies of the same rules drift apart, and then the
+    translation translates senses the cleaning never saw. The result was
+    "(CL: )" and "Fig. " reaching the learner in Bulgarian.
+
+    >>> split_senses("leaf (CL: )/(slang) marijuana")
+    ['leaf', '(slang) marijuana']
+    >>> split_senses("Taiwan (abbr.)")
+    ['Taiwan']
+    """
     if not gloss_en:
         return []
-    clean = _GLOSS_NOISE.sub("", gloss_en)
-    parts = [p.strip() for p in clean.split("/")]
     out: list[str] = []
-    for p in parts:
-        p = p.strip().strip(";").strip()
-        if not p or len(p) > 60:
+    for part in gloss_en.split("/"):
+        cleaned = clean_sense(part.strip())
+        if not cleaned or len(cleaned) > 60:
             continue
-        if not re.search(r"[a-zA-Z]", p):
+        if not re.search(r"[a-zA-Z]", cleaned):
             continue
-        out.append(p)
+        out.append(cleaned)
     return out[:MAX_SENSES]
 
 
@@ -356,8 +365,6 @@ def main() -> int:
             continue
         if args.level and str(w.get("hsk_level")) != args.level:
             continue
-        if hanzi in human:
-            continue
         if (w.get("gloss_bg") or "").strip():
             continue
         todo.append(w)
@@ -464,10 +471,41 @@ def main() -> int:
             }
 
     # Merge with the human glosses so the file is the complete picture.
+    #
+    # The human gloss goes FIRST, because it was written by a person.
+    # But it used to replace the machine gloss entirely, and that cost
+    # the learner the other senses: 197 of the 457 words with a human
+    # gloss had a single synonym where the English carries three or
+    # more. It also cost correctness for the polyphonic characters: 和
+    # was glossed "тишина" (quiet) because the Wiktionary entry that
+    # was scanned lists that sense, while the entry teaches "and; with".
+    #
+    # So the human gloss leads and the machine senses follow it.
     merged: dict[str, dict] = {}
     for word, gloss in human.items():
         merged[word] = {"gloss": gloss, "source": "human"}
-    merged.update(results)
+
+    for hanzi, got in results.items():
+        human_gloss = human.get(hanzi)
+        if not human_gloss:
+            merged[hanzi] = got
+            continue
+        # The machine senses the human gloss does not already cover.
+        extra: list[str] = []
+        seen = {human_gloss.strip().lower()}
+        for part in got["gloss"].split(" / "):
+            key = part.strip().lower()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            extra.append(part)
+        if extra:
+            merged[hanzi] = {
+                "gloss": " / ".join([human_gloss] + extra),
+                "source": "human+machine",
+            }
+        else:
+            merged[hanzi] = {"gloss": human_gloss, "source": "human"}
 
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(merged, fh, ensure_ascii=False, indent=1, sort_keys=True)
