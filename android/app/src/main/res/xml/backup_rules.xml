@@ -2,11 +2,14 @@
 <!--
   Backup rules: the content DB is re-downloadable, but user progress
   (SRS state) MUST be backed up so a device swap does not lose streaks.
+
+  Naming the paths to include is enough: everything that is not named
+  is left out. The bundled content.db is copied into files/content/ and
+  is 20 MB of re-downloadable data, so it is not backed up, and it must
+  not be listed as an <exclude> either, because an exclude that names a
+  path no <include> covers is a lint error.
 -->
 <full-backup-content>
     <include domain="file" path="datastore/" />
     <include domain="database" path="hanzi_user.db" />
-    <exclude domain="file" path="content/content.db" />
-    <exclude domain="file" path="content/content.db-wal" />
-    <exclude domain="file" path="content/content.db-shm" />
 </full-backup-content>

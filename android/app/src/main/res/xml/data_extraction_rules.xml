@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The user progress (SRS state and the settings store) travels with the
+  device; the bundled content database does not. It is 20 MB of
+  re-downloadable data, and naming the paths to include already leaves
+  everything else out.
+-->
 <data-extraction-rules>
     <cloud-backup>
         <include domain="file" path="datastore/" />
         <include domain="database" path="hanzi_user.db" />
-        <exclude domain="file" path="content/content.db" />
     </cloud-backup>
     <device-transfer>
         <include domain="file" path="datastore/" />
         <include domain="database" path="hanzi_user.db" />
-        <exclude domain="file" path="content/content.db" />
     </device-transfer>
 </data-extraction-rules>

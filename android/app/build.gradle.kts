@@ -92,14 +92,22 @@ android {
  * a fresh clone can still build the app -- it just ships without
  * content, and the app shows its "run the extraction pipeline" state.
  *
+ * The assets go into a GENERATED directory, not into src/main/assets.
+ * Writing into the source tree makes Gradle's lint tasks see the assets
+ * folder as both an input and the output of another task, and the
+ * release build fails with "uses this output of task ':app:syncContentDb'
+ * without declaring an explicit or implicit dependency". A generated
+ * directory has no such conflict.
+ *
  * The paths are resolved to plain Files at configuration time: the
  * configuration cache cannot serialise a Gradle script object captured
  * by a task predicate.
  */
 val contentDbFile = rootProject.layout.projectDirectory.file("../data/content.db").asFile
-val contentAssetDir = layout.projectDirectory.dir("src/main/assets/content").asFile
 val audioSourceDir = rootProject.layout.projectDirectory.dir("../data/audio").asFile
-val audioAssetDir = layout.projectDirectory.dir("src/main/assets/audio").asFile
+val generatedAssetDir = layout.buildDirectory.dir("generated/assets").get().asFile
+val contentAssetDir = File(generatedAssetDir, "content")
+val audioAssetDir = File(generatedAssetDir, "audio")
 
 val syncContentDb by tasks.registering(Copy::class) {
     from(contentDbFile)
@@ -118,7 +126,20 @@ val syncAudio by tasks.registering(Copy::class) {
     onlyIf { task -> task.inputs.files.files.any { f -> f.exists() } }
 }
 
+// The generated assets are part of the app's assets, and every task that
+// packages them has to run after the copies.
+android.sourceSets.getByName("main").assets.srcDir(generatedAssetDir)
+
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(syncContentDb, syncAudio)
+}
+
+// The lint tasks read the assets folder, and that folder is the output of
+// the two copy tasks above. Gradle refuses to guess the order and fails
+// the release build with "uses this output of task ':app:syncContentDb'
+// without declaring an explicit or implicit dependency", so the order is
+// declared here.
+tasks.matching { it.name.contains("Lint") || it.name.contains("lint") }.configureEach {
     dependsOn(syncContentDb, syncAudio)
 }
 
