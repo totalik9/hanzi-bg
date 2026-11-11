@@ -18,8 +18,9 @@ data class WordEntry(
     val audio: String? = null,
     /**
      * Where the Bulgarian gloss came from: "human" for the ones a person
-     * wrote, "machine" for the machine translation, "" when there is no
-     * Bulgarian gloss at all.
+     * wrote, "machine" for the machine translation, "human+machine" when
+     * a human gloss leads and the machine senses follow it, and "" when
+     * there is no Bulgarian gloss at all.
      *
      * The app shows this so the learner knows which glosses are worth
      * trusting -- a machine translation can be wrong, and a learner who
@@ -27,8 +28,14 @@ data class WordEntry(
      */
     val glossSource: String = "",
 ) {
-    /** True when the Bulgarian gloss was written by a person. */
-    val isHumanGloss: Boolean get() = glossSource == "human"
+    /** True when a person wrote part of the Bulgarian gloss. */
+    val isHumanGloss: Boolean get() = glossSource.startsWith("human")
+
+    /**
+     * True when the gloss contains a machine translation the learner
+     * should treat with care.
+     */
+    val hasMachineGloss: Boolean get() = glossSource.contains("machine")
 }
 
 data class GrammarEntry(

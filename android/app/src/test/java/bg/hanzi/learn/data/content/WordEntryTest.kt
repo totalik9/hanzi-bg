@@ -50,4 +50,29 @@ class WordEntryTest {
     fun `the source is kept verbatim`() {
         assertEquals("machine", word("machine").glossSource)
     }
+
+    @Test
+    fun `a combined gloss is both human and machine`() {
+        // A human gloss leads and the machine senses it does not cover
+        // follow it. The learner must be told that part of the card is
+        // a machine translation, and the "human glosses only" filter
+        // must leave it out.
+        val combined = word("human+machine")
+        assertTrue(combined.isHumanGloss)
+        assertTrue(combined.hasMachineGloss)
+    }
+
+    @Test
+    fun `a pure human gloss has no machine part`() {
+        // A gloss that is entirely human carries no machine text, so it
+        // must not be flagged as one.
+        assertFalse(word("human").hasMachineGloss)
+        assertFalse(word("").hasMachineGloss)
+    }
+
+    @Test
+    fun `a pure machine gloss is flagged as machine`() {
+        assertTrue(word("machine").hasMachineGloss)
+        assertFalse(word("machine").isHumanGloss)
+    }
 }

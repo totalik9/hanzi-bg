@@ -76,7 +76,9 @@ class DictionaryViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(loading = true)
         val results = withContext(Dispatchers.IO) { content.search(query, limit = 50) }
         val filtered = if (humanGlossesOnly) {
-            results.filter { it.isHumanGloss }
+            // Only the glosses a person wrote, with no machine text in
+            // them. A combined gloss has both, so it does not pass.
+            results.filter { it.glossSource == "human" }
         } else {
             results
         }

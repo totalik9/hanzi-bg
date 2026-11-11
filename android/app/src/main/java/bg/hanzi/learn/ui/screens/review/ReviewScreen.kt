@@ -123,7 +123,7 @@ fun ReviewScreen(
                             )
                             // The machine translation can be wrong, and a
                             // learner who does not know that will trust it.
-                            if (!word.isHumanGloss) {
+                            if (word.hasMachineGloss) {
                                 Text(
                                     text = stringResource(R.string.gloss_machine_note),
                                     style = MaterialTheme.typography.labelSmall,

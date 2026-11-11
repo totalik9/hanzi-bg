@@ -120,7 +120,7 @@ private fun WordRow(word: WordEntry) {
                     text = word.glossBg,
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (!word.isHumanGloss) {
+                if (word.hasMachineGloss) {
                     Text(
                         text = stringResource(R.string.gloss_machine_note),
                         style = MaterialTheme.typography.labelSmall,
