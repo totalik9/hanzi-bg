@@ -125,6 +125,47 @@ def is_verb_from_definition(definition: str) -> bool:
     return False
 
 
+def _usable_definition(definition: str) -> bool:
+    """True when a CC-CEDICT gloss carries a meaning worth teaching.
+
+    Rows like "surname Bai" or "variant of 著|着[zhao1]" describe the
+    character rather than its meaning, and they are exactly the rows
+    that would otherwise be picked first.
+
+    >>> _usable_definition("surname Bai")
+    False
+    >>> _usable_definition("variant of 著|着[zhao1]")
+    False
+    >>> _usable_definition("hundred/numerous/all kinds of")
+    True
+    """
+    d = definition.strip()
+    if not d:
+        return False
+    if re.match(r"^(surname|variant of|old variant|erhua|see also|abbr\. for)\b", d, re.I):
+        return False
+    # a gloss that is only a cross-reference has nothing to translate
+    return bool(re.search(r"[a-zA-Z]{2}", d))
+
+
+def _same_reading(cand_py: str, pinyin_marked: str) -> bool:
+    """True when two pinyin strings name the same reading.
+
+    Compares the tone-marked forms after normalising case, spacing and
+    the CC-CEDICT capitalisation of surnames (Bai vs bai).
+
+    >>> _same_reading("bǎi", "bǎi")
+    True
+    >>> _same_reading("Bǎi", "bǎi")
+    True
+    >>> _same_reading("Bǎi", "chē")
+    False
+    """
+    a = (cand_py or "").strip().lower().replace(" ", "")
+    b = (pinyin_marked or "").strip().lower().replace(" ", "")
+    return bool(a) and a == b
+
+
 def load_hsk_rows() -> tuple[dict[str, dict], Counter]:
     """Read the HSK 3.0 CSVs into {hanzi: record}.
 
@@ -326,19 +367,33 @@ def main() -> int:
         pinyin_number = canonical_pinyin_number(pinyin_number)
 
         # --- definition / part of speech ---------------------------------
+        # CC-CEDICT lists several rows per character, one per reading, and
+        # the FIRST one is often the least useful: 百 -> "surname Bai",
+        # 车 -> "surname Che", 大学 -> "the Great Learning ... in
+        # Confucianism". The reading the learner is actually taught
+        # (bǎi, chē, dà xué) sits in a later row. So pick the row whose
+        # pinyin matches the one we already resolved, and skip rows that
+        # carry no meaning to translate.
         cands = cedict.get(hanzi, [])
         definition = ""
-        for _trad, _py, d in cands:
-            if d:
+        for _trad, cand_py, d in cands:
+            if not d or not _usable_definition(d):
+                continue
+            if _same_reading(cand_py, pinyin_marked):
                 definition = d
                 break
+        if not definition:
+            for _trad, _cand_py, d in cands:
+                if d and _usable_definition(d):
+                    definition = d
+                    break
         if not definition:
             # CC-CEDICT may list only the traditional form
             row = conn.execute(
                 "SELECT definition FROM dict WHERE traditional=? LIMIT 1",
                 (rec["traditional"] or hanzi,),
             ).fetchone()
-            if row:
+            if row and row["definition"]:
                 definition = row["definition"]
         if not definition:
             # fall back to the English meaning from the HSK list
