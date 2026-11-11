@@ -197,16 +197,47 @@ _FINALS_BY_LEN = sorted(set(_FINALS), key=len, reverse=True)
 # cache for the syllable inventory loaded from data/raw/pinyin_syllables.json
 _INVENTORY: set[str] | None = None
 
-# used only if the inventory file is missing; keeps the pipeline runnable
-_FALLBACK_SYLLABLES = {
-    "a", "o", "e", "ai", "ei", "ao", "ou", "an", "en", "ang", "eng", "er",
-    "i", "ia", "ie", "iao", "iu", "ian", "in", "iang", "ing", "iong",
-    "u", "ua", "uo", "uai", "ui", "uan", "un", "uang", "ueng",
-    "ü", "üe", "üan", "ün", "ue",
-    "yi", "ya", "ye", "yao", "you", "yan", "yin", "yang", "ying", "yong",
-    "yu", "yue", "yuan", "yun", "wu", "wo", "wai", "wei", "wan", "wen",
-    "wang", "weng",
-}
+# The inventory of legal Mandarin syllables, used to segment run-together
+# pinyin. It is derived from the real pinyin-data files by
+# _build_syllable_inventory.py and cached in data/raw/pinyin_syllables.json.
+#
+# The list below is the same inventory, written out, so the module still
+# segments correctly on a fresh clone that has not downloaded anything
+# yet. An earlier, much shorter list held only the syllables without a
+# consonant initial, and a missing syllable is not a harmless gap: the
+# segmenter then splits a word at the wrong place -- 去年 came out as
+# "qu nian" instead of "qu nian" with the right boundary, because "qu"
+# was missing and the parser fell back to "qun"+"ian".
+#
+# The order is alphabetical; the syllabic nasals and the rare ê vowel are
+# deliberately left out -- they are not needed to segment a word and they
+# would only add noise.
+_FALLBACK_SYLLABLES = set("""
+a ai an ang ao ba bai ban bang bao bei ben beng bi bian biang biao bie bin
+bing bo bong bu ca cai can cang cao ce cei cen ceng cha chai chan chang chao
+che chen cheng chi chong chou chu chua chuai chuan chuang chui chun chuo ci
+cong cou cu cuan cui cun cuo da dai dan dang dao de dei den deng di dia dian
+diao die din ding diu dong dou du duan dui dun duo e ei en eng er fa fan
+fang fei fen feng fiao fo fou fu ga gai gan gang gao ge gei gen geng gong
+gou gu gua guai guan guang gui gun guo ha hai han hang hao he hei hen heng
+hm hng hong hou hu hua huai huan huang hui hun huo ji jia jian jiang jiao
+jie jin jing jiong jiu ju juan jue jun ka kai kan kang kao ke kei ken keng
+kong kou ku kua kuai kuan kuang kui kun kuo la lai lan lang lao le lei len
+leng li lia lian liang liao lie lin ling liu lo long lou lu luan lun luo lü
+lüe ma mai man mang mao me mei men meng mi mian miao mie min ming miu mo mou
+mu n na nai nan nang nao ne nei nen neng ng ni nia nian niang niao nie nin
+ning niu nong nou nu nuan nun nuo nü nüe o ou pa pai pan pang pao pei pen
+peng pi pian piao pie pin ping po pou pu qi qia qian qiang qiao qie qin qing
+qiong qiu qu quan que qun ran rang rao re ren reng ri rong rou ru rua ruan
+rui run ruo sa sai san sang sao se sen seng sha shai shan shang shao she shei
+shen sheng shi shou shu shua shuai shuan shuang shui shun shuo si song sou su
+suan sui sun suo ta tai tan tang tao te tei teng ti tian tiao tie ting tong
+tou tu tuan tui tun tunwa tuo wa wai wan wang wei wen weng wo wong wu xi
+xia xian xiang xiao xie xin xing xiong xiu xu xuan xue xun ya yan yang yao
+ye yi yin ying yo yong you yu yuan yue yun za zai zan zang zao ze zei zen
+zeng zha zhai zhan zhang zhao zhe zhei zhen zheng zhi zhong zhou zhu zhua
+zhuai zhuan zhuang zhui zhun zhuo zi zong zou zu zuan zui zun zuo
+""".split())
 
 # tone-marked vowels, mapped to their plain form for final matching
 _MARK_TO_PLAIN = {}
