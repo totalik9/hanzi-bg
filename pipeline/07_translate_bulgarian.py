@@ -99,14 +99,117 @@ def split_senses(gloss_en: str) -> list[str]:
 
 
 def clean_translation(text: str) -> str:
-    """Trim the model's output down to a usable gloss."""
+    """Trim the model's output down to a usable gloss.
+
+    The model sometimes returns the same alternative twice: "to speak;
+    to talk; to say" comes back as "да говоря; да говоря; да казва". The
+    alternatives are separated by ";" or ",", and a gloss that says the
+    same thing twice looks broken to a learner, so the repeats go.
+
+    >>> clean_translation("да говоря; да говоря; да казва")
+    'да говоря; да казва'
+    >>> clean_translation("вода")
+    'вода'
+    """
     text = text.strip()
     text = text.rstrip(" .")
     text = " ".join(text.split())
     # The model sometimes returns the source text unchanged.
     if re.fullmatch(r"[A-Za-z\s\-']+", text):
         return ""
+
+    # Collapse a part that is one word said over and over.
+    parts = [p.strip() for p in re.split(r"\s*[;,]\s*", text) if p.strip()]
+    parts = [_collapse_repeated_words(p) for p in parts]
+
+    # Drop an alternative that repeats an earlier one.
+    if len(parts) > 1:
+        seen: set[str] = set()
+        kept: list[str] = []
+        for part in parts:
+            key = _duplicate_key(part)
+            if key in seen:
+                continue
+            seen.add(key)
+            kept.append(part)
+        parts = kept
+    text = "; ".join(parts)
     return text
+
+
+def _collapse_repeated_words(part: str) -> str:
+    """Collapse a part that is one word said over and over.
+
+    "съдебно съдебно съдебно съдебно" is what the model returns when
+    it loops on a single word, and "Много много" is the same fault
+    with one repeat. The learner sees a broken card.
+
+    The loop also cuts the last word in half: "съдебно съдебно съ" --
+    the generation hit its token limit mid-word. A trailing fragment
+    that is a prefix of the repeated word is that cut, and it goes too.
+
+    >>> _collapse_repeated_words("съдебно съдебно съдебно")
+    'съдебно'
+    >>> _collapse_repeated_words("Много много")
+    'Много'
+    >>> _collapse_repeated_words("да не е така")
+    'да не е така'
+    >>> _collapse_repeated_words("съдебно съдебно съ")
+    'съдебно'
+    >>> _collapse_repeated_words("тегло равно на 500 g")
+    'тегло равно на 500 g'
+    >>> _collapse_repeated_words("Слизай с")
+    'Слизай с'
+    """
+    words = part.split()
+    if len(words) < 2:
+        return part
+
+    # The generation was cut mid-word at the end of a repeated run:
+    # "съдебно съдебно съ" -- drop the fragment. It is a strict prefix
+    # of the repeated word before it, and it is short.
+    #
+    # The run matters: without it, "Слизай с" would lose the "с" that
+    # means "with".
+    if len(words) >= 3:
+        last, prev, before = words[-1], words[-2], words[-3]
+        if (
+            prev.lower() == before.lower()
+            and len(last) <= 3
+            and len(last) < len(prev)
+            and prev.lower().startswith(last.lower())
+        ):
+            words = words[:-1]
+
+    # Collapse every run of the same word.
+    collapsed: list[str] = []
+    for word in words:
+        if collapsed and collapsed[-1].lower() == word.lower():
+            continue
+        collapsed.append(word)
+
+    return " ".join(collapsed)
+
+
+def _duplicate_key(part: str) -> str:
+    """The key under which two alternatives count as the same.
+
+    "(идиом) непроменлив" and "непроменлив" are the same word, and
+    "Много много" is one word said twice.
+
+    >>> _duplicate_key("(идиом) непроменлив")
+    'непроменлив'
+    >>> _duplicate_key("Добре")
+    'добре'
+    """
+    s = re.sub(r"^\((?:идиом|idiom|разг|книж|сленг|жарг)\)\s*", "", part.strip().lower())
+    s = re.sub(r"[^\w\s]", "", s)
+    s = " ".join(s.split())
+    # "Много много" -> "много"
+    words = s.split()
+    if len(words) == 2 and words[0] == words[1]:
+        s = words[0]
+    return s
 
 
 def load_cache(path: str) -> dict[str, str]:
