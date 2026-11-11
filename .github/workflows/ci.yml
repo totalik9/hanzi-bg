@@ -85,6 +85,13 @@ jobs:
       - name: Byte-compile every pipeline script
         run: python -m compileall -q pipeline simulation
 
+      - name: Run the pipeline doctests
+        run: |
+          python -m pytest --doctest-modules -q \
+            pipeline/pinyin_utils.py \
+            pipeline/03_build_vocab.py \
+            pipeline/07_translate_bulgarian.py
+
       - name: Check the pipeline scripts expose the expected entry points
         run: |
           for f in 01_fetch_sources 02_build_dictionary 03_build_vocab \
