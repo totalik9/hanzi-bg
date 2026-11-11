@@ -703,11 +703,12 @@ def main():
         print("  the app asks the learner to produce Chinese.")
     print()
     print("  STILL MISSING (in priority order):")
-    print("    1. Grammar quizzes attached to the grammar points -- the")
-    print("       grammar is served as reference text and never tested")
-    print("    2. Word-order mode must be scored, not just displayed")
-    print("    3. Stroke-order writing must be traced by the learner")
-    print("    4. Speaking: recording the learner's own voice")
+    print("    1. Speaking: recording the learner's own voice -- the tones")
+    print("       need a real ear, and a recorded voice is how the learner")
+    print("       hears whether the tone was right")
+    print("    2. The Bulgarian glosses are machine translated. HSK 1")
+    print("       (300 words) still needs a human check.")
+    print("    3. The grammar explanations are still English.")
     print()
 
     out = ROOT / "simulation" / "results.json"
