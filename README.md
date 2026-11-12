@@ -69,9 +69,9 @@ python 03_build_vocab.py           # -> data/vocab_hsk.json (10 896 HSK 3.0 ду
 python 04_build_grammar.py         # -> data/grammar.json (506 точки, 3 286 примера)
 python 05_build_sentences.py       # -> data/sentences.json (89 254 изречения)
 python 06_build_audio.py           # -> data/audio/*.mp3 (Edge TTS)
+python 09_clean_glosses.py         # -> чисти английските глоси ПРЕДИ превода
 python 07_translate_bulgarian.py   # -> data/bg_translations.json (NLLB-200)
 python 08_build_content_db.py      # -> data/content.db
-python 09_clean_glosses.py         # -> чисти английските глоси преди превода
 python 10_compare_models.py        # -> сравнява NLLB-200 с M2M-100
 ```
 
@@ -85,8 +85,13 @@ python 10_compare_models.py        # -> сравнява NLLB-200 с M2M-100
 се самопопълва от предишния файл, така че прекъсване в средата не
 губи работа.
 
-**Редът е важен:** `09_clean_glosses.py` чисти английските глоси
-преди превода. Без него моделът превежда смисли, които са шум
+**Редът е важен:** `09_clean_glosses.py` трябва да върви **преди**
+`07_translate_bulgarian.py` и `08_build_content_db.py`, защото той
+пренаписва `data/vocab_hsk.json` — файла, от който преводачът чете
+смислите и от който базата данни взима глосовете. При стария ред
+(`08` преди `09`) почистването просто не достигаше до базата: тя носеше
+126 непочистени английски глоса. Без почистването моделът превежда
+смисли, които са шум
 („(CL: )", „Fig.", „(abbr.)"), и чужият текст отива в картата на
 ученика. `07` използва същата функция за почистване, така че двете
 правила не се разминават.
