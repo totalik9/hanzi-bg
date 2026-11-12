@@ -156,6 +156,7 @@ class ContentRepository @Inject constructor(
                                 isVerb = c.int("is_verb") == 1,
                                 freq = if (c.isNull("freq")) null else c.getInt("freq"),
                                 audio = c.strOrNull("audio"),
+                                glossSource = c.str("gloss_source"),
                             ),
                         )
                     }
@@ -260,6 +261,7 @@ class ContentRepository @Inject constructor(
                                 isVerb = c.int("is_verb") == 1,
                                 freq = if (c.isNull("freq")) null else c.getInt("freq"),
                                 audio = c.strOrNull("audio"),
+                                glossSource = c.str("gloss_source"),
                             ),
                         )
                     }
