@@ -46,7 +46,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      - name: Set up the Android SDK
+        # The runner image already ships a current cmdline-tools, and it
+        # is used directly rather than through setup-android: that action
+        # pins an OLDER cmdline-tools, which does not know the licences
+        # that exist today, so its licence step fails and the job dies.
+        # The licences are accepted here and the packages the project
+        # needs are installed.
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Cache Gradle
         uses: actions/cache@v4
