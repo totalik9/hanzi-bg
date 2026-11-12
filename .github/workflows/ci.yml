@@ -82,6 +82,10 @@ jobs:
         with:
           python-version: '3.11'
 
+      # setup-python installs a bare interpreter; pytest is not part of it.
+      - name: Install pytest
+        run: pip install --upgrade pytest
+
       - name: Byte-compile every pipeline script
         run: python -m compileall -q pipeline simulation
 
@@ -96,7 +100,8 @@ jobs:
         run: |
           for f in 01_fetch_sources 02_build_dictionary 03_build_vocab \
                    04_build_grammar 05_build_sentences 06_build_audio \
-                   07_translate_bulgarian 08_build_content_db; do
+                   07_translate_bulgarian 08_build_content_db \
+                   09_clean_glosses 10_compare_models; do
             test -f "pipeline/${f}.py" || { echo "::error::missing pipeline/${f}.py"; exit 1; }
           done
           echo "all pipeline entry points present"
