@@ -37,7 +37,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pinyin_utils import DATA  # noqa: E402
+from pinyin_utils import DATA, sanitize_speech  # noqa: E402
 
 AUDIO_DIR = os.path.join(DATA, "audio")
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
@@ -49,9 +49,9 @@ VOICE = "zh-CN-XiaoxiaoNeural"
 
 # The text is spoken, so it must not contain characters the voice would
 # read out or choke on. CJK punctuation is dropped; latin text and digits
-# are kept because a lesson may legitimately mix them.
-_STRIP = re.compile(r"[\s\u3000-\u303f\uff00-\uffef!-/:-@\[-`{-~]+")
-_NON_SPEAKABLE = re.compile(r"[^一-鿿a-zA-Z0-9üÜà-ÿ\s]")
+# are kept because a lesson may legitimately mix them. The rule lives in
+# pinyin_utils.sanitize_speech, because the database build has to apply
+# the SAME normalisation when it looks the clips up.
 
 # Sentences above this length are skipped: the cost of the TTS request
 # grows with the text, and a 40-character sentence is not study material.
@@ -65,11 +65,7 @@ REQUEST_TIMEOUT = 30
 
 def sanitize(text: str) -> str:
     """Reduce a text to the characters that will actually be spoken."""
-    # Drop everything that is not a CJK ideograph, a latin letter or a
-    # digit, then collapse the whitespace.
-    cleaned = _NON_SPEAKABLE.sub(" ", text)
-    cleaned = re.sub(r"\s+", " ", cleaned).strip()
-    return cleaned
+    return sanitize_speech(text)
 
 
 def filename_for(text: str, label: str = "") -> str:

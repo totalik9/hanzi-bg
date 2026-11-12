@@ -36,7 +36,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pinyin_utils import DATA, RAW, is_hanzi, strip_tones  # noqa: E402
+from pinyin_utils import DATA, RAW, is_hanzi, sanitize_speech, strip_tones  # noqa: E402
 
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
 GRAMMAR_JSON = os.path.join(DATA, "grammar.json")
@@ -144,6 +144,13 @@ def audio_index() -> dict[str, str]:
 
     06_build_audio.py names the files content-addressed, so the mapping
     text -> file name has to be read back from its manifest.
+
+    The manifest holds the SANITISED text -- the characters the voice
+    actually speaks -- while a sentence in the corpus keeps its
+    punctuation ("關燈。"). The lookup therefore has to sanitise the
+    sentence too, or the clip is never found: without this, 0 of the 396
+    sentences with a Bulgarian translation were linked to their audio and
+    399 clips (5.8 MB) sat in the APK unreferenced.
     """
     data = load_json(AUDIO_MANIFEST)
     if not data:
@@ -222,7 +229,7 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
             with_machine += 1
 
         # The audio manifest is keyed by the sanitised spoken text.
-        audio_file = audio.get(hanzi)
+        audio_file = audio.get(sanitize_speech(hanzi))
 
         rows.append((
             hanzi,
@@ -328,13 +335,17 @@ def build_sentences(conn: sqlite3.Connection, audio: dict[str, str]) -> int:
             continue
         en = e.get("translations_en") or []
         bg = e.get("translations_bg") or []
+        # The audio manifest is keyed by the SANITISED text, so the
+        # sentence has to be sanitised the same way before the lookup.
+        # "關燈。" is spoken as "關燈", and only the second form is in the
+        # manifest.
         rows.append((
             e.get("id"),
             hanzi,
             e.get("pinyin") or "",
             en[0] if en else "",
             bg[0] if bg else "",
-            audio.get(hanzi),
+            audio.get(sanitize_speech(hanzi)),
         ))
 
     conn.executemany(
