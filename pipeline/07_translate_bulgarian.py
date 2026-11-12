@@ -127,6 +127,10 @@ def clean_translation(text: str) -> str:
     if re.fullmatch(r"[A-Za-z\s\-']+", text):
         return ""
 
+    # The model sometimes starts the answer with a dash: "- Не", "- Татко".
+    # It is not a definition.
+    text = re.sub(r"^[-–—]+\s*", "", text)
+
     # Collapse a part that is one word said over and over.
     parts = [p.strip() for p in re.split(r"\s*[;,]\s*", text) if p.strip()]
     parts = [_collapse_repeated_words(p) for p in parts]
@@ -200,16 +204,35 @@ def _collapse_repeated_words(part: str) -> str:
     return " ".join(collapsed)
 
 
+def _strip_stress(text: str) -> str:
+    """Remove the stress mark from a Bulgarian word.
+
+    The human glosses from Wiktionary carry the stress: "се́дмица". The
+    model does not: "седмица". They are the same word, and a gloss that
+    lists both teaches the learner that they are two.
+
+    >>> _strip_stress("се́дмица")
+    'седмица'
+    >>> _strip_stress("седмица")
+    'седмица'
+    """
+    return "".join(ch for ch in text if not (0x300 <= ord(ch) <= 0x36F))
+
+
 def _duplicate_key(part: str) -> str:
     """The key under which two alternatives count as the same.
 
     "(идиом) непроменлив" and "непроменлив" are the same word, and
-    "Много много" is one word said twice.
+    "Много много" is one word said twice. "бяло" and "бял" are the
+    same word too -- Bulgarian marks the definite article on the
+    adjective, so the machine writes it both ways.
 
     >>> _duplicate_key("(идиом) непроменлив")
     'непроменлив'
     >>> _duplicate_key("Добре")
     'добре'
+    >>> _duplicate_key("бяло")
+    'бял'
     """
     s = re.sub(r"^\((?:идиом|idiom|разг|книж|сленг|жарг)\)\s*", "", part.strip().lower())
     s = re.sub(r"[^\w\s]", "", s)
@@ -218,6 +241,9 @@ def _duplicate_key(part: str) -> str:
     words = s.split()
     if len(words) == 2 and words[0] == words[1]:
         s = words[0]
+    # "бяло" and "бял" are the same word.
+    if len(s) > 3 and s.endswith("о") and s[:-1].endswith("л"):
+        s = s[:-1]
     return s
 
 
@@ -365,8 +391,6 @@ def main() -> int:
             continue
         if args.level and str(w.get("hsk_level")) != args.level:
             continue
-        if (w.get("gloss_bg") or "").strip():
-            continue
         todo.append(w)
 
     seen = set()
@@ -411,6 +435,11 @@ def main() -> int:
     print(f"  already in the cache: {len(senses) - len(todo_senses):,} "
           f"-> {len(todo_senses):,} to translate")
 
+    # The clock starts here, not inside the translation loop: when every
+    # sense is already in the cache there is nothing to translate, and
+    # the summary still has to report how long the run took.
+    started = time.time()
+
     if todo_senses:
         print(f"loading {MODEL_ID} ...")
         import torch
@@ -423,7 +452,6 @@ def main() -> int:
 
         bos = tokenizer.convert_tokens_to_ids(TARGET_LANG)
 
-        started = time.time()
         for i in range(0, len(todo_senses), args.batch):
             chunk = todo_senses[i:i + args.batch]
             tokenizer.src_lang = SOURCE_LANG
@@ -492,9 +520,9 @@ def main() -> int:
             continue
         # The machine senses the human gloss does not already cover.
         extra: list[str] = []
-        seen = {human_gloss.strip().lower()}
+        seen = {_strip_stress(human_gloss.strip().lower())}
         for part in got["gloss"].split(" / "):
-            key = part.strip().lower()
+            key = _strip_stress(part.strip().lower())
             if not key or key in seen:
                 continue
             seen.add(key)
