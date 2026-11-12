@@ -42,6 +42,7 @@ from pinyin_utils import (  # noqa: E402
     canonical_pinyin_number,
     split_pinyin_by_chars,
     split_pinyin_syllables,
+    strip_tones,
     tone_marked_to_number,
 )
 
@@ -154,16 +155,135 @@ def _same_reading(cand_py: str, pinyin_marked: str) -> bool:
     Compares the tone-marked forms after normalising case, spacing and
     the CC-CEDICT capitalisation of surnames (Bai vs bai).
 
+    The erhua apostrophe is normalised away as well: the HSK CSVs write
+    "bǎo'ān" while CC-CEDICT writes "bǎo ān", and the two spellings name
+    the same reading. Without this the comparison never matched and the
+    builder fell back to the FIRST CC-CEDICT row -- which for 保安 is the
+    capitalised surname row, so the learner was told that "security guard"
+    means "Bonan ethnic group".
+
     >>> _same_reading("bǎi", "bǎi")
     True
     >>> _same_reading("Bǎi", "bǎi")
     True
     >>> _same_reading("Bǎi", "chē")
     False
+    >>> _same_reading("bǎo ān", "bǎo'ān")
+    True
+    >>> _same_reading("Bǎo ān", "bǎo'ān")
+    True
+    >>> _same_reading("bǎo ān", "píng'ān")
+    False
     """
-    a = (cand_py or "").strip().lower().replace(" ", "")
-    b = (pinyin_marked or "").strip().lower().replace(" ", "")
+    a = _reading_key(cand_py)
+    b = _reading_key(pinyin_marked)
     return bool(a) and a == b
+
+
+def _reading_key(text: str) -> str:
+    """A comparison key for a pinyin reading.
+
+    The case, the spacing and the erhua apostrophe are normalised away, so
+    two spellings of the same reading produce the same key.
+
+    The erhua suffix has three spellings -- "ér" in the HSK CSVs, "er"
+    in some rows, and a bare "r" in CC-CEDICT ("nǚ hái r") -- so all three
+    are folded into one canonical form.
+
+    The TONES are kept, apart from the erhua suffix. 东西 is taught as
+    "dōng xi" (thing, stuff) and also has a CC-CEDICT row "dōng xī" (east
+    and west); stripping the tones would make the two readings
+    indistinguishable and the learner would be taught the wrong meaning.
+
+    >>> _reading_key("Bǎo ān")
+    'bǎo ān'
+    >>> _reading_key("bǎo'ān")
+    'bǎo ān'
+    >>> _reading_key("nǚ hái r")
+    'nǚ hái ER'
+    >>> _reading_key("nǚ hái ér")
+    'nǚ hái ER'
+    >>> _reading_key("dōng xī") == _reading_key("dōng xi")
+    False
+    """
+    parts = []
+    for token in (text or "").strip().lower().replace("'", " ").replace("’", " ").split():
+        plain = strip_tones(token)
+        if plain == "r" or plain == "er":
+            # The erhua suffix, in any of its spellings.
+            parts.append("ER")
+        else:
+            parts.append(token)
+    return " ".join(parts)
+
+
+def _agreement(definition: str, meaning: str) -> int:
+    """How many words a gloss and the HSK meaning share.
+
+    The HSK list is written for learners, so its meaning is the gloss the
+    learner is supposed to end up with. When CC-CEDICT holds two rows for
+    the SAME reading -- "Bǎo ān" (the Bonan ethnic group) and "bǎo ān"
+    (the security guard) -- the one that agrees with the HSK meaning is
+    the one to teach.
+
+    Only words of three letters or more are counted, so that a short
+    gloss does not match on an article or a preposition.
+
+    >>> _agreement("to ensure public security", "security guard; ensuring safety")
+    1
+    >>> _agreement("to ensure public security", "to ensure safety")
+    1
+    >>> _agreement("Bonan ethnic group", "security guard")
+    0
+    """
+    if not definition or not meaning:
+        return 0
+    words = set(re.findall(r"[a-z]{3,}", definition.lower()))
+    truth = set(re.findall(r"[a-z]{3,}", meaning.lower()))
+    return len(words & truth)
+
+
+def _select_definition(
+    cands: list[tuple[str, str, str]],
+    pinyin_marked: str,
+    hanzi: str,
+    meaning: str,
+) -> str:
+    """Pick the CC-CEDICT row that carries the meaning being taught.
+
+    The rows are ranked by how well they agree with the HSK meaning, and
+    ties are broken in favour of the lower-case pinyin: CC-CEDICT
+    capitalises a surname reading, and the capitalised row is often a
+    place name or a family name rather than the word's own meaning.
+
+    >>> rows = [("保安", "Bǎo ān", "Bonan ethnic group"),
+    ...         ("保安", "bǎo ān", "to ensure public security")]
+    >>> _select_definition(rows, "bǎo ān", "保安", "security guard")
+    'to ensure public security'
+    """
+    best = ""
+    best_score = -1
+    for _trad, cand_py, d in cands:
+        if not d or not _usable_definition(d):
+            continue
+        if not _same_reading(cand_py, pinyin_marked):
+            continue
+        score = _agreement(d, meaning)
+        if not best:
+            best = d
+            best_score = score
+        if score > best_score:
+            best, best_score = d, score
+        elif score == best_score and cand_py and cand_py[:1].islower():
+            # The same meaning, but the reading a learner is taught.
+            best = d
+    if best:
+        return best
+    # No row matches the reading: take the first usable one.
+    for _trad, _cand_py, d in cands:
+        if d and _usable_definition(d):
+            return d
+    return ""
 
 
 def load_hsk_rows() -> tuple[dict[str, dict], Counter]:
@@ -375,18 +495,7 @@ def main() -> int:
         # pinyin matches the one we already resolved, and skip rows that
         # carry no meaning to translate.
         cands = cedict.get(hanzi, [])
-        definition = ""
-        for _trad, cand_py, d in cands:
-            if not d or not _usable_definition(d):
-                continue
-            if _same_reading(cand_py, pinyin_marked):
-                definition = d
-                break
-        if not definition:
-            for _trad, _cand_py, d in cands:
-                if d and _usable_definition(d):
-                    definition = d
-                    break
+        definition = _select_definition(cands, pinyin_marked, hanzi, rec["meaning"])
         if not definition:
             # CC-CEDICT may list only the traditional form
             row = conn.execute(

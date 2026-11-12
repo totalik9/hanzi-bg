@@ -252,8 +252,19 @@ def _plain(text: str) -> str:
 
     The result is lower-cased because the HSK CSVs capitalise surnames
     ("Māma", "Zhōng") while the initial/final tables are lower-case.
+
+    The lower-casing happens FIRST, so an upper-case tone mark is stripped
+    as well. The mark table only holds lower-case vowels, so "Ōu" used to
+    survive as "ōu" and never matched the syllable inventory.
+
+    >>> _plain("bǎo")
+    'bao'
+    >>> _plain("Ōu")
+    'ou'
+    >>> _plain("Ü")
+    'ü'
     """
-    return "".join(_MARK_TO_PLAIN.get(c, c) for c in text).lower()
+    return "".join(_MARK_TO_PLAIN.get(c, c) for c in text.lower())
 
 
 def strip_tones(text: str) -> str:
@@ -263,6 +274,74 @@ def strip_tones(text: str) -> str:
     erhua suffix is written ("nǎr" vs "nǎ ér").
     """
     return _plain(text).replace("'", "").replace("’", "")
+
+
+def _plain_with_breaks(text: str) -> tuple[str, set[int], list[int]]:
+    """The plain form of a pinyin string, the syllable boundaries the erhua
+    apostrophe forces, and the mapping back to the original characters.
+
+    The erhua apostrophe is NOT a syllable: it marks the boundary between
+    the base syllable and the r-coloured one ("nǚ'ér" is "nǚ" + "ér").
+    Treating it as one produced a junk "'" token, which reached the numeric
+    pinyin as a neutral-tone "'5" and was then indexed in the pinyin IME as
+    a syllable a learner could type.
+
+    Removing the apostrophe and remembering where it stood keeps the
+    boundary without letting it become a syllable of its own.
+
+    >>> plain, breaks, orig = _plain_with_breaks("nǚ'ér")
+    >>> plain
+    'nüer'
+    >>> sorted(breaks)
+    [2]
+    >>> len(orig)
+    4
+    """
+    plain_chars: list[str] = []
+    breaks: set[int] = set()
+    orig: list[int] = []
+    for i, ch in enumerate(text):
+        if ch in "'’":
+            # The boundary falls between the plain characters before it and
+            # the ones after it.
+            breaks.add(len(plain_chars))
+            continue
+        plain_chars.append(_MARK_TO_PLAIN.get(ch.lower(), ch.lower()))
+        orig.append(i)
+    return "".join(plain_chars), breaks, orig
+
+
+def _slice(orig: list[int], text: str, start: int, end: int) -> str:
+    """The original text of the plain characters [start, end)."""
+    return text[orig[start] : orig[end - 1] + 1]
+
+
+# The characters the TTS voice speaks: CJK ideographs, latin letters,
+# digits and the accented latin vowels. Everything else -- the CJK
+# punctuation, the quotes, the dashes -- is dropped, because the voice
+# would read it out.
+_NON_SPEAKABLE = re.compile(r"[^一-鿿a-zA-Z0-9üÜà-ÿ\s]")
+
+
+def sanitize_speech(text: str) -> str:
+    """Reduce a text to the characters that are actually spoken.
+
+    The TTS voice reads out what is left, so the punctuation of a Chinese
+    sentence has to go: "關燈。" is spoken as "關燈". The same
+    normalisation is used when the audio manifest is read back, so the
+    two always agree on what a clip says.
+
+    >>> sanitize_speech("關燈。")
+    '關燈'
+    >>> sanitize_speech("早上好！")
+    '早上好'
+    >>> sanitize_speech("我心痛。")
+    '我心痛'
+    >>> sanitize_speech("Hello, world!")
+    'Hello world'
+    """
+    cleaned = _NON_SPEAKABLE.sub(" ", text)
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 def _has_initial(syllable: str) -> bool:
@@ -341,12 +420,15 @@ def split_pinyin_by_chars(
     ['sān', 'gè']
     >>> split_pinyin_by_chars("sāngè", "三", readings) is None
     True
+    >>> readings = {"女": ["nǚ"], "儿": ["ér"]}
+    >>> split_pinyin_by_chars("nǚ'ér", "女儿", readings)
+    ['nǚ', 'ér']
     """
     text = text.strip()
     if not text or " " in text:
         return None
 
-    plain = _plain(text)
+    plain, breaks, orig = _plain_with_breaks(text)
     n = len(plain)
 
     # allowed plain syllable forms for each character position
@@ -370,9 +452,12 @@ def split_pinyin_by_chars(
             piece = plain[pos:pos + length]
             if piece not in allowed[char_pos]:
                 continue
+            # A syllable may not span an erhua boundary.
+            if any(pos < b < pos + length for b in breaks):
+                continue
             tail = place(pos + length, char_pos + 1)
             if tail is not None:
-                return [text[pos:pos + length]] + tail
+                return [_slice(orig, text, pos, pos + length)] + tail
         return None
 
     return place(0, 0)
@@ -416,6 +501,12 @@ def split_pinyin_syllables(text: str, n_syllables: int | None = None) -> list[st
     pass `n_syllables`; the parser then returns the split with exactly that
     many syllables.
 
+    The erhua apostrophe is a SYLLABLE MARKER, not a syllable: "nǚ'ér" is
+    the two syllables "nǚ" and "ér", and the apostrophe only says that the
+    second one is the r-colouring of the first. Treating it as a syllable
+    produced a junk "'" token, which then reached the numeric pinyin as a
+    neutral-tone "'5" and ended up indexed in the pinyin IME.
+
     >>> split_pinyin_syllables("bàba")
     ['bà', 'ba']
     >>> split_pinyin_syllables("yīnián")
@@ -424,14 +515,18 @@ def split_pinyin_syllables(text: str, n_syllables: int | None = None) -> list[st
     ['sān', 'gè']
     >>> split_pinyin_syllables("ni3 hao3")
     ['ni3', 'hao3']
+    >>> split_pinyin_syllables("nǚ'ér")
+    ['nǚ', 'ér']
+    >>> split_pinyin_syllables("hǎo wán ' ér")
+    ['hǎo', 'wán', 'ér']
     """
     text = text.strip()
     if not text:
         return []
     if " " in text:
-        return text.split()
+        return [t for t in text.split() if t not in ("'", "’")]
 
-    plain = _plain(text)
+    plain, breaks, orig = _plain_with_breaks(text)
     inventory = _load_syllable_inventory()
     n = len(plain)
 
@@ -444,6 +539,9 @@ def split_pinyin_syllables(text: str, n_syllables: int | None = None) -> list[st
     for i in range(n - 1, -1, -1):
         for j in range(i + 1, n + 1):
             if plain[i:j] not in inventory:
+                continue
+            # A syllable may not span an erhua boundary.
+            if any(i < b < j for b in breaks):
                 continue
             for k, tail in best[j].items():
                 if k + 1 > limit:
@@ -470,7 +568,7 @@ def split_pinyin_syllables(text: str, n_syllables: int | None = None) -> list[st
     out: list[str] = []
     pos = 0
     for length in chosen:
-        out.append(text[pos:pos + length])
+        out.append(_slice(orig, text, pos, pos + length))
         pos += length
     return out
 
