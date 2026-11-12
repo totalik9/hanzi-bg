@@ -29,24 +29,32 @@ object PinyinIme {
      * The syllables come from the index, so only real Mandarin syllables
      * can be produced. The longest match wins, which is what makes "nihao"
      * split into "ni" + "hao" rather than "n" + "i" + "hao".
+     *
+     * A SPACE separates syllables and is kept: "qu nian" is two
+     * syllables, and reading it as one string ("qunian") makes the
+     * greedy splitter pick "qun" + "ian", which are real syllables too.
+     * The word is then never in the candidate pool and the learner
+     * cannot produce it at all.
      */
     fun splitIntoSyllables(typed: String, known: Set<String>): List<String> {
         val out = mutableListOf<String>()
-        var rest = typed.lowercase()
-        while (rest.isNotEmpty()) {
-            // The longest prefix that is a known syllable wins, so
-            // "nihao" splits into "ni" + "hao" rather than "n" + "i" + ...
-            val length = (rest.length downTo 1)
-                .firstOrNull { len -> rest.substring(0, len) in known }
-            if (length == null) {
-                // No syllable matches the start of the remainder. Keep the
-                // rest as one piece so the caller can show the learner
-                // that the input is not understood yet.
-                out += rest
-                break
+        for (chunk in typed.lowercase().split(' ').filter { it.isNotEmpty() }) {
+            var rest = chunk
+            while (rest.isNotEmpty()) {
+                // The longest prefix that is a known syllable wins, so
+                // "nihao" splits into "ni" + "hao" rather than "n" + "i" + ...
+                val length = (rest.length downTo 1)
+                    .firstOrNull { len -> rest.substring(0, len) in known }
+                if (length == null) {
+                    // No syllable matches the start of the remainder. Keep the
+                    // rest as one piece so the caller can show the learner
+                    // that the input is not understood yet.
+                    out += rest
+                    break
+                }
+                out += rest.substring(0, length)
+                rest = rest.substring(length)
             }
-            out += rest.substring(0, length)
-            rest = rest.substring(length)
         }
         return out
     }
@@ -61,20 +69,30 @@ object PinyinIme {
      * A candidate is a word whose pinyin EQUALS the typed syllables, or
      * STARTS WITH them: the second case is what makes the word appear
      * while the learner is still typing ("nih" already offers "你好").
+     *
+     * [wordToFreq] holds the corpus frequency rank of each word. It is
+     * what decides the order: sixteen words are pronounced "jian" and
+     * only twelve fit in the list, so without a frequency order the
+     * common ones fall off the end and the learner cannot produce them.
      */
     fun candidates(
         typed: String,
         syllableToWords: Map<String, List<String>>,
         wordToPinyin: Map<String, String>,
         wordToGloss: Map<String, String>,
+        wordToFreq: Map<String, Int> = emptyMap(),
     ): List<Candidate> {
-        val clean = typed.lowercase().filter { it.isLetter() }
-        if (clean.isEmpty()) return emptyList()
+        // The letters and the spaces are kept: the space is what tells
+        // "qu nian" from "qunian", and the pinyin of a word is written
+        // with spaces too.
+        val clean = typed.lowercase().filter { it.isLetter() || it == ' ' }
+        if (clean.isBlank()) return emptyList()
 
         val known = syllableToWords.keys
         val syllables = splitIntoSyllables(clean, known)
         if (syllables.isEmpty()) return emptyList()
-        val joined = syllables.joinToString("")
+        val joined = syllables.joinToString(" ")
+        val joinedFlat = joined.replace(" ", "")
 
         // The pool: every word that contains any of the syllables typed
         // so far. Drawing from all of them, not just the last, is what
@@ -87,15 +105,31 @@ object PinyinIme {
         fun plainPinyin(word: String): String =
             wordToPinyin[word]?.lowercase()?.replace(" ", "").orEmpty()
 
-        val exact = pool.filter { plainPinyin(it) == joined }
+        val exact = pool.filter { plainPinyin(it) == joinedFlat }
         val prefix = pool.filter {
             val p = plainPinyin(it)
-            p.isNotEmpty() && p.startsWith(joined)
+            p.isNotEmpty() && p.startsWith(joinedFlat)
         }
 
         return (exact + prefix)
             .distinct()
-            .sortedBy { word -> wordToGloss[word].isNullOrBlank() } // glossed words first
+            // The order matters twice over. An EXACT match comes before a
+            // word that merely starts with the same letters: "wei" is
+            // nine words, but the list also holds ninety-two that begin
+            // with "wei", and without this rule the exact ones fall off
+            // the end of the list.
+            //
+            // Within each group the commonest word comes first, the way a
+            // real IME orders its candidates. Words with a gloss come
+            // before words without one, because a learner cannot choose a
+            // word they cannot read.
+            .sortedWith(
+                compareBy(
+                    { word: String -> if (word in exact) 0 else 1 },
+                    { word: String -> wordToFreq[word] ?: Int.MAX_VALUE },
+                    { word: String -> wordToGloss[word].isNullOrBlank() },
+                )
+            )
             .take(12)
             .map { word ->
                 Candidate(

@@ -92,6 +92,14 @@ data class ImeIndex(
     val syllableToWords: Map<String, List<String>>,
     val wordToPinyin: Map<String, String>,
     val wordToGloss: Map<String, String>,
+    /**
+     * The corpus frequency rank of each word, lower is commoner.
+     *
+     * The IME needs it to order the candidates: a syllable like "jian"
+     * matches sixteen words and only twelve fit on the screen, so
+     * without a frequency order the common ones fall off the end.
+     */
+    val wordToFreq: Map<String, Int> = emptyMap(),
 )
 
 /**
@@ -367,8 +375,9 @@ class ContentRepository @Inject constructor(
 
         val wordToPinyin = mutableMapOf<String, String>()
         val wordToGloss = mutableMapOf<String, String>()
+        val wordToFreq = mutableMapOf<String, Int>()
         db.rawQuery(
-            "SELECT hanzi, pinyin_plain, pinyin, gloss_bg, gloss_en FROM words",
+            "SELECT hanzi, pinyin_plain, pinyin, gloss_bg, gloss_en, freq FROM words",
             null,
         ).use { c ->
             while (c.moveToNext()) {
@@ -377,10 +386,13 @@ class ContentRepository @Inject constructor(
                 // types letters, not tone marks.
                 wordToPinyin[hanzi] = c.str("pinyin_plain").ifBlank { c.str("pinyin") }
                 wordToGloss[hanzi] = c.str("gloss_bg").ifBlank { c.str("gloss_en") }
+                if (!c.isNull("freq")) {
+                    wordToFreq[hanzi] = c.getInt("freq")
+                }
             }
         }
 
-        ImeIndex(syllableToWords, wordToPinyin, wordToGloss)
+        ImeIndex(syllableToWords, wordToPinyin, wordToGloss, wordToFreq)
     } ?: ImeIndex(emptyMap(), emptyMap(), emptyMap())
 
     /** A character with its stroke-order data, for the writing mode. */

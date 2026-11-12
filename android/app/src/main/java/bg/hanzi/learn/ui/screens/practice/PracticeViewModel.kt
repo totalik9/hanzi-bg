@@ -306,6 +306,7 @@ class PracticeViewModel @Inject constructor(
             syllableToWords = imeIndex.syllableToWords,
             wordToPinyin = imeIndex.wordToPinyin,
             wordToGloss = imeIndex.wordToGloss,
+            wordToFreq = imeIndex.wordToFreq,
         )
         _uiState.value = _uiState.value.copy(
             production = current.copy(typed = text, candidates = candidates),
