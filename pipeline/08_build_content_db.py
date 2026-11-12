@@ -197,22 +197,25 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
         if not hanzi:
             continue
 
-        gloss_bg = (w.get("gloss_bg") or "").strip()
-        if gloss_bg:
-            source = "human"
-        elif hanzi in human_bg_combined:
+        # The combined gloss comes first: it already carries the human
+        # gloss and the machine senses that it does not cover.
+        if hanzi in human_bg_combined:
             gloss_bg = human_bg_combined[hanzi]
             source = "human+machine"
         else:
-            glosses = human_bg.get(hanzi)
-            if glosses:
-                gloss_bg = glosses[0]
+            gloss_bg = (w.get("gloss_bg") or "").strip()
+            if gloss_bg:
                 source = "human"
-            elif hanzi in machine_bg:
-                gloss_bg = machine_bg[hanzi]
-                source = "machine"
             else:
-                source = ""
+                glosses = human_bg.get(hanzi)
+                if glosses:
+                    gloss_bg = glosses[0]
+                    source = "human"
+                elif hanzi in machine_bg:
+                    gloss_bg = machine_bg[hanzi]
+                    source = "machine"
+                else:
+                    source = ""
         if gloss_bg:
             with_bg += 1
         if source == "machine":
