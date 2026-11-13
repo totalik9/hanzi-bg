@@ -1,0 +1,80 @@
+{
+ "_comment": [
+  "The sources of the content, and their licences.",
+  "",
+  "This file is the machine-readable version of the table in",
+  "readme.md. It is written by the pipeline (01_fetch_sources.py",
+  "keeps the download manifest) and it is what the app shows",
+  "under 'about the content'.",
+  "",
+  "The audio licences are per contributor: Tatoeba is CC BY 2.0 FR",
+  "as a corpus, but every sentence carries its own licence and",
+  "the audio of a sentence is contributed by a person. The",
+  "per-sentence licences live in data/raw/sentences_with_audio.csv",
+  "and are copied into the content database with the sentences."
+ ],
+ "sources": [
+  {
+   "name": "CC-CEDICT",
+   "url": "https://www.mdbg.net/chinese/dictionary?page=cedict",
+   "license": "CC BY-SA 4.0",
+   "used_for": "definitions and part of speech for the vocabulary"
+  },
+  {
+   "name": "Make Me a Hanzi",
+   "url": "https://github.com/skishore/makemeahanzi",
+   "license": "Arphic Public License",
+   "used_for": "stroke order and radical for the characters"
+  },
+  {
+   "name": "HSK 3.0 word lists",
+   "url": "https://literatelanguages.com/chinese/",
+   "license": "see the source",
+   "used_for": "the graded vocabulary and the level of every word"
+  },
+  {
+   "name": "Chinese Grammar Wiki (AllSet Learning)",
+   "url": "https://resources.allsetlearning.com/chinese/grammar/Main_Page",
+   "license": "Creative Commons",
+   "used_for": "the grammar points and their example sentences"
+  },
+  {
+   "name": "Tatoeba",
+   "url": "https://tatoeba.org/en/downloads",
+   "license": "CC BY 2.0 FR",
+   "used_for": "the sentence corpus and the human audio",
+   "note": "The audio is contributed per sentence by individual people. The per-sentence licence is in the license column of sentences_with_audio.csv and travels with the sentence into the content database."
+  },
+  {
+   "name": "pinyin-data",
+   "url": "https://github.com/mozillazg/pinyin-data",
+   "license": "MIT",
+   "used_for": "the per-character readings and the syllable inventory"
+  },
+  {
+   "name": "phrase-pinyin-data",
+   "url": "https://github.com/mozillazg/phrase-pinyin-data",
+   "license": "MIT",
+   "used_for": "the pinyin of the multi-character words"
+  },
+  {
+   "name": "Chinese Wiktionary (via kaikki.org)",
+   "url": "https://kaikki.org/dictionary/Chinese/",
+   "license": "CC BY-SA 4.0",
+   "used_for": "the human Bulgarian glosses and the part of speech"
+  },
+  {
+   "name": "NLLB-200",
+   "url": "https://huggingface.co/facebook/nllb-200-distilled-600M",
+   "license": "CC-BY-NC 4.0",
+   "used_for": "the machine Bulgarian glosses, grammar and sentences",
+   "note": "NON-COMMERCIAL. This is the licence that blocks paid distribution: the machine glosses would have to be replaced with human ones or with a model under a permissive licence before any paid release. The column gloss_source says which glosses came from the model."
+  },
+  {
+   "name": "Microsoft Edge TTS (Azure Neural Voices)",
+   "url": "https://github.com/rany2/edge-tts",
+   "license": "no licence on the audio itself; the voice is a Microsoft Azure Neural Voice",
+   "used_for": "the pronunciation clips"
+  }
+ ]
+}
