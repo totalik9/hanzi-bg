@@ -79,6 +79,17 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
           restore-keys: gradle-${{ runner.os }}-
 
+      # The content database is not in version control -- it is a build
+      # artefact of the pipeline. A small fixture is built here so that
+      # the release packaging is actually exercised: the check below
+      # verifies that the database ships uncompressed, and it can only
+      # do that if there is one in the APK.
+      - name: Build a small content database
+        run: |
+          python pipeline/make_test_fixture.py
+          mkdir -p data
+          cp android/app/src/androidTest/assets/content/content.db data/content.db
+
       - name: Run unit tests
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest --no-daemon
@@ -117,7 +128,10 @@ jobs:
           set -euo pipefail
           apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
           echo "APK: $apk"
-          listing=$(unzip -l "$apk" | grep -E 'assets/content/content\.db' || true)
+          # `unzip -v` and not `unzip -l`: only the verbose listing
+          # shows the compression method, and the method is the whole
+          # point of the check.
+          listing=$(unzip -v "$apk" | grep -E 'assets/content/content\.db' || true)
           if [ -z "$listing" ]; then
             echo "::error::content.db is not in the release APK"
             exit 1
@@ -127,6 +141,10 @@ jobs:
           # is compressed and the byte-for-byte copy would break.
           if echo "$listing" | grep -q 'Defl'; then
             echo "::error::content.db is compressed in the APK - the first-launch copy would fail"
+            exit 1
+          fi
+          if ! echo "$listing" | grep -q 'Stored'; then
+            echo "::error::could not tell how content.db is stored in the APK"
             exit 1
           fi
           echo "content.db is stored uncompressed"
@@ -251,7 +269,20 @@ jobs:
           cp -r pipeline "$tmp/pipeline"
           mkdir -p "$tmp/data/raw"
           rm -f "$tmp/data/raw/pinyin_syllables.json"
-          if python "$tmp/pipeline/pinyin_utils.py" 2>/dev/null; then
+          # The inventory is loaded lazily, so the script has to be
+          # asked for it: running the module does not touch it.
+          if python - "$tmp" <<'PY'
+          import sys
+          sys.path.insert(0, sys.argv[1] + "/pipeline")
+          import pinyin_utils
+          try:
+              pinyin_utils.split_pinyin_syllables("yīnián")
+          except SystemExit:
+              sys.exit(0)
+          print("the pipeline did not fail on a missing input")
+          sys.exit(1)
+          PY
+          then
             echo "::error::the pipeline did not fail on a missing input"
             exit 1
           fi
