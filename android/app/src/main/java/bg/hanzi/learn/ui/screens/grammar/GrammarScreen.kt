@@ -71,11 +71,25 @@ private fun GrammarCard(entry: GrammarEntry) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (entry.summary.isNotBlank()) {
+            if (entry.summaryBg.isNotBlank() || entry.summary.isNotBlank()) {
                 Text(
-                    text = entry.summary,
+                    // The Bulgarian summary first: the app is for
+                    // Bulgarian learners of Chinese, so the English one
+                    // is the fallback, not the other way round.
+                    text = entry.summaryBg.ifBlank { entry.summary },
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            if (entry.summaryBg.isNotBlank() && entry.summary.isNotBlank()) {
+                // The English summary stays available: it is useful to a
+                // learner who gets stuck, and it is the source of the
+                // Bulgarian translation.
+                Text(
+                    text = entry.summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
             if (entry.body.isNotBlank()) {

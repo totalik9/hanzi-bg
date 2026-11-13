@@ -220,4 +220,65 @@ class PinyinImeTest {
             lastExact in 0 until firstLonger,
         )
     }
+
+    /**
+     * The umlaut gap.
+     *
+     * The index stores the umlaut folded to "u" -- a phone keyboard
+     * cannot type "ü" -- and the word's stored pinyin is folded the
+     * same way before it is compared with what was typed. Without this
+     * the 76 words that carry the umlaut were unreachable: the learner
+     * typed "lu", got nothing, and concluded the app was broken.
+     */
+    @Test
+    fun foldsTheUmlautSoTheWordCanBeTypedWithoutIt() {
+        // 绿 is "lü" in the dictionary; the index holds it as "lu".
+        val candidates = PinyinIme.candidates(
+            typed = "lu",
+            syllableToWords = mapOf("lu" to listOf("绿", "旅")),
+            wordToPinyin = mapOf("绿" to "lü", "旅" to "lü you"),
+            wordToGloss = mapOf("绿" to "зелен", "旅" to "пътуване"),
+        )
+        assertTrue(
+            "expected 绿 among $candidates",
+            candidates.any { it.hanzi == "绿" },
+        )
+    }
+
+    @Test
+    fun acceptsTheOtherUmlautSpellings() {
+        // "lv" is the convention Chinese input methods use; "lu:" is
+        // what CC-CEDICT writes. Both must find the same word.
+        for (typed in listOf("lu", "lv", "lü", "lu:")) {
+            val candidates = PinyinIme.candidates(
+                typed = typed,
+                syllableToWords = mapOf("lu" to listOf("绿")),
+                wordToPinyin = mapOf("绿" to "lü"),
+                wordToGloss = mapOf("绿" to "зелен"),
+            )
+            assertTrue(
+                "expected 绿 for '$typed' among $candidates",
+                candidates.any { it.hanzi == "绿" },
+            )
+        }
+    }
+
+    @Test
+    fun normalisesTheUmlautSpellings() {
+        assertEquals("lu", PinyinIme.normalise("lü"))
+        assertEquals("lu", PinyinIme.normalise("LV"))
+        assertEquals("lu", PinyinIme.normalise("lu:"))
+        assertEquals("nu", PinyinIme.normalise("nü"))
+        assertEquals("lue", PinyinIme.normalise("lüe"))
+        // A syllable without an umlaut is untouched.
+        assertEquals("hao", PinyinIme.normalise("hao"))
+    }
+
+    @Test
+    fun splitsTheUmlautSyllableLikeAnyOther() {
+        assertEquals(
+            listOf("lu", "you"),
+            PinyinIme.splitIntoSyllables("lüyou", setOf("lu", "you")),
+        )
+    }
 }

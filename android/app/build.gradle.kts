@@ -172,8 +172,6 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.common)
 
-    implementation(libs.coil.compose)
-    implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)

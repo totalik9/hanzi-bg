@@ -18,6 +18,17 @@
     <string name="home_continue">Продължи</string>
     <string name="home_due_today">%1$d за днес</string>
     <string name="home_no_due">Няма за повторение</string>
+    <!-- The daily goal and the streak. -->
+    <string name="home_daily_goal">Днес: %1$d / %2$d прегледа</string>
+    <string name="home_streak">Поредица: %1$d дни</string>
+    <!-- The level selector. -->
+    <string name="home_pick_level">Избери ниво</string>
+    <string name="home_pick_level_hint">Словата за упражнения и повторение идват от тези нива.</string>
+    <string name="home_practice_this_level">Упражнения</string>
+    <string name="home_review_this_level">Повторение</string>
+
+    <!-- Practice -->
+    <string name="practice_level">Ниво: %1$s</string>
 
     <!-- Flashcard -->
     <string name="card_show_answer">Покажи отговор</string>

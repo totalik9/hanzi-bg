@@ -6,6 +6,7 @@ import bg.hanzi.learn.audio.AudioPlayer
 import bg.hanzi.learn.data.content.CharacterEntry
 import bg.hanzi.learn.data.content.ContentRepository
 import bg.hanzi.learn.data.content.ImeIndex
+import bg.hanzi.learn.data.content.LevelSelection
 import bg.hanzi.learn.data.content.SentenceEntry
 import bg.hanzi.learn.data.content.WordEntry
 import bg.hanzi.learn.data.ime.PinyinIme
@@ -31,6 +32,17 @@ enum class PracticeMode(val label: String) {
     GRAMMAR_QUIZ("Граматика"),
 }
 
+/**
+ * How many sentences the word-order pool holds.
+ *
+ * It used to be 60, and the pool was the 60 SHORTEST sentences with a
+ * Bulgarian translation, so the learner met the same six words over
+ * and over and then hit "Няма повече изречения". The pool is now
+ * shuffled over the whole set, so the same sentence does not come back
+ * immediately, and the limit is large enough to last.
+ */
+private const val SENTENCE_POOL = 2000
+
 /** A listening exercise: hear the word, pick the right one. */
 data class ListeningExercise(
     val word: WordEntry,
@@ -46,7 +58,22 @@ data class GrammarExample(
     val zh: String,
     val pinyin: String,
     val en: String,
-)
+    /**
+     * The Bulgarian gloss of the example.
+     *
+     * The grammar quiz asks the learner to match a Chinese sentence to
+     * its meaning, and the answer has to be in Bulgarian: the app is
+     * for Bulgarian learners of Chinese, and asking them to pick an
+     * English meaning is asking them to read English to learn Chinese.
+     *
+     * The English gloss is kept as the fallback for the examples that
+     * have not been translated yet.
+     */
+    val bg: String = "",
+) {
+    /** The gloss the quiz shows: Bulgarian when there is one. */
+    val meaning: String get() = bg.ifBlank { en }
+}
 
 /**
  * A grammar quiz: the learner sees a Chinese example and has to pick its
@@ -104,6 +131,8 @@ data class PracticeUiState(
     val finished: Boolean = false,
     val correctCount: Int = 0,
     val totalCount: Int = 0,
+    /** The levels the pool is drawn from, for the screen's title. */
+    val levelLabel: String = "",
 )
 
 /**
@@ -133,6 +162,16 @@ class PracticeViewModel @Inject constructor(
     private var usedSentences = mutableSetOf<Long>()
     private val random = Random(42)
 
+    /**
+     * The levels the pool is drawn from.
+     *
+     * It used to be hardcoded to levels 1 and 2, which left 95 % of the
+     * vocabulary in the database but out of reach of every exercise.
+     * The level now comes from the navigation.
+     */
+    var levelSelection: String = LevelSelection.DEFAULT
+        private set
+
     /** Plays the pronunciation of a word. */
     fun playAudio(fileName: String) {
         if (fileName.isNotBlank()) {
@@ -141,24 +180,67 @@ class PracticeViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
-            val loaded = withContext(Dispatchers.IO) {
-                val index = content.imeIndex()
-                // The practice pool is the vocabulary that has a Bulgarian
-                // gloss: a production exercise without a meaning to
-                // produce would be guesswork.
-                val words = content.wordsForLevel("1", limit = 300) +
-                    content.wordsForLevel("2", limit = 200)
-                val sentences = content.sentencesWithBulgarian(limit = 60)
-                val examples = parseGrammarExamples(content.grammarWithExamples())
-                Triple(index, words, sentences) to examples
-            }
-            imeIndex = loaded.first.first
-            wordPool = loaded.first.second.filter { it.glossBg.isNotBlank() }
-            sentencePool = loaded.first.third
-            grammarExamples = loaded.second
-            _uiState.value = _uiState.value.copy(loading = false)
-            nextProduction()
+        viewModelScope.launch { load() }
+    }
+
+    /**
+     * Point the pool at a set of levels and reload it.
+     */
+    fun setLevel(selection: String?) {
+        val levels = LevelSelection.levelsOf(selection)
+        if (levels == LevelSelection.levelsOf(levelSelection)) return
+        levelSelection = LevelSelection.argumentFor(levels)
+        viewModelScope.launch { load() }
+    }
+
+    private suspend fun load() {
+        val loaded = withContext(Dispatchers.IO) {
+            val index = content.imeIndex()
+            // The practice pool is the vocabulary that has a Bulgarian
+            // gloss: a production exercise without a meaning to
+            // produce would be guesswork.
+            //
+            // The whole level is loaded, not a fixed slice of it: HSK 1
+            // has 300 words and HSK 7-9 has 5 562, so any fixed limit
+            // would starve the big levels or cut the small ones short.
+            // The usedWords set keeps the exercises varied.
+            val levels = LevelSelection.levelsOf(levelSelection)
+            val words = content.wordsForLevels(levels)
+            val sentences = content.sentencesWithBulgarian(limit = SENTENCE_POOL)
+            val examples = parseGrammarExamples(content.grammar())
+            Triple(index, words, sentences) to examples
+        }
+        imeIndex = loaded.first.first
+        wordPool = loaded.first.second.filter { it.glossBg.isNotBlank() }
+        sentencePool = loaded.first.third
+        grammarExamples = loaded.second
+        usedWords = mutableSetOf()
+        usedSentences = mutableSetOf()
+        _uiState.value = _uiState.value.copy(
+            loading = false,
+            levelLabel = LevelSelection.labelOf(levelSelection),
+        )
+        // The learner may have switched to another mode while the pool
+        // was still loading. Without this, that mode would be left
+        // empty: nextWordOrder() and its siblings run against the pool
+        // as it was when they were called, and they never run again.
+        nextForCurrentMode()
+    }
+
+    /**
+     * Draw the next exercise for the mode that is showing.
+     *
+     * The modes all draw from the pool, so the mode has to be redrawn
+     * whenever the pool changes -- when the level changes and when the
+     * pool finishes loading.
+     */
+    private fun nextForCurrentMode() {
+        when (_uiState.value.mode) {
+            PracticeMode.PRODUCTION -> nextProduction()
+            PracticeMode.LISTENING -> nextListening()
+            PracticeMode.WORD_ORDER -> nextWordOrder()
+            PracticeMode.WRITING -> nextWriting()
+            PracticeMode.GRAMMAR_QUIZ -> nextGrammarQuiz()
         }
     }
 
@@ -183,14 +265,20 @@ class PracticeViewModel @Inject constructor(
                 val zh = obj["zh"]?.jsonPrimitive?.content.orEmpty()
                 val pinyin = obj["pinyin"]?.jsonPrimitive?.content.orEmpty()
                 val en = obj["en"]?.jsonPrimitive?.content.orEmpty()
+                val bg = obj["bg"]?.jsonPrimitive?.content.orEmpty()
                 if (zh.isNotBlank() && en.isNotBlank()) {
                     out.add(
                         GrammarExample(
-                            pointTitle = point.title,
+                            // The Bulgarian title of the grammar point.
+                            // The quiz shows the point the example
+                            // belongs to, so that hint has to be in the
+                            // learner's language too.
+                            pointTitle = point.titleBg.ifBlank { point.title },
                             level = point.level,
                             zh = zh,
                             pinyin = pinyin,
                             en = en,
+                            bg = bg,
                         ),
                     )
                 }
@@ -217,9 +305,18 @@ class PracticeViewModel @Inject constructor(
      * distractors are other examples' translations, so they are about the
      * same length and equally plausible -- a distractor that is obviously
      * wrong teaches nothing.
+     *
+     * The options are the BULGARIAN meanings. The quiz used to ask the
+     * learner to match Chinese to English in an app whose whole premise
+     * is learning Chinese from Bulgarian. A learner who does not read
+     * English was stuck at this screen.
      */
     fun nextGrammarQuiz() {
-        val pool = grammarExamples.filter { it.en.isNotBlank() }
+        // Only the examples that have a Bulgarian meaning can be used
+        // for a Bulgarian quiz: mixing Bulgarian and English options
+        // would let the learner pick the language instead of the
+        // meaning.
+        val pool = grammarExamples.filter { it.bg.isNotBlank() }
         if (pool.isEmpty()) {
             _uiState.value = _uiState.value.copy(finished = true, grammarQuiz = null)
             return
@@ -228,11 +325,11 @@ class PracticeViewModel @Inject constructor(
         val example = pool[index]
 
         val distractors = pool
-            .filterIndexed { i, e -> i != index && e.en != example.en }
+            .filterIndexed { i, e -> i != index && e.bg != example.bg }
             .shuffled(random)
             .take(3)
-            .map { it.en }
-        val options = (distractors + example.en).shuffled(random)
+            .map { it.bg }
+        val options = (distractors + example.bg).shuffled(random)
 
         _uiState.value = _uiState.value.copy(
             grammarQuiz = GrammarQuizExercise(
@@ -241,7 +338,7 @@ class PracticeViewModel @Inject constructor(
                 exampleZh = example.zh,
                 examplePinyin = example.pinyin,
                 options = options,
-                correctAnswer = example.en,
+                correctAnswer = example.bg,
             ),
             finished = false,
         )
@@ -267,7 +364,11 @@ class PracticeViewModel @Inject constructor(
      * likely to be familiar.
      */
     fun nextListening() {
-        val pool = wordPool.filter { it.audio != null && it.hanzi !in usedWords }
+        // The clip has to EXIST, not merely be non-null: the column can
+        // hold an empty string for a word that has no clip yet, and
+        // such a word would put the learner in front of a button that
+        // plays nothing.
+        val pool = wordPool.filter { !it.audio.isNullOrBlank() && it.hanzi !in usedWords }
         if (pool.isEmpty()) {
             _uiState.value = _uiState.value.copy(finished = true, listening = null)
             return

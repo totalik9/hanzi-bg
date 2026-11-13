@@ -21,12 +21,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -46,11 +48,27 @@ import bg.hanzi.learn.ui.theme.LangType
  */
 @Composable
 fun PracticeScreen(
+    level: String? = null,
     viewModel: PracticeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // The level arrives with the navigation. It is applied here rather
+    // than in the ViewModel's init block so that the pool is loaded for
+    // the level the learner actually chose.
+    LaunchedEffect(level) {
+        viewModel.setLevel(level)
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
+        if (state.levelLabel.isNotBlank()) {
+            Text(
+                text = stringResource(R.string.practice_level, state.levelLabel),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
         ModeSelector(current = state.mode, onSelect = viewModel::setMode)
 
         when (state.mode) {
@@ -68,12 +86,19 @@ private fun ModeSelector(current: PracticeMode, onSelect: (PracticeMode) -> Unit
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // The tag lets the instrumented tests scroll the row to a chip
+        // that is off the screen: there are five of them and only two
+        // or three fit.
+        modifier = Modifier.testTag("mode_selector"),
     ) {
         items(PracticeMode.entries.toList()) { mode ->
             FilterChip(
                 selected = mode == current,
                 onClick = { onSelect(mode) },
                 label = { Text(mode.label) },
+                // The tag lets the instrumented tests pick this chip out
+                // of the screen.
+                modifier = Modifier.testTag("mode_${mode.name}"),
             )
         }
     }

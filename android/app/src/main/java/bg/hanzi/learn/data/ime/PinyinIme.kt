@@ -24,6 +24,37 @@ object PinyinIme {
     )
 
     /**
+     * Normalise typed pinyin to the form the index is keyed by.
+     *
+     * The learner types plain letters, and no phone keyboard produces
+     * the umlaut: "lü" (绿, green) can only be typed as "lu", "lv" or
+     * "lu:" depending on the keyboard, and a learner who types "lu"
+     * must still find the word.
+     *
+     * So the umlaut is folded to "u" on both sides of the comparison:
+     * "lü" and "lu" name the same syllable, and the word's stored pinyin
+     * is folded the same way before it is compared with what was typed.
+     *
+     * "v" is folded to "u" as well, because that is the other
+     * convention Chinese input methods use ("lv" for "lü"), and "v"
+     * never appears in a Mandarin syllable in its own right.
+     *
+     * >>> normalise("lü")
+     * 'lu'
+     * >>> normalise("LV")
+     * 'lu'
+     * >>> normalise("lu:")
+     * 'lu'
+     * >>> normalise("nü3")
+     * 'nu3'
+     */
+    fun normalise(text: String): String = text
+        .lowercase()
+        .replace("ü", "u")
+        .replace("u:", "u")
+        .replace("v", "u")
+
+    /**
      * Split typed letters into syllables.
      *
      * The syllables come from the index, so only real Mandarin syllables
@@ -35,10 +66,13 @@ object PinyinIme {
      * greedy splitter pick "qun" + "ian", which are real syllables too.
      * The word is then never in the candidate pool and the learner
      * cannot produce it at all.
+     *
+     * The typed text is normalised first, so "lü" is split as "lu" and
+     * the index -- which is keyed by the normalised form -- is found.
      */
     fun splitIntoSyllables(typed: String, known: Set<String>): List<String> {
         val out = mutableListOf<String>()
-        for (chunk in typed.lowercase().split(' ').filter { it.isNotEmpty() }) {
+        for (chunk in normalise(typed).split(' ').filter { it.isNotEmpty() }) {
             var rest = chunk
             while (rest.isNotEmpty()) {
                 // The longest prefix that is a known syllable wins, so
@@ -102,8 +136,13 @@ object PinyinIme {
             syllableToWords[syllable]?.forEach { pool += it }
         }
 
+        // The stored pinyin is normalised the same way the typed text
+        // is, so that "lu" finds the word whose pinyin is "lü". Without
+        // this the 76 words that carry the umlaut are unreachable: the
+        // learner types "lu", gets nothing, and concludes the app is
+        // broken.
         fun plainPinyin(word: String): String =
-            wordToPinyin[word]?.lowercase()?.replace(" ", "").orEmpty()
+            normalise(wordToPinyin[word]?.replace(" ", "") ?: "")
 
         val exact = pool.filter { plainPinyin(it) == joinedFlat }
         val prefix = pool.filter {

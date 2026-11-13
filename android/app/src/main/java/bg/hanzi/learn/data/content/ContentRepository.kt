@@ -45,6 +45,14 @@ data class GrammarEntry(
     val level: String,
     val category: String,
     val summary: String,
+    /**
+     * The Bulgarian summary.
+     *
+     * The app is for Bulgarian learners of Chinese, so this is what the
+     * screen shows; the English [summary] is the fallback and the
+     * source of the translation.
+     */
+    val summaryBg: String = "",
     val body: String,
     val examples: String,
 )
@@ -172,6 +180,38 @@ class ContentRepository @Inject constructor(
             }
         } ?: emptyList()
 
+    /**
+     * The words of several levels at once, in level order.
+     *
+     * A limit of 0 means "all of them". The level groups are not all the
+     * same size -- HSK 1 has 300 words and HSK 7-9 has 5 562 -- so a
+     * fixed limit would either starve the big levels or cut the small
+     * ones off.
+     */
+    fun wordsForLevels(levels: List<String>, limit: Int = 0): List<WordEntry> = read { db ->
+        if (levels.isEmpty()) return@read emptyList()
+        // The levels are bound as parameters, but LIMIT cannot be bound
+        // (SQLite rejects a bound LIMIT), so it is inlined as an integer.
+        val limitClause = if (limit > 0) "LIMIT $limit" else ""
+        val placeholders = levels.joinToString(",") { "?" }
+        db.rawQuery(
+            """
+            SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
+            FROM words
+            WHERE hsk_level IN ($placeholders)
+            ORDER BY hsk_level, (freq IS NULL), freq, hanzi
+            $limitClause
+            """.trimIndent(),
+            levels.toTypedArray(),
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(c.toWordEntry())
+                }
+            }
+        }
+    } ?: emptyList()
+
     fun verbsForLevel(level: String, limit: Int = 100): List<WordEntry> = read { db ->
         db.rawQuery(
             """
@@ -240,6 +280,11 @@ class ContentRepository @Inject constructor(
      * "hao" has no reason to know that the character is written "hǎo",
      * and searching the tone-marked column would miss every such word.
      * The tone-marked form is still matched, for anyone who does type it.
+     *
+     * This is also the pinyin-prefix search the dictionary uses: the
+     * query is matched against `pinyin_plain`, which is the toneless
+     * form, and the results are ordered by the corpus frequency so the
+     * commonest word comes first.
      */
     fun search(query: String, limit: Int = 50): List<WordEntry> {
         if (query.isBlank()) return emptyList()
@@ -278,11 +323,22 @@ class ContentRepository @Inject constructor(
         } ?: emptyList()
     }
 
+    /**
+     * The grammar points, with their examples.
+     *
+     * The grammar mode needs the example sentences to quiz the learner on;
+     * without them the grammar screen can only be read, which the
+     * simulation shows is not learning.
+     *
+     * This used to exist twice -- once as `grammar()` and once as
+     * `grammarWithExamples()` -- with the same body, and only one of
+     * them was ever called. There is one function now.
+     */
     fun grammar(level: String? = null): List<GrammarEntry> = read { db ->
         val sql = if (level == null) {
-            "SELECT id, title, title_bg, level, category, summary, body, examples FROM grammar ORDER BY level, id"
+            "SELECT id, title, title_bg, level, category, summary, summary_bg, body, examples FROM grammar ORDER BY level, id"
         } else {
-            "SELECT id, title, title_bg, level, category, summary, body, examples FROM grammar WHERE level = ? ORDER BY id"
+            "SELECT id, title, title_bg, level, category, summary, summary_bg, body, examples FROM grammar WHERE level = ? ORDER BY id"
         }
         val args = level?.let { arrayOf(it) } ?: emptyArray()
         db.rawQuery(sql, args).use { c ->
@@ -296,6 +352,7 @@ class ContentRepository @Inject constructor(
                             level = c.str("level"),
                             category = c.str("category"),
                             summary = c.str("summary"),
+                            summaryBg = c.str("summary_bg"),
                             body = c.str("body"),
                             examples = c.str("examples"),
                         ),
@@ -319,32 +376,6 @@ class ContentRepository @Inject constructor(
                             titleBg = c.str("title_bg"),
                             level = c.str("level"),
                             ord = c.getInt("ord"),
-                        ),
-                    )
-                }
-            }
-        }
-    } ?: emptyList()
-
-    fun sentences(limit: Int = 100): List<SentenceEntry> = read { db ->
-        db.rawQuery(
-            """
-            SELECT s.id, s.hanzi, s.pinyin, s.translation_en, s.translation_bg, s.audio_path
-            FROM sentences s
-            LIMIT $limit
-            """.trimIndent(),
-            null,
-        ).use { c ->
-            buildList {
-                while (c.moveToNext()) {
-                    add(
-                        SentenceEntry(
-                            id = c.getLong("id"),
-                            hanzi = c.str("hanzi"),
-                            pinyin = c.str("pinyin"),
-                            translationEn = c.str("translation_en"),
-                            translationBg = c.str("translation_bg"),
-                            audioPath = c.strOrNull("audio_path"),
                         ),
                     )
                 }
@@ -413,39 +444,21 @@ class ContentRepository @Inject constructor(
     }
 
     /**
-     * The words that start with a given pinyin, for the production mode.
+     * Sentences that carry a Bulgarian translation.
      *
-     * The learner types pinyin; the candidates are the words whose pinyin
-     * begins with what they typed. The order is by frequency, so the
-     * commonest word comes first -- the same rule a real IME follows.
-     */
-    fun wordsStartingWithPinyin(prefix: String, limit: Int = 12): List<WordEntry> =
-        read { db ->
-            val plain = prefix.trim().lowercase()
-            if (plain.isEmpty()) return@read emptyList()
-            db.rawQuery(
-                """
-                SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
-                FROM words
-                WHERE pinyin_tones LIKE ?
-                ORDER BY (freq IS NULL), freq, hanzi
-                LIMIT $limit
-                """.trimIndent(),
-                arrayOf("$plain%"),
-            ).use { c ->
-                buildList {
-                    while (c.moveToNext()) {
-                        add(c.toWordEntry())
-                    }
-                }
-            }
-        } ?: emptyList()
-
-    /**
-     * Sentences that carry a Bulgarian translation, shortest first.
+     * These are the sentences the word-order mode works on: the learner
+     * rearranges the Chinese characters into the right order, and the
+     * Bulgarian translation is what they are aiming at.
      *
-     * Short sentences are the ones a learner can actually reorder and
-     * reproduce, so the word-order mode works on this list.
+     * The result is SHUFFLED. The query used to sort by length and take
+     * the first N, which meant the learner always met the same handful
+     * of shortest sentences -- "Изгаси лампата." over and over -- and
+     * then ran into "Няма повече изречения" after a few dozen exercises.
+     *
+     * The shuffle happens in SQL so that the whole set is available and
+     * the order is decided by the database rather than by a LIMIT
+     * applied to a length-sorted list. The learner gets a different
+     * sentence every time.
      */
     fun sentencesWithBulgarian(limit: Int = 50): List<SentenceEntry> = read { db ->
         db.rawQuery(
@@ -453,7 +466,7 @@ class ContentRepository @Inject constructor(
             SELECT s.id, s.hanzi, s.pinyin, s.translation_en, s.translation_bg, s.audio_path
             FROM sentences s
             WHERE s.translation_bg != ''
-            ORDER BY LENGTH(s.hanzi), s.id
+            ORDER BY RANDOM()
             LIMIT $limit
             """.trimIndent(),
             null,
@@ -466,39 +479,6 @@ class ContentRepository @Inject constructor(
         }
     } ?: emptyList()
 
-    /**
-     * The grammar points of a level, with their examples.
-     *
-     * The grammar mode needs the example sentences to quiz the learner on;
-     * without them the grammar screen can only be read, which the
-     * simulation shows is not learning.
-     */
-    fun grammarWithExamples(level: String? = null): List<GrammarEntry> = read { db ->
-        val sql = if (level == null) {
-            "SELECT id, title, title_bg, level, category, summary, body, examples FROM grammar ORDER BY level, id"
-        } else {
-            "SELECT id, title, title_bg, level, category, summary, body, examples FROM grammar WHERE level = ? ORDER BY id"
-        }
-        val args = level?.let { arrayOf(it) } ?: emptyArray()
-        db.rawQuery(sql, args).use { c ->
-            buildList {
-                while (c.moveToNext()) {
-                    add(
-                        GrammarEntry(
-                            id = c.getLong("id"),
-                            title = c.str("title"),
-                            titleBg = c.str("title_bg"),
-                            level = c.str("level"),
-                            category = c.str("category"),
-                            summary = c.str("summary"),
-                            body = c.str("body"),
-                            examples = c.str("examples"),
-                        ),
-                    )
-                }
-            }
-        }
-    } ?: emptyList()
 }
 
 private fun Cursor.toWordEntry() = WordEntry(
