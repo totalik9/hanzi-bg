@@ -16,11 +16,13 @@ that can be verified independently:
 """
 
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+import make_vectors  # noqa: E402
 import srs  # noqa: E402
 import simulate_learners as sim  # noqa: E402
 
@@ -43,8 +45,16 @@ def test_parity_with_kotlin_vectors():
     print("\n1. Python port vs Kotlin vectors")
     expected_path = ROOT / "simulation" / "expected_vectors.json"
     if not expected_path.exists():
-        check("expected_vectors.json exists", False, str(expected_path))
-        return
+        # A missing artefact and a broken model are different problems.
+        # The vectors are generated, not checked in from somewhere else,
+        # so the check can be made on a fresh clone without a separate
+        # setup step -- and without pretending the file was verified.
+        print("   expected_vectors.json is missing -- generating it")
+        make_vectors.main()
+        if not expected_path.exists():
+            check("expected_vectors.json could be generated", False, str(expected_path))
+            return
+        check("expected_vectors.json was generated", True)
     expected = json.loads(expected_path.read_text(encoding="utf-8"))
 
     mismatches = 0
@@ -193,6 +203,77 @@ def test_simulation_runs_and_is_deterministic():
           f"{r_gen.words_solid} vs {r_sca.words_solid}")
 
 
+def test_drift_guard_is_not_vacuous():
+    """The CI drift check has to be able to fail.
+
+    `git diff` on an untracked file exits 0, so the check used to pass
+    no matter what the file contained -- and the file was not tracked at
+    all, so it did not exist in a fresh clone. The guard was vacuous.
+
+    This check proves two things:
+      1. expected_vectors.json is TRACKED by git, so `git diff` sees it.
+      2. A wrong number in it makes the CI command exit non-zero.
+
+    A check that cannot fail is not a check.
+    """
+    print("\n7. The CI drift guard")
+    vectors = ROOT / "simulation" / "expected_vectors.json"
+
+    tracked = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", "simulation/expected_vectors.json"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    check(
+        "expected_vectors.json is tracked by git",
+        tracked.returncode == 0,
+        "git ls-files says it is not tracked -- the drift check is vacuous",
+    )
+
+    if not vectors.exists():
+        check("expected_vectors.json exists for the drift test", False, str(vectors))
+        return
+
+    # Now prove the check can fail: corrupt one number, run the exact
+    # command CI runs, and confirm it reports the difference.
+    original = vectors.read_text(encoding="utf-8")
+    try:
+        data = json.loads(original)
+        name = next(iter(data))
+        data[name][0]["stability"] = data[name][0]["stability"] + 1.0
+        vectors.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+        result = subprocess.run(
+            [
+                "git", "diff", "--exit-code", "--",
+                "simulation/expected_vectors.json",
+                "android/app/src/test/resources/srs_vectors.json",
+            ],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        check(
+            "a corrupted vector makes the CI drift check fail",
+            result.returncode != 0,
+            f"git diff exited {result.returncode} -- the check cannot fail",
+        )
+    finally:
+        vectors.write_text(original, encoding="utf-8")
+
+    # And that the restored file is clean again.
+    result = subprocess.run(
+        [
+            "git", "diff", "--exit-code", "--",
+            "simulation/expected_vectors.json",
+            "android/app/src/test/resources/srs_vectors.json",
+        ],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    check(
+        "the restored vectors pass the drift check again",
+        result.returncode == 0,
+        result.stdout[:200],
+    )
+
+
 def main():
     print("=" * 70)
     print("Simulation harness self-checks")
@@ -203,6 +284,7 @@ def main():
     test_profiles_are_distinct()
     test_content_loader_refuses_to_invent()
     test_simulation_runs_and_is_deterministic()
+    test_drift_guard_is_not_vacuous()
 
     print()
     if failures:

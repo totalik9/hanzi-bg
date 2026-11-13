@@ -3,5 +3,8 @@ __pycache__/
 
 # Simulation output
 /results.json
-/expected_vectors.json
 /analysis_output.txt
+# expected_vectors.json is NOT ignored: it is tracked in git, because CI
+# diffs it against the Kotlin test vectors to catch scheduler drift, and
+# `git diff` on an untracked file silently passes, which would make that
+# check vacuous.

@@ -24,19 +24,43 @@ class ContentDatabaseProvider @Inject constructor(
 
     private var cached: SQLiteDatabase? = null
 
+    /**
+     * The file the database is opened from, when it is set directly.
+     *
+     * The instrumented tests point this at a fixture database instead
+     * of the 19.7 MB one that ships in the APK: the tests assert on
+     * what the screens show, and a fixture holding six words says
+     * everything they need to. It is also what makes the tests fast
+     * enough to run in CI.
+     *
+     * It is set by the test before the app starts, and it is null in
+     * the app itself.
+     */
+    @Volatile
+    var overridePath: String? = null
+
     val database: SQLiteDatabase?
         get() = cached ?: open().also { cached = it }
 
     private fun open(): SQLiteDatabase? = try {
-        val target = ensureCopied()
-        if (target != null) {
+        val override = overridePath ?: testOverridePath
+        if (override != null) {
             SQLiteDatabase.openDatabase(
-                target.absolutePath,
+                override,
                 null,
                 SQLiteDatabase.OPEN_READONLY,
             )
         } else {
-            null
+            val target = ensureCopied()
+            if (target != null) {
+                SQLiteDatabase.openDatabase(
+                    target.absolutePath,
+                    null,
+                    SQLiteDatabase.OPEN_READONLY,
+                )
+            } else {
+                null
+            }
         }
     } catch (e: IOException) {
         Log.e(TAG, "Unable to open content database", e)
@@ -84,6 +108,19 @@ class ContentDatabaseProvider @Inject constructor(
         if (exists()) readText() else null
     } catch (e: IOException) {
         null
+    }
+
+    companion object {
+        /**
+         * The database the instrumented tests run against.
+         *
+         * The provider is created by Hilt before any test code runs, so
+         * the path has to be reachable without an instance. It is null
+         * in the app, and it is set by the test runner's setup.
+         */
+        @Volatile
+        @JvmStatic
+        var testOverridePath: String? = null
     }
 }
 

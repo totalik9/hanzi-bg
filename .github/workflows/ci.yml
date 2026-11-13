@@ -27,6 +27,14 @@ jobs:
 
       - name: Verify the Python port matches the Kotlin scheduler
         run: |
+          # The vectors are tracked in git. `git diff` on an untracked
+          # file exits 0, so the check below would pass no matter what
+          # the file contained -- a check that cannot fail is not a
+          # check. The ls-files test makes the vacuous case an error.
+          test -n "$(git ls-files simulation/expected_vectors.json)" || {
+            echo "::error::expected_vectors.json is not tracked - the drift check is vacuous"
+            exit 1
+          }
           python simulation/make_vectors.py
           git diff --exit-code -- simulation/expected_vectors.json \
             android/app/src/test/resources/srs_vectors.json \
@@ -86,6 +94,110 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      # The release build is the one that matters -- it is what goes to
+      # the Play Store -- and it is the one that has broken before: the
+      # syncContentDb task used to write into app/src/main/assets, a
+      # SOURCE directory, and lintVital failed with "uses this output
+      # of task ':app:syncContentDb' without declaring an explicit or
+      # implicit dependency". Nothing in CI would have caught that.
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Run the release lint
+        working-directory: android
+        run: ./gradlew :app:lintVitalRelease --no-daemon
+
+      # The content database is copied out of the APK byte-for-byte on
+      # first launch, so its entry has to be STORED, not DEFLATED. A
+      # compressed entry would make the copy fail on the device.
+      - name: Check the content DB ships uncompressed
+        working-directory: android
+        run: |
+          set -euo pipefail
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          echo "APK: $apk"
+          listing=$(unzip -l "$apk" | grep -E 'assets/content/content\.db' || true)
+          if [ -z "$listing" ]; then
+            echo "::error::content.db is not in the release APK"
+            exit 1
+          fi
+          echo "$listing"
+          # "Stored" means the entry is uncompressed; "Defl" means it
+          # is compressed and the byte-for-byte copy would break.
+          if echo "$listing" | grep -q 'Defl'; then
+            echo "::error::content.db is compressed in the APK - the first-launch copy would fail"
+            exit 1
+          fi
+          echo "content.db is stored uncompressed"
+
+      - name: Upload the release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hanzi-bg-release
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  # The five practice modes, on an emulator.
+  #
+  # The pure logic of the modes is covered by the unit tests, but the
+  # modes themselves were not tested at all -- the repo's own plan
+  # named this as the gap. The instrumented tests run against a
+  # fixture database with six words, so they are fast.
+  instrumented:
+    name: Instrumented tests (emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up the Android SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "system-images;android-34;google_apis;x86_64"
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/*.libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # The emulator action needs the Gradle cache and the AVD out of
+      # the way, and the tests need the fixture database.
+      - name: Build the fixture content database
+        run: python pipeline/make_test_fixture.py
+
+      - name: Run the instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-snapshot-save
+          script: cd android && ./gradlew :app:connectedDebugAndroidTest --no-daemon
+
+      - name: Upload the test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-report
+          path: android/app/build/reports/androidTests/connected/**
+          if-no-files-found: ignore
+
   lint:
     name: Pipeline scripts compile
     runs-on: ubuntu-latest
@@ -100,6 +212,12 @@ jobs:
       - name: Install pytest
         run: pip install --upgrade pytest
 
+      # The pipeline needs these to reproduce the content. Without
+      # beautifulsoup4 the grammar build discovers zero pages and
+      # silently produces 11 grammar points instead of 506.
+      - name: Install the pipeline dependencies
+        run: python -m pip install -r pipeline/requirements.txt
+
       - name: Byte-compile every pipeline script
         run: python -m compileall -q pipeline simulation
 
@@ -112,10 +230,54 @@ jobs:
 
       - name: Check the pipeline scripts expose the expected entry points
         run: |
-          for f in 01_fetch_sources 02_build_dictionary 03_build_vocab \
+          for f in 00_build_all 01_fetch_sources 02_build_dictionary 03_build_vocab \
                    04_build_grammar 05_build_sentences 06_build_audio \
                    07_translate_bulgarian 08_build_content_db \
-                   09_clean_glosses 10_compare_models; do
+                   09_clean_glosses 10_compare_models \
+                   _build_char_readings _build_syllable_inventory _build_word_freq; do
             test -f "pipeline/${f}.py" || { echo "::error::missing pipeline/${f}.py"; exit 1; }
           done
           echo "all pipeline entry points present"
+
+      # The guards that stop a degraded content database from shipping.
+      # A missing input has to be an error, not a warning: a run that
+      # "succeeds" with 11 grammar points and 0 Bulgarian glosses
+      # produces the content.db that goes into the APK.
+      - name: Check the pipeline fails loudly on a missing input
+        run: |
+          set -euo pipefail
+          # A copy of the repo with the syllable inventory removed.
+          tmp=$(mktemp -d)
+          cp -r pipeline "$tmp/pipeline"
+          mkdir -p "$tmp/data/raw"
+          rm -f "$tmp/data/raw/pinyin_syllables.json"
+          if python "$tmp/pipeline/pinyin_utils.py" 2>/dev/null; then
+            echo "::error::the pipeline did not fail on a missing input"
+            exit 1
+          fi
+          echo "the pipeline fails loudly on a missing input"
+
+      - name: Check the content database quality gate
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "pipeline")
+          import importlib.util
+          spec = importlib.util.spec_from_file_location(
+              "build_content_db", "pipeline/08_build_content_db.py"
+          )
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          # The gate must reject an empty database.
+          import sqlite3, tempfile, os
+          path = os.path.join(tempfile.mkdtemp(), "empty.db")
+          conn = sqlite3.connect(path)
+          conn.executescript(module.SCHEMA)
+          problems = module.check_content_quality(conn)
+          assert problems, "the quality gate accepted an empty database"
+          print("the quality gate rejects an empty database:")
+          for problem in problems:
+              print("   -", problem)
+          PY
