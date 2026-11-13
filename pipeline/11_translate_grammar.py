@@ -226,7 +226,13 @@ def mask(text: str, syllables: set[str]) -> tuple[str, dict[str, str]]:
         for name, value in terms.items():
             if value == term:
                 return name
-        name = f"TERM{len(terms) + 1}"
+        # The bracket form is deliberate. NLLB-200 translated a plain
+        # "TERM1" into "ТЕРМ1" -- it read it as an English word and
+        # translated it -- and then the placeholder could not be found
+        # and the Chinese term was appended to the end of the sentence
+        # instead of standing where it belonged. A bracketed token is
+        # carried through unchanged.
+        name = f"[P{len(terms) + 1}]"
         terms[name] = term
         return name
 
@@ -242,18 +248,44 @@ def mask(text: str, syllables: set[str]) -> tuple[str, dict[str, str]]:
     return masked, terms
 
 
+# The placeholder as it comes back when the model has transliterated
+# it: "TERM1" came back as "ТЕРМ1". The Cyrillic letters are matched
+# explicitly because the damage is exactly that kind.
+_MANGLED = re.compile(r"[ТТ][EЕ][RР][MМ]\s*(\d+)")
+
+
 def unmask(text: str, terms: dict[str, str]) -> str:
     """Put the Chinese terms back.
 
-    A placeholder the model dropped is appended rather than lost: a
-    missing character is visible and can be fixed, an invisible one
-    teaches the learner the wrong thing.
+    Three cases, in the order they are handled:
+
+      1. The placeholder is there -- put the term back in its place.
+      2. The placeholder was transliterated ("[P1]" -> "[П1]" or
+         "ТЕРМ1"). It is recognised and repaired.
+      3. The placeholder is gone entirely. The term is appended
+         rather than lost: a missing character is visible and can be
+         fixed, an invisible one teaches the learner the wrong thing.
     """
     for name, term in terms.items():
         if name in text:
             text = text.replace(name, term)
-        else:
-            text = text.rstrip() + " " + term
+            continue
+
+        # A mangled placeholder: the model transliterated the token
+        # instead of carrying it through.
+        number = re.sub(r"\D", "", name)
+        if number:
+            mangled = re.compile(
+                r"\[" + re.escape(name[1]) + r"\d*\]?"
+                r"|[ТТ][EЕ][RР][MМ]\s*" + number + r"\b",
+                re.IGNORECASE,
+            )
+            replaced = mangled.sub(term, text)
+            if replaced != text:
+                text = replaced
+                continue
+
+        text = text.rstrip() + " " + term
     return text
 
 
