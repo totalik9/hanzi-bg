@@ -1,8 +1,8 @@
 import csv, json, os, sqlite3, sys
-sys.path.insert(0, r"C:/Users/IPP/projects/hanzi-bg/pipeline")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import split_pinyin_syllables, tone_marked_to_number
 
-ROOT = r"C:/Users/IPP/projects/hanzi-bg"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "data", "raw")
 conn = sqlite3.connect(os.path.join(ROOT, "data", "hanzi.db"))
 

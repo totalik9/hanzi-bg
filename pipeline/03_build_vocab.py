@@ -27,6 +27,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import os
@@ -36,6 +37,7 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _guards  # noqa: E402
 from pinyin_utils import (  # noqa: E402
     DATA,
     RAW,
@@ -375,6 +377,17 @@ def load_char_pinyin(conn: sqlite3.Connection) -> dict[str, str]:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Build the graded HSK vocabulary list")
+    ap.add_argument(
+        "--allow-degraded",
+        action="store_true",
+        help="carry on when an input is missing, with a warning "
+             "(the output is then NOT fit for the app)",
+    )
+    args = ap.parse_args()
+    if args.allow_degraded:
+        _guards.set_allow_degraded()
+
     if not os.path.exists(DB_PATH):
         print(f"ERROR: missing {DB_PATH} - run 02_build_dictionary.py first")
         return 1
@@ -394,11 +407,13 @@ def main() -> int:
     # per-character reading lists, used to disambiguate run-together pinyin
     char_readings: dict[str, list[str]] = {}
     cr_path = os.path.join(RAW, "char_readings.json")
-    if os.path.exists(cr_path):
+    if _guards.require_file(
+        cr_path,
+        "the per-character reading map",
+        "python pipeline/_build_char_readings.py",
+    ):
         with open(cr_path, encoding="utf-8") as fh:
             char_readings = json.load(fh)
-    else:
-        print("  WARNING: char_readings.json missing - run _build_char_readings.py")
     print(f"  characters with reading lists: {len(char_readings):,}")
 
     # Wiktionary part-of-speech labels (CC-CEDICT has none)
@@ -422,7 +437,11 @@ def main() -> int:
     # corpus frequency ranks
     freq_rank: dict[str, int] = {}
     fr_path = os.path.join(RAW, "word_freq.json")
-    if os.path.exists(fr_path):
+    if _guards.require_file(
+        fr_path,
+        "the corpus frequency ranks",
+        "python pipeline/_build_word_freq.py",
+    ):
         with open(fr_path, encoding="utf-8") as fh:
             freq_rank = {k: int(v) for k, v in json.load(fh).items()}
     print(f"  words with a corpus frequency rank: {len(freq_rank):,}")

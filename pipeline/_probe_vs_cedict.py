@@ -4,10 +4,10 @@ CC-CEDICT covers 100% of HSK words with space-separated pinyin, so it is the
 reference. This decides which source the vocab builder should trust.
 """
 import csv, json, os, sqlite3, sys
-sys.path.insert(0, r"C:/Users/IPP/projects/hanzi-bg/pipeline")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import split_pinyin_by_chars, split_pinyin_syllables, strip_tones
 
-ROOT = r"C:/Users/IPP/projects/hanzi-bg"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "data", "raw")
 char_readings = json.load(open(os.path.join(RAW, "char_readings.json"), encoding="utf-8"))
 conn = sqlite3.connect(os.path.join(ROOT, "data", "hanzi.db"))

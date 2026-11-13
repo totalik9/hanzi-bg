@@ -1,7 +1,7 @@
 import csv, json, os, re, sqlite3, sys
 from collections import Counter
 
-ROOT = r"C:/Users/IPP/projects/hanzi-bg"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "pipeline"))
 from pinyin_utils import tone_marked_to_number  # noqa: E402
 

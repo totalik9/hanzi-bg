@@ -12,8 +12,13 @@ import time
 
 import requests
 
+# The repository root, derived from this file: the script used to
+# carry the original developer's absolute path, which is dead on any
+# other machine.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 URL = "https://kaikki.org/dictionary/downloads/zh/zh-extract.jsonl.gz"
-OUT = sys.argv[1] if len(sys.argv) > 1 else "C:/Users/IPP/projects/hanzi-bg/data/raw/bg_zh_wiktionary.json"
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "raw", "bg_zh_wiktionary.json")
 
 h = {"User-Agent": "Mozilla/5.0"}
 result = {}

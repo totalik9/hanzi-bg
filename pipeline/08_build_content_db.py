@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sqlite3
 import sys
 import time
@@ -47,6 +48,11 @@ BG_GLOSS = os.path.join(RAW, "bg_zh_wiktionary.json")
 # machine glosses for the rest.
 BG_TRANSLATIONS = os.path.join(DATA, "bg_translations.json")
 RAW_MANIFEST = os.path.join(RAW, "manifest.json")
+# The machine-readable list of sources and licences. It is tracked in
+# the repository root (data/ is not versioned), so the app can show
+# where the content came from and which licence covers what.
+SOURCES_JSON = os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "sources.json")
 
 OUT = os.path.join(DATA, "content.db")
 
@@ -75,6 +81,10 @@ CREATE TABLE grammar (
     level    TEXT NOT NULL DEFAULT '',
     category TEXT NOT NULL DEFAULT '',
     summary  TEXT NOT NULL DEFAULT '',
+    -- the Bulgarian summary, from 11_translate_grammar.py. The app is
+    -- for Bulgarian learners, so the English summary is the fallback
+    -- and this is what is shown.
+    summary_bg TEXT NOT NULL DEFAULT '',
     body     TEXT NOT NULL DEFAULT '',
     examples TEXT NOT NULL DEFAULT ''
 );
@@ -281,13 +291,14 @@ def build_grammar(conn: sqlite3.Connection) -> int:
             e.get("level") or "",
             e.get("category") or "",
             summary,
+            e.get("summary_bg") or "",
             body,
             json.dumps(examples, ensure_ascii=False),
         ))
 
     conn.executemany(
-        "INSERT INTO grammar (title, title_bg, level, category, summary, body, examples) "
-        "VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO grammar (title, title_bg, level, category, summary, summary_bg, body, examples) "
+        "VALUES (?,?,?,?,?,?,?,?)",
         rows,
     )
     return len(rows)
@@ -426,7 +437,17 @@ def build_ime(conn: sqlite3.Connection) -> int:
     a row for each, so a search for "hao" finds "你好" as well as "好".
 
     The syllable is stored in NUMERIC form without the tone ("hao3" ->
-    "hao"), because the learner types letters, not tones.
+    "hao"), because the learner types letters only.
+
+    The umlaut is stored FOLDED: "lü" becomes "lu". A phone keyboard
+    cannot produce "ü", so a learner who types "lu" has to find 绿
+    (lǜ). The stored pinyin of the word is folded the same way on the
+    app side, so the two match. Without this, 76 words -- every one that
+    carries the umlaut -- were unreachable from the production mode.
+
+    The alternative, storing the umlaut as "v" (the other Chinese IME
+    convention), is not used here: "v" is folded to "u" on the app side
+    too, so both spellings find the word.
     """
     rows = []
     for hanzi, pinyin_number, freq in conn.execute(
@@ -435,8 +456,12 @@ def build_ime(conn: sqlite3.Connection) -> int:
         for syllable in (pinyin_number or "").split():
             # strip the tone digit: the learner types letters only
             plain = syllable.rstrip("12345").lower()
-            if plain:
-                rows.append((plain, hanzi, freq))
+            if not plain:
+                continue
+            # Fold the umlaut to "u". CC-CEDICT writes it as "u:", and
+            # the pinyin-data files as "ü"; both name the same syllable.
+            plain = plain.replace("ü", "u").replace("u:", "u")
+            rows.append((plain, hanzi, freq))
 
     conn.executemany(
         "INSERT OR REPLACE INTO ime (syllable, hanzi, freq) VALUES (?,?,?)",
@@ -482,6 +507,11 @@ def build_manifest(conn: sqlite3.Connection) -> dict[str, str]:
             "the words.gloss_source column says which is which"
         ),
         "source_licenses": json.dumps(licenses, ensure_ascii=False),
+        # The full source list with the licences, from sources.json.
+        "sources_json": (
+            json.dumps(load_json(SOURCES_JSON) or {}, ensure_ascii=False)
+            if os.path.exists(SOURCES_JSON) else "{}"
+        ),
         "gloss_note": (
             "Bulgarian glosses come from Chinese Wiktionary (human) or from "
             "NLLB-200 (machine). The gloss_source column records which."
@@ -492,6 +522,70 @@ def build_manifest(conn: sqlite3.Connection) -> dict[str, str]:
         list(values.items()),
     )
     return values
+
+
+def check_content_quality(conn: sqlite3.Connection) -> list[str]:
+    """Check that the database holds the content the app needs.
+
+    A content.db that is missing half its grammar or all of its Bulgarian
+    glosses still "builds": the script prints a summary and exits 0, and
+    the APK ships with a dictionary that answers in English or not at
+    all. The failures this catches are silent, so they are checked here,
+    before the file is written, and they stop the run.
+
+    The thresholds are the measured state of a full pipeline run, minus a
+    wide margin. They are not aspirations: a build that falls below them
+    has lost a step, and the message names the step to re-run.
+    """
+    def count(sql: str) -> int:
+        return conn.execute(sql).fetchone()[0]
+
+    problems: list[str] = []
+
+    grammar = count("SELECT COUNT(*) FROM grammar")
+    if grammar < 400:
+        problems.append(
+            f"grammar: {grammar} points (expected 500+) - "
+            f"run pipeline/04_build_grammar.py"
+        )
+
+    with_bg = count("SELECT COUNT(*) FROM words WHERE gloss_bg != ''")
+    if with_bg < 10000:
+        problems.append(
+            f"Bulgarian glosses: {with_bg:,} words (expected 10,000+) - "
+            f"run pipeline/07_translate_bulgarian.py"
+        )
+
+    words = count("SELECT COUNT(*) FROM words")
+    if words < 10000:
+        problems.append(
+            f"vocabulary: {words:,} words (expected 10,000+) - "
+            f"run pipeline/03_build_vocab.py"
+        )
+
+    # Every word the learner can practise has to be pronounceable, or the
+    # listening mode is a button that plays nothing.
+    with_audio = count("SELECT COUNT(*) FROM words WHERE audio IS NOT NULL AND audio != ''")
+    if with_audio == 0:
+        problems.append(
+            "audio: no word has a pronunciation clip - "
+            "run pipeline/06_build_audio.py"
+        )
+
+    sentences = count("SELECT COUNT(*) FROM sentences")
+    if sentences < 1000:
+        problems.append(
+            f"sentences: {sentences:,} (expected 1,000+) - "
+            f"run pipeline/05_build_sentences.py"
+        )
+
+    ime = count("SELECT COUNT(*) FROM ime")
+    if ime == 0:
+        problems.append(
+            "IME index: empty - run pipeline/03_build_vocab.py"
+        )
+
+    return problems
 
 
 def remove_old_db(path: str) -> None:
@@ -528,11 +622,43 @@ def remove_old_db(path: str) -> None:
         )
 
 
+def install_db(tmp: str, out: str) -> None:
+    """Put the freshly built database in place of the old one.
+
+    The new database is built under a temporary name first, so a run that
+    fails the quality gate leaves the previous content.db untouched
+    instead of replacing a working dictionary with an empty one.
+
+    On Windows a file that another program holds open cannot be replaced,
+    so the old one is emptied in place and the new bytes are copied over.
+    """
+    try:
+        os.replace(tmp, out)
+        return
+    except OSError:
+        pass
+    remove_old_db(out)
+    with open(tmp, "rb") as src, open(out, "wb") as dst:
+        shutil.copyfileobj(src, dst)
+    try:
+        os.remove(tmp)
+    except OSError:
+        pass
+
+
 def main() -> int:
-    remove_old_db(OUT)
+    # The database is built under a temporary name. The quality gate runs
+    # on it, and only a database that passes is put in place -- a degraded
+    # content.db must never replace a working one.
+    tmp_out = OUT + ".building"
+    if os.path.exists(tmp_out):
+        try:
+            os.remove(tmp_out)
+        except OSError:
+            pass
 
     os.makedirs(DATA, exist_ok=True)
-    conn = sqlite3.connect(OUT)
+    conn = sqlite3.connect(tmp_out)
     conn.executescript(SCHEMA)
 
     audio = audio_index()
@@ -566,9 +692,30 @@ def main() -> int:
     print("building manifest ...")
     values = build_manifest(conn)
 
+    # The gate runs BEFORE the commit and the VACUUM: a database that
+    # fails it is not written, so a degraded content.db can never reach
+    # the APK. There is no --allow-degraded escape hatch here on purpose.
+    problems = check_content_quality(conn)
+    if problems:
+        conn.close()
+        try:
+            os.remove(tmp_out)
+        except OSError:
+            pass
+        print()
+        print("ERROR: the content database does not meet the quality bar:")
+        for problem in problems:
+            print(f"  - {problem}")
+        print()
+        print("The database was NOT written. The previous one is untouched.")
+        print("Re-run the steps above.")
+        return 1
+
     conn.commit()
     conn.execute("VACUUM")
     conn.close()
+
+    install_db(tmp_out, OUT)
 
     size = os.path.getsize(OUT)
     print()

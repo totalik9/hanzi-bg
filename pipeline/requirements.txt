@@ -1,0 +1,29 @@
+# Dependencies of the content pipeline.
+#
+# The pipeline is stdlib-first: the scripts below import only the standard
+# library. These are the third-party packages some of them need, and they
+# are declared here so a fresh clone can reproduce the content.
+#
+#     python -m pip install -r pipeline/requirements.txt
+#
+# The two optional groups are NOT needed to build the dictionary, the
+# vocabulary, the grammar or the content database. They are needed for the
+# two steps that talk to the outside world or run a model.
+
+# --- fetch sources / build grammar -----------------------------------
+# 01_fetch_sources.py downloads the raw corpora; 04_build_grammar.py reads
+# the rendered grammar pages with BeautifulSoup. Without it the grammar
+# build silently discovers zero pages.
+requests>=2.31
+beautifulsoup4>=4.12
+
+# --- audio -------------------------------------------------------------
+# 06_build_audio.py synthesises the pronunciation clips with Edge TTS.
+edge-tts>=6.1
+
+# --- Bulgarian translation (07_translate_bulgarian.py, optional) ------
+# Needs a ~2.5 GB model: facebook/nllb-200-distilled-600M. The glosses it
+# produces are machine translations under CC-BY-NC; see readme.md.
+# torch>=2.2
+# transformers>=4.40
+# sentencepiece>=0.2

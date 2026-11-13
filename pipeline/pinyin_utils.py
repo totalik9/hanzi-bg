@@ -16,8 +16,18 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# _guards lives next to this module. The pipeline scripts put their own
+# directory on sys.path before importing anything, but pinyin_utils is
+# also imported directly (by the doctests and by the probe scripts), so
+# the path is set up here too.
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+import _guards  # noqa: E402
+
 ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, "data")
 RAW = os.path.join(DATA, "raw")
@@ -468,8 +478,11 @@ def _load_syllable_inventory() -> set[str]:
 
     The inventory is built from the real pinyin-data files by
     _build_syllable_inventory.py and cached in data/raw/pinyin_syllables.json.
-    If that file is missing the module falls back to a small built-in set so
-    the pipeline still runs (with lower-quality splits).
+
+    A missing inventory used to fall back to the small built-in set and
+    carry on, which produced lower-quality splits with no sign that
+    anything was wrong. It now stops the run and names the command that
+    fixes it, unless the run was started with --allow-degraded.
     """
     global _INVENTORY
     if _INVENTORY is not None:
@@ -479,7 +492,12 @@ def _load_syllable_inventory() -> set[str]:
     try:
         with open(path, encoding="utf-8") as fh:
             inv = {k.lower() for k in json.load(fh).keys()}
-    except Exception:
+    except (OSError, ValueError):
+        _guards.require_file(
+            path,
+            "the pinyin syllable inventory",
+            "python pipeline/_build_syllable_inventory.py",
+        )
         inv = set(_FALLBACK_SYLLABLES)
     _INVENTORY = inv
     return inv

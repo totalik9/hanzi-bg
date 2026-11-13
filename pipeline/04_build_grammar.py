@@ -23,6 +23,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -33,6 +34,7 @@ from xml.etree import ElementTree
 import requests
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _guards  # noqa: E402
 from pinyin_utils import (  # noqa: E402
     DATA,
     RAW,
@@ -146,7 +148,11 @@ def fetch_rendered_links(url: str) -> list[tuple[str, str]]:
     try:
         from bs4 import BeautifulSoup
     except ImportError:
-        print("   WARNING: beautifulsoup4 not installed; cannot read rendered links")
+        _guards.require_import(
+            "bs4",
+            "beautifulsoup4",
+            "04_build_grammar.py",
+        )
         return []
     soup = BeautifulSoup(r.text, "html.parser")
     content = soup.find("div", {"id": "mw-content-text"}) or soup
@@ -237,10 +243,25 @@ def resolve_redirects(texts: dict[str, str]) -> dict[str, str]:
     The grammar point pages use short ASG* identifiers that redirect to a
     human-readable title; the real title is used for the entry, while the
     ASG* slug stays as the stable identifier.
+
+    The space after REDIRECT is OPTIONAL. MediaWiki accepts both
+    "#REDIRECT[[Target]]" and "#REDIRECT [[Target]]", and this wiki
+    writes the first form. The pattern used to require the space, so
+    every redirect was missed: 100 of the 506 grammar points kept
+    their raw "ASG..." slug as the title and carried a summary that
+    began with the literal text "REDIRECT". The learner saw a card
+    titled "ASGOOCVO".
+
+    >>> resolve_redirects({"ASGOOCVO": '#REDIRECT[[Expressing possession with "you"]]'})
+    {'ASGOOCVO': 'Exposing_possession_with_"you"'}
+    >>> resolve_redirects({"ASG1": '#REDIRECT [[Target page]]'})
+    {'ASG1': 'Target_page'}
+    >>> resolve_redirects({"ASG1": "A real page with content."})
+    {'ASG1': 'ASG1'}
     """
     out: dict[str, str] = {}
     for slug, text in texts.items():
-        m = re.match(r"^#REDIRECT\s+\[\[([^\]|]+)", text.strip())
+        m = re.match(r"^#REDIRECT\s*\[\[([^\]|]+)", text.strip())
         if m:
             target = m.group(1).strip().replace(" ", "_")
             out[slug] = target
@@ -439,11 +460,30 @@ def make_summary(wikitext: str) -> str:
         if p.lower().startswith(("level", "similar to", "used for", "keywords",
                                   "contents", "see also", "structure", "examples")):
             continue
+        # A page that is only a redirect has no summary of its own. Its
+        # text is "#REDIRECT[[Target]]", and stripping the markup leaves
+        # "REDIRECTExpressing possession with 'you'" -- which is what
+        # 100 of the grammar points showed. The real page is fetched
+        # separately, so an entry that falls back to the redirect text
+        # gets no summary at all rather than a broken one.
+        if p.upper().startswith("REDIRECT"):
+            return ""
         return p[:400]
     return text[:400]
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Scrape the Chinese Grammar Wiki")
+    ap.add_argument(
+        "--allow-degraded",
+        action="store_true",
+        help="carry on when an input is missing, with a warning "
+             "(the output is then NOT fit for the app)",
+    )
+    args = ap.parse_args()
+    if args.allow_degraded:
+        _guards.set_allow_degraded()
+
     os.makedirs(CACHE, exist_ok=True)
     os.makedirs(DATA, exist_ok=True)
 
@@ -470,6 +510,19 @@ def main() -> int:
                 found += 1
         print(f"  {page}: {found} grammar points")
     print(f"  discovered {len(targets)} grammar point pages")
+    # Zero discovered points is the signature of a failed scrape, not of an
+    # empty wiki: the level index pages build their tables with Semantic
+    # MediaWiki queries, so without BeautifulSoup (or with a blocked
+    # request) the ASG* list simply is not in the HTML. Carrying on here
+    # produced a grammar.json with 11 points instead of 506, and that
+    # degraded file is what shipped.
+    if not targets:
+        _guards.require_ok(
+            False,
+            "no grammar point pages were discovered (this is a failed scrape, "
+            "not an empty wiki)",
+            "python pipeline/04_build_grammar.py",
+        )
 
     print("fetching grammar point pages ...")
     point_text = fetch_wikitext_titles(sorted(targets))
