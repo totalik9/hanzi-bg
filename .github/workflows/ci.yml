@@ -271,6 +271,10 @@ jobs:
           rm -f "$tmp/data/raw/pinyin_syllables.json"
           # The inventory is loaded lazily, so the script has to be
           # asked for it: running the module does not touch it.
+          # The script exits 1 when the guard fired -- the pipeline
+          # stopped, which is what has to happen -- and 0 when it
+          # carried on, which is the bug. The `if` therefore reports the
+          # failure when the script exits 0.
           if python - "$tmp" <<'PY'
           import sys
           sys.path.insert(0, sys.argv[1] + "/pipeline")
@@ -278,9 +282,8 @@ jobs:
           try:
               pinyin_utils.split_pinyin_syllables("yīnián")
           except SystemExit:
-              sys.exit(0)
-          print("the pipeline did not fail on a missing input")
-          sys.exit(1)
+              sys.exit(1)
+          sys.exit(0)
           PY
           then
             echo "::error::the pipeline did not fail on a missing input"
