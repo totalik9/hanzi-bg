@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 
@@ -62,6 +63,47 @@ MAX_TOKENS = 128
 
 # Sentences longer than this are not word-order material.
 MAX_SENTENCE_CHARS = 12
+
+
+def is_usable(text: str) -> bool:
+    """True when a machine translation is clean enough to teach from.
+
+    The word-order mode shows the Bulgarian sentence as the thing the
+    learner is aiming at, and the learner rebuilds the Chinese to
+    match it. A wrong Bulgarian sentence is not a slightly imperfect
+    exercise -- it teaches the wrong meaning.
+
+    NLLB-200 makes three kinds of mess on short sentences, and all
+    three are caught here:
+
+      * a DIALOGUE where there should be one sentence: "- Ето го. -
+        Добре." The learner is asked to rebuild one Chinese sentence
+        and the prompt shows two.
+      * the English left in the text: "Подай се." is fine, but
+        "Submit the form." is not a translation.
+      * a gloss rather than a sentence: "Очарователно." for 討厭.
+        (disgusting) is a wrong word, and no filter can catch every
+        wrong word -- which is why the human glosses are preferred
+        wherever they exist.
+
+    The check is about the shape of the text, not about whether it is
+    correct: a filter cannot tell a wrong word from a right one. The
+    human translations from the corpus are always kept.
+    """
+    if not text:
+        return False
+    if len(text) > 80:
+        return False
+    # A dialogue: two or more dashes with a space after them.
+    if re.search(r"-\s", text):
+        return False
+    # English left in the text.
+    if re.search(r"[A-Za-z]", text):
+        return False
+    # It has to be Bulgarian.
+    if not re.search(r"[\u0400-\u04ff]", text):
+        return False
+    return True
 
 
 def load_cache(path: str) -> dict[str, str]:
@@ -190,7 +232,9 @@ def main() -> int:
         if not en_list:
             continue
         bg = cache.get(en_list[0].strip())
-        if bg:
+        # A translation that is not clean enough to teach from is
+        # dropped rather than shown: see is_usable().
+        if bg and is_usable(bg):
             e["translations_bg"] = [bg]
             filled += 1
 
