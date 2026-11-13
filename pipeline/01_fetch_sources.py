@@ -15,6 +15,7 @@ from __future__ import annotations
 import bz2
 import gzip
 import hashlib
+import argparse
 import json
 import os
 import shutil
@@ -263,6 +264,31 @@ def decompress(kind: str, src: str, dest: str) -> None:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Download the raw source files")
+    ap.add_argument(
+        "--only",
+        action="append",
+        default=[],
+        help="download only the sources whose file name starts with this "
+             "(e.g. --only pinyin). Repeatable. Everything is downloaded "
+             "when the flag is absent.",
+    )
+    args = ap.parse_args()
+
+    sources = SOURCES
+    if args.only:
+        prefixes = tuple(args.only)
+        sources = tuple(
+            (name, url, lic, kind)
+            for (name, url, lic, kind) in SOURCES
+            if name.startswith(prefixes)
+        )
+        if not sources:
+            print(f"ERROR: no source matches {args.only}")
+            return 1
+        print(f"downloading {len(sources)} of {len(SOURCES)} sources "
+              f"(prefixes: {', '.join(prefixes)})")
+
     os.makedirs(RAW, exist_ok=True)
     manifest = {}
     if os.path.exists(MANIFEST):
@@ -275,7 +301,7 @@ def main() -> int:
     results = {"downloaded": 0, "skipped": 0, "failed": 0}
     failures = []
 
-    for name, url, license_name, kind in SOURCES:
+    for name, url, license_name, kind in sources:
         dest = os.path.join(RAW, name)
         if os.path.exists(dest) and os.path.getsize(dest) > 0:
             print(f"[skip] {name} (exists, {os.path.getsize(dest):,} bytes)")

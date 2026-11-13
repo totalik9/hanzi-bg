@@ -239,12 +239,25 @@ jobs:
       - name: Byte-compile every pipeline script
         run: python -m compileall -q pipeline simulation
 
+      # The doctests exercise the pinyin splitter, and the splitter
+      # needs the syllable inventory -- which is built from the
+      # pinyin-data files, and those are a build artefact that is not in
+      # version control. Without this step the doctests fail in CI for
+      # the right reason (a missing input) and for the wrong one (the
+      # guard fires instead of the split being checked).
+      - name: Fetch the pinyin sources and build the syllable inventory
+        run: |
+          python pipeline/01_fetch_sources.py --only pinyin
+          python pipeline/_build_syllable_inventory.py
+          python pipeline/_build_char_readings.py
+
       - name: Run the pipeline doctests
         run: |
           python -m pytest --doctest-modules -q \
             pipeline/pinyin_utils.py \
             pipeline/03_build_vocab.py \
-            pipeline/07_translate_bulgarian.py
+            pipeline/07_translate_bulgarian.py \
+            pipeline/11_translate_grammar.py
 
       - name: Check the pipeline scripts expose the expected entry points
         run: |
