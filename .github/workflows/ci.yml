@@ -46,6 +46,9 @@ jobs:
   android:
     name: Android build + unit tests
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
 
@@ -67,8 +70,6 @@ jobs:
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0"
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -165,6 +166,15 @@ jobs:
   instrumented:
     name: Instrumented tests (emulator)
     runs-on: ubuntu-latest
+    # The emulator is the slowest step in the pipeline. A timeout stops
+    # a wedged emulator from holding the whole workflow open.
+    timeout-minutes: 45
+    # The emulator action has to find the SDK that the step below
+    # installs the system image into, so the path is set for the whole
+    # job and not only for the step that uses it.
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
 
@@ -181,8 +191,6 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0" \
             "system-images;android-34;google_apis;x86_64"
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -203,9 +211,12 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
+          # The system image installed above is the google_apis one,
+          # and the action's default target is the plain AOSP image.
+          # They are different packages.
+          target: google_apis
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -noaudio -gpu swiftshader_indirect -no-snapshot-save
           script: cd android && ./gradlew :app:connectedDebugAndroidTest --no-daemon
 
       - name: Upload the test report
