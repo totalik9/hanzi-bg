@@ -189,6 +189,12 @@ jobs:
   instrumented:
     name: Instrumented tests (emulator)
     runs-on: ubuntu-latest
+    # The diagnostics are pushed to a branch so that a failing run can
+    # be read without admin rights on the repository. The job log is
+    # admin-only, and the artefact download needs actions:read, so
+    # neither is available to the person who has to fix the failure.
+    permissions:
+      contents: write
     # The emulator is the slowest step in the pipeline. A timeout stops
     # a wedged emulator from holding the whole workflow open. It has
     # to be generous: the emulator alone can take half an hour to boot
@@ -312,6 +318,27 @@ jobs:
           name: instrumented-diagnostics
           path: instrumented-diagnostics/**
           if-no-files-found: ignore
+
+      # The same files, pushed to a branch, so that a failing run can
+      # be read WITHOUT any special permission at all:
+      #
+      #   https://github.com/totalik9/hanzi-bg/tree/ci-diagnostics
+      #
+      # The branch is disposable -- it is overwritten on every failing
+      # run and can be deleted at any time.
+      - name: Publish the diagnostics to a branch
+        if: failure()
+        run: |
+          set -euo pipefail
+          [ -d instrumented-diagnostics ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin ci-diagnostics || true
+          git checkout -B ci-diagnostics
+          git add -f instrumented-diagnostics
+          git commit -m "ci diagnostics from run ${GITHUB_RUN_ID}" || true
+          git push --force origin ci-diagnostics
+          echo "::notice::diagnostics published to the ci-diagnostics branch"
 
   lint:
     name: Pipeline scripts compile
