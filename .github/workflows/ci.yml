@@ -90,6 +90,23 @@ jobs:
           python pipeline/make_test_fixture.py
           mkdir -p data
           cp android/app/src/androidTest/assets/content/content.db data/content.db
+          # The database above holds SIX words. It is a fixture, and it
+          # is what the APK below is built from -- so the APK is a
+          # packaging smoke test, not the app. The artefact names say
+          # so, because an artefact called "release" that contains six
+          # words is worse than no artefact at all: somebody downloads
+          # it, installs it, and ships a toy to the Play Store.
+          #
+          # The real content is a build artefact of the pipeline (data/
+          # is not in version control), and it takes ~40 minutes of
+          # model time to build. It does not belong in a per-push CI
+          # run.
+          echo "content.db words: $(python - <<'PY'
+          import sqlite3
+          conn = sqlite3.connect('data/content.db')
+          print(conn.execute('select count(*) from words').fetchone()[0])
+          PY
+          )"
 
       - name: Run unit tests
         working-directory: android
@@ -102,7 +119,9 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: hanzi-bg-debug
+          # "fixture" in the name, because the content database in this
+          # APK has six words. See the note above.
+          name: hanzi-bg-debug-fixture
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -153,7 +172,11 @@ jobs:
       - name: Upload the release APK
         uses: actions/upload-artifact@v4
         with:
-          name: hanzi-bg-release
+          # NOT "hanzi-bg-release". This APK is built from the six-word
+          # fixture database, so it is a release BUILD with fixture
+          # CONTENT. Naming it "release" invited the reading that it is
+          # the shippable app.
+          name: hanzi-bg-release-build-fixture-content
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
@@ -178,6 +201,13 @@ jobs:
     #
     # The tests themselves pass on an emulator: they were written
     # against a local API 34 image and run green there.
+    #
+    # This job failed on EVERY run before (4 failures, 5 cancelled, 0
+    # passes) because the action's default "-gpu swiftshader_indirect"
+    # is not a mode emulator 37 accepts -- it was deprecated in 36.4.9
+    # and the runner image ships 37.x. The emulator died on the flag
+    # and the action then waited for a device that would never come.
+    # The flag and the boot timeout are set explicitly below.
     continue-on-error: true
     # The emulator action has to find the SDK that the step below
     # installs the system image into, so the path is set for the whole
@@ -230,6 +260,24 @@ jobs:
           # A named profile that does not exist for this image leaves
           # the emulator with the wrong screen.
           force-avd-creation: true
+          # The action's default GPU mode is "-gpu swiftshader_indirect",
+          # and the emulator no longer accepts it: swiftshader_indirect
+          # was deprecated in emulator 36.4.9 and the runner image
+          # ships emulator 37.x. The modes emulator 37 accepts are
+          # auto, host, software, lavapipe, swiftshader and swangle --
+          # "swiftshader" is the direct replacement, and it is what the
+          # deprecated name was an alias for.
+          #
+          # This is why the job failed with "Timeout waiting for
+          # emulator to boot" on every run: the emulator process died
+          # on the unknown flag, and the action then sat polling a
+          # device that would never appear until the timeout.
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim
+          # The default is 600 seconds. A cold runner with software
+          # rendering is slower than that, and the failure mode is
+          # another timeout -- so the budget is raised rather than
+          # left to chance.
+          emulator-boot-timeout: 1800
           script: cd android && ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
 
       - name: Upload the test report
@@ -291,6 +339,7 @@ jobs:
                    04_build_grammar 05_build_sentences 06_build_audio \
                    07_translate_bulgarian 08_build_content_db \
                    09_clean_glosses 10_compare_models \
+                   11_translate_grammar 12_translate_sentences \
                    _build_char_readings _build_syllable_inventory _build_word_freq; do
             test -f "pipeline/${f}.py" || { echo "::error::missing pipeline/${f}.py"; exit 1; }
           done
