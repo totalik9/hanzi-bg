@@ -301,6 +301,7 @@ class MirrorSource:
         self._tarball: bytes | None = None
         self._pages: dict[str, str] = {}
         self._titles: dict[str, str] = {}
+        self._level_map: dict[str, list[str]] | None = None
 
     def _load(self) -> None:
         if self._pages:
@@ -312,11 +313,16 @@ class MirrorSource:
     def index_pages(self) -> dict[str, str]:
         """The level index pages.
 
-        They are not in the mirror, so they come from the live site or
-        from the Internet Archive. There are only eight of them, so
-        the rate limiting does not bite, and they are worth the eight
-        requests: they carry the level of the points whose own
-        wikitext has no level category -- 63 of the 506.
+        They are not in the mirror, and they are not needed: the level
+        of every point is in the checked-in mapping
+        (pipeline/reference/grammar_levels.json), which was read from the
+        index pages and is kept in version control.
+
+        The index pages are still fetched when they can be, because
+        they are the authority on the level and a fresh copy is newer
+        than the checked-in one. But the pipeline does not depend on
+        them: the Internet Archive rate-limits hard enough that a fresh
+        clone cannot count on getting eight pages out of it.
         """
         self._load()
         out: dict[str, str] = {}
@@ -327,7 +333,7 @@ class MirrorSource:
             # are not worth a request the archive will rate-limit.
             if page not in LEVEL_PAGES:
                 continue
-            html = fetch_rendered_page(page)
+            html = fetch_rendered_page(page, attempts=1)
             if html:
                 out[page.replace(" ", "_")] = html
         return out
@@ -335,10 +341,10 @@ class MirrorSource:
     def rendered_links(self, page: str) -> list[tuple[str, str]]:
         """The grammar points of a level.
 
-        The index pages are the authority on which point belongs to
-        which level, so they are used when they are available. The
-        mirror's own level categories are the fallback: they agree
-        with the index pages for every point that has both.
+        The checked-in mapping is the authority: it was read from the
+        level index pages themselves. The mirror's own level
+        categories are the fallback, and the two agree for every point
+        that has both.
         """
         self._load()
         level = LEVEL_PAGES.get(page, "")
@@ -346,9 +352,21 @@ class MirrorSource:
             return []
         out = []
         for slug, text in sorted(self._pages.items()):
-            if self._m.level_of(text) == level:
+            if self.level_of(slug) == level:
                 out.append((self._m.title_of(text) or slug, slug))
         return out
+
+    def level_of(self, slug: str) -> str:
+        """The level of a grammar point.
+
+        The checked-in mapping first, then the point's own category.
+        """
+        if self._level_map is None:
+            self._level_map = self._m.read_levels()
+        mapped = self._m.level_from_map(slug, self._level_map)
+        if mapped:
+            return mapped
+        return self._m.level_of(self._pages.get(slug, ""))
 
     def point_pages(self, slugs: list[str]) -> dict[str, str]:
         self._load()
@@ -921,7 +939,7 @@ def main() -> int:
             for _t, slug in fetch_rendered_links_cache.get(page, [])
             if slug.startswith("ASG")
         }
-        if index_pages and targets and point_pages:
+        if targets and point_pages:
             source = candidate
             break
         print(f"  the {candidate.name} source did not deliver; trying the next one")
@@ -994,6 +1012,10 @@ def main() -> int:
         for m in re.finditer(r"\[\[Category:([^\]|]+)", body):
             categories.add(m.group(1).strip())
         level = detect_level(slug, categories)
+        if not level and isinstance(source, MirrorSource):
+            # The mirror knows the level from the checked-in mapping,
+            # which was read from the level index pages.
+            level = source.level_of(slug)
         if not level:
             # record the level whose index page links to this point
             for page in LEVEL_PAGES:

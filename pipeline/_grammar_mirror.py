@@ -50,6 +50,7 @@ collects nothing, while the mirror arrives in a second.
 from __future__ import annotations
 
 import io
+import json
 import os
 import re
 import tarfile
@@ -61,6 +62,22 @@ import requests
 MIRROR_REPO = "ivankra/asg"
 MIRROR_TARBALL = (
     "https://codeload.github.com/ivankra/asg/tar.gz/refs/heads/master"
+)
+
+# The level of every grammar point, kept in version control.
+#
+# The wiki builds its level tables with Semantic MediaWiki queries, so
+# the list of points per level exists only in the rendered index pages
+# -- and the wiki is behind a Cloudflare challenge. The Internet
+# Archive has snapshots of those eight index pages, but it
+# rate-limits hard enough that a fresh clone cannot count on getting
+# them.
+#
+# So the mapping is checked in. It was read from the archive snapshots
+# of the eight level index pages, and it agrees with the mirror's own
+# category tags for every point that has both.
+LEVELS_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "reference", "grammar_levels.json"
 )
 
 _UA = (
@@ -241,3 +258,42 @@ def save_mirror(pages: dict[str, str], out_dir: str) -> str:
         with open(os.path.join(out_dir, safe + ".txt"), "w", encoding="utf-8") as fh:
             fh.write(text)
     return out_dir
+
+
+def read_levels() -> dict[str, list[str]]:
+    """The level of every grammar point, from the checked-in mapping.
+
+    >>> levels = read_levels()
+    >>> "A1" in levels["ASG04ZCI"]
+    True
+    """
+    if not os.path.exists(LEVELS_FILE):
+        return {}
+    with open(LEVELS_FILE, encoding="utf-8") as fh:
+        doc = json.load(fh)
+    return doc.get("levels", {})
+
+
+def level_from_map(slug: str, mapping: dict[str, list[str]]) -> str:
+    """The CEFR level of a point, from the checked-in mapping.
+
+    The wiki lists a point under both a CEFR level and an HSK level,
+    and the CEFR one is the one the app shows. A point that is only
+    listed under an HSK level keeps that.
+
+    >>> m = {"ASGX": ["B1", "HSK_2"], "ASGY": ["HSK_3"]}
+    >>> level_from_map("ASGX", m)
+    'B1'
+    >>> level_from_map("ASGY", m)
+    'HSK3'
+    >>> level_from_map("ASGZ", m)
+    ''
+    """
+    levels = mapping.get(slug) or []
+    for name in ("A1", "A2", "B1", "B2", "C1"):
+        if name in levels:
+            return name
+    for name in levels:
+        if name.startswith("HSK"):
+            return name.replace("HSK_", "HSK")
+    return ""
