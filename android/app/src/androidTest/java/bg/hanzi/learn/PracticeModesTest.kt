@@ -3,6 +3,7 @@ package bg.hanzi.learn
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
@@ -108,6 +109,23 @@ class PracticeModesTest {
         openPractice()
 
         for (mode in listOf("Производство", "Слушане", "Подреждане", "Писане", "Граматика")) {
+            // The chips live in a LazyRow and only two or three of the
+            // five fit on the screen. A chip that is scrolled out of
+            // view is NOT COMPOSED AT ALL -- it is not in the tree, so
+            // it cannot be found by its text, however correct the text
+            // is.
+            //
+            // So the row has to be scrolled to the chip first, the
+            // same way selectMode() does it. Asserting on the text of
+            // an off-screen chip passed on a screen where four chips
+            // happened to fit and failed on one where three did --
+            // which is why this test failed on the CI runner while
+            // passing on the developer's emulator. The failure had
+            // nothing to do with the app.
+            composeRule.onNodeWithTag("mode_selector")
+                .performScrollToNode(hasText(mode))
+            composeRule.waitForIdle()
+
             assertTrue(
                 "the mode '$mode' must be offered",
                 composeRule.onAllNodesWithText(mode).fetchSemanticsNodes().isNotEmpty(),
