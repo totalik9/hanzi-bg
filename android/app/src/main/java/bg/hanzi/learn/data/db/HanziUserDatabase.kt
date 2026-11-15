@@ -53,6 +53,16 @@ interface SrsCardDao {
 
     @Query("SELECT COUNT(*) FROM srs_card WHERE level = :level")
     suspend fun learnedCount(level: String): Int
+
+    /**
+     * The words the learner has met, for the given levels.
+     *
+     * The review screen needs them so it can offer the words the
+     * learner has NOT met yet: without that it offered the same first
+     * words of the level for ever.
+     */
+    @Query("SELECT itemId FROM srs_card WHERE level IN (:levels)")
+    suspend fun learnedItemIds(levels: List<String>): List<String>
 }
 
 @Dao

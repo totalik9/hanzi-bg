@@ -146,27 +146,33 @@ class ReviewViewModel @Inject constructor(
     private fun loadNext() {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            val due = srsDao.dueCards(now, 20)
+            val levels = LevelSelection.levelsOf(levelSelection)
+
+            // The cards that are due. They come first: they are the
+            // reviews the learner is supposed to do today.
+            val due = srsDao.dueCards(now, ReviewDeck.SESSION_SIZE)
             val dueWords = due.mapNotNull { card ->
                 content.wordByHanzi(card.itemId)
             }
 
-            if (dueWords.isNotEmpty()) {
-                queue = dueWords
-                index = 0
-                _uiState.value = ReviewUiState(
-                    loading = false,
-                    revealed = false,
-                    current = queue[0],
-                    levelLabel = LevelSelection.labelOf(levelSelection),
-                )
-                return@launch
-            }
+            // The words the learner has already met, so the session can
+            // be filled with the ones they have NOT met: the deck used
+            // to offer the same first words of the level for ever, and
+            // the rest of the level was unreachable from here.
+            val learned = srsDao.learnedItemIds(levels).toSet()
 
-            // Nothing due — seed the session with the selected level's
-            // words so the learner can still study.
-            val levels = LevelSelection.levelsOf(levelSelection)
-            val words = content.wordsForLevels(levels, limit = 20)
+            // How many candidates to read: at most `learned.size` of
+            // them can be learned ones, so this many always holds twenty
+            // that are not. The limit is a maximum, so a level smaller
+            // than that simply returns all of its words.
+            val candidates = ReviewDeck.SESSION_SIZE + learned.size
+            val levelWords = content.wordsForLevels(levels, limit = candidates)
+
+            val words = ReviewDeck.session(
+                due = dueWords,
+                levelWords = levelWords,
+                learned = learned,
+            )
             queue = words
             index = 0
             _uiState.value = ReviewUiState(

@@ -258,19 +258,49 @@ def test_drift_guard_is_not_vacuous():
     finally:
         vectors.write_text(original, encoding="utf-8")
 
-    # And that the restored file is clean again.
-    result = subprocess.run(
-        [
-            "git", "diff", "--exit-code", "--",
-            "simulation/expected_vectors.json",
-            "android/app/src/test/resources/srs_vectors.json",
-        ],
-        cwd=ROOT, capture_output=True, text=True,
+    # And that the vectors on disk are NOT STALE.
+    #
+    # This used to be "git diff is clean", which is a different thing:
+    # `git diff` compares the working tree with the INDEX, so it
+    # reports a difference whenever the regenerated vectors have not
+    # been committed -- even when they are perfectly correct. The
+    # self-check then failed on a fresh checkout with the fix in
+    # progress, which is exactly when it is least useful.
+    #
+    # The invariant that actually matters is: regenerating the vectors
+    # produces EXACTLY the files that are on disk. If the scheduler
+    # changes and the vectors are not regenerated, this fails. When
+    # CI runs `git diff --exit-code` after regenerating, it checks the
+    # same thing plus "and they were committed".
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "make_vectors", ROOT / "simulation" / "make_vectors.py"
+    )
+    make_vectors = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(make_vectors)
+
+    generated_vectors, generated_expected = make_vectors.build()
+    kotlin_path = ROOT / "android/app/src/test/resources/srs_vectors.json"
+    expected_path = ROOT / "simulation/expected_vectors.json"
+
+    on_disk_kotlin = json.loads(kotlin_path.read_text(encoding="utf-8"))
+    on_disk_expected = json.loads(expected_path.read_text(encoding="utf-8"))
+
+    check(
+        "the Kotlin vectors are not stale",
+        on_disk_kotlin == generated_vectors,
+        "run simulation/make_vectors.py",
     )
     check(
-        "the restored vectors pass the drift check again",
-        result.returncode == 0,
-        result.stdout[:200],
+        "the Python vectors are not stale",
+        on_disk_expected == generated_expected,
+        "run simulation/make_vectors.py",
+    )
+    check(
+        "the Kotlin and Python vectors describe the same reviews",
+        {k: v["steps"] for k, v in on_disk_kotlin.items()} == on_disk_expected,
+        "the two files have drifted apart",
     )
 
 

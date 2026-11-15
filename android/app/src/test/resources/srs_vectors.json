@@ -190,12 +190,12 @@
       {
         "rating": "HARD",
         "now": 1700086400000,
-        "dueAt": 1700087000000,
+        "dueAt": 1700244540370,
         "stability": 1.54,
         "difficulty": 5.3,
         "reps": 2,
         "lapses": 0,
-        "state": 0
+        "state": 1
       },
       {
         "rating": "AGAIN",
@@ -295,12 +295,12 @@
       {
         "rating": "HARD",
         "now": 1700172800000,
-        "dueAt": 1700173400000,
+        "dueAt": 1700259200000,
         "stability": 0.6,
         "difficulty": 8.9,
         "reps": 1,
         "lapses": 2,
-        "state": 2
+        "state": 1
       },
       {
         "rating": "GOOD",
@@ -553,42 +553,42 @@
       {
         "rating": "HARD",
         "now": 1700086400000,
-        "dueAt": 1700087000000,
+        "dueAt": 1700172800000,
         "stability": 0.88,
         "difficulty": 6.8,
         "reps": 2,
         "lapses": 0,
-        "state": 0
+        "state": 1
       },
       {
         "rating": "HARD",
         "now": 1700172800000,
-        "dueAt": 1700173400000,
+        "dueAt": 1700337908426,
         "stability": 0.968,
         "difficulty": 7.1,
         "reps": 3,
         "lapses": 0,
-        "state": 0
+        "state": 1
       },
       {
         "rating": "HARD",
         "now": 1700259200000,
-        "dueAt": 1700259800000,
+        "dueAt": 1700542215523,
         "stability": 1.0648,
         "difficulty": 7.4,
         "reps": 4,
         "lapses": 0,
-        "state": 0
+        "state": 1
       },
       {
         "rating": "HARD",
         "now": 1700345600000,
-        "dueAt": 1700346200000,
+        "dueAt": 1700776819858,
         "stability": 1.17128,
         "difficulty": 7.7,
         "reps": 5,
         "lapses": 0,
-        "state": 0
+        "state": 1
       },
       {
         "rating": "GOOD",

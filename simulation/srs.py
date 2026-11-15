@@ -121,8 +121,12 @@ def schedule(current: Optional[SrsState], rating: str, now: int) -> SrsState:
     elif rating == HARD:
         stability = max(0.6, current.stability * 1.1)
         difficulty = _clamp(current.difficulty + 0.3, 1.0, 10.0)
-        state = STATE_RELEARNING if state == STATE_RELEARNING else state
         reps += 1
+        # HARD is a SUCCESSFUL recall: the learner knew the word, it
+        # just took them longer than they wanted. The state machine has
+        # to advance for it -- it did not, and a card the learner found
+        # hard stayed on the 10-minute learning step for ever.
+        state = _advance_state(state, reps)
     elif rating == GOOD:
         stability = max(1.0, current.stability * ease)
         difficulty = _clamp(current.difficulty - 0.15, 1.0, 10.0)

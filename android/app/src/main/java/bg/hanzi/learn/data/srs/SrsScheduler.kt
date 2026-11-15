@@ -84,8 +84,19 @@ object SrsScheduler {
             Rating.HARD -> {
                 stability = max(0.6, current.stability * 1.1)
                 difficulty = (current.difficulty + 0.3).coerceIn(1.0, 10.0)
-                state = if (state == STATE_RELEARNING) STATE_RELEARNING else state
                 reps += 1
+                // HARD is a SUCCESSFUL recall: the learner knew the
+                // word, it just took them longer than they wanted.
+                //
+                // The state machine has to advance for it. It did not,
+                // and the consequence was that a card the learner
+                // found hard stayed on the 10-minute learning step for
+                // ever -- rating it "Трудно" a hundred times never made
+                // it a review card, and the daily review load grew
+                // without bound. The smaller stability gain and the
+                // bigger difficulty penalty are what make a hard card
+                // come back sooner than an easy one.
+                state = advanceState(state, reps)
             }
 
             Rating.GOOD -> {
