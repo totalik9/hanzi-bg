@@ -102,6 +102,24 @@ LIT_FIG = re.compile(r"^(?:lit|fig)\.\s+", re.IGNORECASE)
 # cross-reference rule; this is the leftover with nothing in it.
 EMPTY_CL = re.compile(r"\(\s*CL:\s*\)", re.IGNORECASE)
 
+# A classifier marker ANYWHERE in a sense.
+#
+# The cross-reference rule above only catches a sense that STARTS with
+# "CL:", and the empty-marker rule only catches "(CL: )" once the
+# reading has been stripped. What was left in between is a marker with
+# the characters but no sense:
+#
+#     "cat (CL:隻|只[zhi1])"
+#
+# The READING rule strips "[zhi1]" and the HANZI rule strips "隻|只",
+# and the two together leave "(CL: | )" behind -- which is what the
+# learner saw: "Котка (CL: Дърво)". The classifier is no use to a
+# learner anyway: it says which measure word goes with the noun, and
+# the measure word is a separate word in the dictionary.
+#
+# So the whole parenthetical goes, wherever it is.
+CLASSIFIER = re.compile(r"\(\s*CL:.*?\)", re.IGNORECASE)
+
 # "(abbr.)" -- Taiwan (abbr.) is "Тайван (abbr.)" in Bulgarian.
 ABBR = re.compile(r"\(\s*abbr\.?\s*\)", re.IGNORECASE)
 
@@ -132,6 +150,12 @@ def clean_sense(sense: str) -> str | None:
     '(of a fruit) squashy'
     >>> clean_sense("leaf (CL: )")
     'leaf'
+    >>> clean_sense("cat (CL:隻|只[zhi1])")
+    'cat'
+    >>> clean_sense("sofa (CL:條|条[tiao2],張|张[zhang1])")
+    'sofa'
+    >>> clean_sense("fish (CL:條|条[tiao2],尾[wei3])")
+    'fish'
     >>> clean_sense("Taiwan (abbr.)")
     'Taiwan'
     >>> clean_sense("fig. to pad out (writing with fancy phrases)")
@@ -145,6 +169,7 @@ def clean_sense(sense: str) -> str | None:
     if PURE_CROSS_REFERENCE.match(s):
         return None
     s = PARENTHETICAL.sub("", s)
+    s = CLASSIFIER.sub("", s)
     s = READING.sub("", s)
     s = HANZI.sub(" ", s)
     s = REGISTER.sub("", s)
