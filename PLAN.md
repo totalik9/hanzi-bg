@@ -3,7 +3,7 @@
 Приложение за изучаване на китайски (мандарин) от български.
 Android 16+ (API 36), Kotlin + Jetpack Compose, напълно офлайн.
 
-Дата: 2026-11-09 · **обновено 2026-11-10**
+Дата: 2026-11-09 · **обновено 2026-11-15**
 
 ---
 
@@ -643,3 +643,44 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - NLLB-200: https://huggingface.co/facebook/nllb-200-distilled-600M
 - Android 16: https://developer.android.com/about/versions/16/behavior-changes-16
 - 16 KB page size: https://developer.android.com/guide/practices/page-sizes
+
+---
+
+## 12. Издадена версия (2026-11-15)
+
+**v0.1.0** е публикувана в GitHub Releases:
+<https://github.com/totalik9/hanzi-bg/releases/tag/v0.1.0>
+
+| | |
+|---|---|
+| APK | **41 543 920 B (39.62 MiB)**, подписан (v2 + v3, RSA 4096) |
+| SHA-256 | `dbf2b577ed462324be076c76d78109c2fa114d662b397220642134936d76f9ab` |
+| Сертификат | `27:4F:34:6B:58:F0:07:1E:92:CA:0D:38:80:80:98:CF:C9:1D:5C:67:E4:7A:6D:B3:45:AB:23:65:8B:91:28:57` |
+| Публичен сертификат | `release/signing-certificate.pem` |
+
+**Ключът за подписване не е в репото.** Живее в
+`C:\Users\IPP\.hanzi-bg\` (с README), а `android/keystore.properties`
+е gitignore-нат. Това не е педантизъм: Android разпознава
+приложението по сертификата, а не по името на пакета, така че без
+същия ключ следващата версия не може да замени инсталираната —
+потребителят трябва да деинсталира и губи историята на повторенията.
+
+Build-ът е направен така, че да е подписан, **ако** има ключ, и да
+работи без него: липсващият ключ е предупреждение, а не грешка, но
+APK-ът тогава е unsigned и не се инсталира.
+
+### Какво проверява CI при издаване
+
+`.github/workflows/release.yml` има два повода:
+
+1. **Тагът е push-нат** → тагът трябва да е `v` + `versionName` от
+   `build.gradle.kts`, `versionCode` трябва да е по-голям от този на
+   предишния таг, и се пускат всички проверки (parity, симулация,
+   pipeline тестове, unit тестове). Таг, който не съвпада с кода,
+   пада преди да е публикувано нещо.
+2. **Публикувана е release** → свалят се файловете от release-а и се
+   проверяват: checksum-ът срещу `.sha256`, сертификатът срещу
+   `release/signing-certificate.sha256`, и че APK-ът носи корпуса
+   (≥ 5 000 Ogg клипа, 0 MP3, `content.db` да не е компресиран).
+   CI не може да rebuild-ва APK-а — корпусът е build артефакт и не е в
+   git — затова проверява байтовете, които реално се раздават.

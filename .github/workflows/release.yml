@@ -1,0 +1,183 @@
+name: Release
+
+# Two events, two jobs, two different jobs to do.
+#
+#   1. A TAG is pushed -> the tag is checked against the code. A release
+#      that says v0.1.0 while the build says versionName 0.2.0 is a
+#      release nobody can install over the previous one, because
+#      versionCode has to go UP. That check is cheap and it catches the
+#      mistake before the release is published rather than after.
+#
+#   2. A RELEASE is published -> the artefact that was published is
+#      verified: the checksum against the file that says what it should
+#      be, and the signing certificate against the one in the
+#      repository. The APK is built on a machine that has the content
+#      corpus -- the corpus is a build artefact and is not in version
+#      control -- so CI cannot rebuild it and has to check the bytes
+#      that are actually being handed out.
+on:
+  push:
+    tags: ['v*']
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    name: Tag matches the version in the code
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag and versionName have to be the same
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version=$(sed -n 's/.*versionName[[:space:]]*=[[:space:]]*"\(.*\)".*/\1/p' \
+            android/app/build.gradle.kts | head -1)
+          echo "tag: $tag"
+          echo "versionName: $version"
+          if [ "$tag" != "v$version" ]; then
+            echo "::error::the tag is $tag but versionName is $version -- the tag has to be v$version"
+            exit 1
+          fi
+
+      - name: versionCode has to go up, never down
+        run: |
+          set -euo pipefail
+          code=$(sed -n 's/.*versionCode[[:space:]]*=[[:space:]]*\([0-9]*\).*/\1/p' \
+            android/app/build.gradle.kts | head -1)
+          echo "versionCode: $code"
+          previous=$(git tag --sort=-v:refname | grep -v "^${GITHUB_REF_NAME}$" | head -1 || true)
+          if [ -n "$previous" ]; then
+            previous_code=$(git show "$previous:android/app/build.gradle.kts" \
+              | sed -n 's/.*versionCode[[:space:]]*=[[:space:]]*\([0-9]*\).*/\1/p' | head -1)
+            echo "previous tag: $previous (versionCode $previous_code)"
+            if [ "$code" -le "$previous_code" ]; then
+              echo "::error::versionCode $code is not greater than $previous_code from $previous"
+              exit 1
+            fi
+          fi
+
+      # The same checks the CI runs on every push. A tag is a promise
+      # that this exact tree works, so the tree is checked -- the
+      # instrumented tests are left out because they take fifteen
+      # minutes on an emulator and CI has already run them on the same
+      # commit that the tag points at.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install the pipeline dependencies
+        run: python -m pip install -r pipeline/requirements.txt
+
+      - name: Install pytest
+        run: pip install --upgrade pytest
+
+      - name: Verify the Python port matches the Kotlin scheduler
+        run: |
+          test -n "$(git ls-files simulation/expected_vectors.json)" || {
+            echo "::error::expected_vectors.json is not tracked - the drift check is vacuous"
+            exit 1
+          }
+          python simulation/make_vectors.py
+          git diff --exit-code -- simulation/expected_vectors.json \
+            android/app/src/test/resources/srs_vectors.json \
+            || (echo "::error::Scheduler vectors are stale" && exit 1)
+
+      - name: Run the simulation harness self-checks
+        run: python simulation/test_simulation.py
+
+      - name: Run the pipeline tests
+        run: python -m pytest -q pipeline
+
+      - name: Run the Android unit tests
+        working-directory: android
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+
+  artefact:
+    name: The published APK is the one that was promised
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download the published assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          gh release download "${{ github.event.release.tag_name }}" \
+            --dir release-assets \
+            --pattern '*.apk' --pattern '*.sha256'
+          ls -la release-assets
+
+      - name: The checksum has to match the file
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum --check --strict *.sha256
+
+      - name: The APK has to be signed with the key in this repository
+        run: |
+          set -euo pipefail
+          apk=$(ls release-assets/*.apk | head -1)
+          build_tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$build_tools/apksigner" verify --verbose --print-certs "$apk" | tee /tmp/certs.txt
+          actual=$(grep -oE 'SHA-256 digest: [0-9A-Fa-f]+' /tmp/certs.txt | head -1 \
+            | sed 's/SHA-256 digest: //' | tr 'a-f' 'A-F')
+          expected=$(tr -d ' :\n' < release/signing-certificate.sha256 | tr 'a-f' 'A-F')
+          echo "expected: $expected"
+          echo "actual:   $actual"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::the APK is signed with a different certificate than the one in the repository"
+            exit 1
+          fi
+          echo "the APK is signed with the expected certificate"
+
+      - name: The APK has to carry the content, not the fixture
+        run: |
+          set -euo pipefail
+          apk=$(ls release-assets/*.apk | head -1)
+          listing=$(unzip -v "$apk" | grep -E 'assets/content/content\.db' || true)
+          if [ -z "$listing" ]; then
+            echo "::error::content.db is not in the published APK"
+            exit 1
+          fi
+          echo "$listing"
+          if echo "$listing" | grep -q 'Defl'; then
+            echo "::error::content.db is compressed - the first-launch copy would fail"
+            exit 1
+          fi
+          clips=$(unzip -l "$apk" | grep -c 'assets/audio/.*\.ogg' || true)
+          echo "audio clips in the APK: $clips"
+          if [ "$clips" -lt 5000 ]; then
+            echo "::error::only $clips audio clips in the published APK - that is the fixture, not the corpus"
+            exit 1
+          fi
+          mp3=$(unzip -l "$apk" | grep -c 'assets/audio/.*\.mp3' || true)
+          if [ "$mp3" -ne 0 ]; then
+            echo "::error::$mp3 MP3 clips in the APK - the corpus is Opus"
+            exit 1
+          fi
+          echo "the published APK carries the corpus"

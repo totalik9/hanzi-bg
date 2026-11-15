@@ -36,6 +36,14 @@ captures/
 # Kotlin
 .kotlin/
 
+# ---- Release signing ----
+# The signing key and its passwords are secrets. They live outside the
+# repository (see C:\Users\IPP\.hanzi-bg) and are copied in here only
+# while a release is being built.
+keystore.properties
+*.jks
+*.keystore
+
 # ---- CI diagnostics ----
 # The emulator job writes what it saw into instrumented-diagnostics/ so
 # a failing run can be read without admin rights on the repository. It

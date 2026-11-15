@@ -84,6 +84,113 @@ android {
 }
 
 /**
+ * Release signing.
+ *
+ * The release build is UNSIGNED unless a keystore is supplied, because a
+ * signing key is a secret and a secret does not belong in a repository.
+ * An unsigned APK cannot be installed, so a release that is meant to be
+ * handed to somebody needs a key -- and the key has to be the SAME one
+ * for every version, because Android identifies an app by its signing
+ * certificate and not by its package name. A new key means the user has
+ * to uninstall the old app first, which loses their review history.
+ *
+ * Two ways to supply the key, in this order:
+ *
+ *   1. `android/keystore.properties` -- the Android Studio convention.
+ *      The file is gitignored; a copy of it lives outside the
+ *      repository together with the key itself.
+ *   2. Environment variables: HANZI_KEYSTORE, HANZI_KEYSTORE_PASSWORD,
+ *      HANZI_KEY_ALIAS, HANZI_KEY_PASSWORD. This is the form a CI
+ *      runner uses.
+ *
+ * The properties file is read at configuration time, and the signing
+ * config is only created when all four values are there. A half-filled
+ * file fails the build loudly rather than quietly producing an unsigned
+ * APK that looks signed in a filename.
+ */
+/**
+ * The properties file is parsed by hand rather than with
+ * java.util.Properties, because Properties treats a backslash as an
+ * escape character: a Windows path like C:\Users\me\key.jks comes out
+ * of Properties as C:Usersmekey.jks and the build then says the
+ * keystore "was not found" for a file that is sitting right there.
+ * A hand-written parser keeps the path exactly as the user wrote it.
+ */
+val keystoreProperties = mutableMapOf<String, String>()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.forEachLine { rawLine ->
+        val line = rawLine.trim()
+        if (line.isEmpty() || line.startsWith("#") || line.startsWith("!")) {
+            return@forEachLine
+        }
+        val separator = line.indexOf('=')
+        if (separator <= 0) {
+            return@forEachLine
+        }
+        keystoreProperties[line.substring(0, separator).trim()] =
+            line.substring(separator + 1).trim()
+    }
+}
+
+fun signingValue(property: String, environmentVariable: String): String? =
+    (keystoreProperties[property] ?: System.getenv(environmentVariable))
+        ?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingValue("storeFile", "HANZI_KEYSTORE")
+val releaseStorePassword = signingValue("storePassword", "HANZI_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "HANZI_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "HANZI_KEY_PASSWORD")
+
+val releaseSigningValues = mapOf(
+    "storeFile" to releaseStoreFile,
+    "storePassword" to releaseStorePassword,
+    "keyAlias" to releaseKeyAlias,
+    "keyPassword" to releaseKeyPassword,
+)
+val missingSigningValues = releaseSigningValues.filterValues { it == null }.keys
+if (missingSigningValues.isNotEmpty() && missingSigningValues.size != releaseSigningValues.size) {
+    error(
+        "The release signing key is only half configured: " +
+            "${missingSigningValues.joinToString(", ")} missing. " +
+            "Either fill in android/keystore.properties completely, or remove it.",
+    )
+}
+val hasReleaseSigning = missingSigningValues.isEmpty()
+
+if (hasReleaseSigning) {
+    android {
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                // minSdk is 26, so the v1 (JAR) signature is still needed
+                // for the oldest supported devices; v2 covers 24+ and v3
+                // adds the rotation support of 28+.
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+        buildTypes {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+    logger.lifecycle("Release signing: enabled (${releaseStoreFile})")
+} else {
+    logger.warn(
+        "Release signing: DISABLED -- the release APK will be UNSIGNED and " +
+            "cannot be installed. Put a keystore.properties in android/ or set " +
+            "HANZI_KEYSTORE, HANZI_KEYSTORE_PASSWORD, HANZI_KEY_ALIAS and " +
+            "HANZI_KEY_PASSWORD.",
+    )
+}
+
+/**
  * Copies the generated content artefacts into the APK assets.
  *
  * The content database is a build artefact: 08_build_content_db.py
