@@ -381,7 +381,9 @@ jobs:
             pipeline/pinyin_utils.py \
             pipeline/03_build_vocab.py \
             pipeline/07_translate_bulgarian.py \
-            pipeline/11_translate_grammar.py
+            pipeline/11_translate_grammar.py \
+            pipeline/_grammar_mirror.py \
+            pipeline/_grammar_wayback.py
 
       - name: Check the pipeline scripts expose the expected entry points
         run: |

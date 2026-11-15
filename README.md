@@ -65,7 +65,7 @@ apksigner verify --print-certs hanzi-bg-v0.1.0-release.apk
 |---|---|
 | Инструментна верига (AGP 8.10.1, Gradle 8.11.1, JDK 17, Build Tools 36.0.0) | работеща |
 | Android скелет: 6 екрана, Room, Hilt, Media3 | работещ, **build successful** |
-| Unit тестове | **74/74 минават** |
+| Unit тестове | **90/90 минават** |
 | Инструментирани тестове (емулатор) | **7/7 минават** — петте учебни режима |
 | SRS планировчик (SM-2, FSRS-съвместим) | работещ + parity тест с Python |
 | Pipeline за съдържание (15 скрипта) | **завършен, възпроизводим от чист клониран** |
@@ -338,7 +338,7 @@ page size се изпълнява. (Внимание: APK-то всъщност 
 | [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cedict) | CC BY-SA 4.0 |
 | [Make Me a Hanzi](https://github.com/skishore/makemeahanzi) | Arphic Public License |
 | [HSK 3.0 word lists](https://literatelanguages.com/chinese/) | виж източника |
-| [Chinese Grammar Wiki](https://resources.allsetlearning.com/chinese/grammar/Main_Page) | Creative Commons |
+| [Chinese Grammar Wiki](https://resources.allsetlearning.com/chinese/grammar/Main_Page) | **CC BY-NC-SA 3.0** — некомерсиално, с атрибуция |
 | [Tatoeba](https://tatoeba.org/en/downloads) | CC BY 2.0 FR |
 | [pinyin-data](https://github.com/mozillazg/pinyin-data) | MIT |
 | [M2M-100](https://huggingface.co/facebook/m2m100_418M) | **MIT** — моделът на превода по подразбиране |
@@ -354,6 +354,24 @@ page size се изпълнява. (Внимание: APK-то всъщност 
 > CC BY 2.0 FR, но всеки запис има собствен лиценз и
 > `sentences_with_audio.csv` носи колоната `license` за всеки от тях.
 > При разпространение на аудиото тези лицензи трябва да се пренесат.
+
+> **Грамматиката е CC BY-NC-SA 3.0 — некомерсиална.** Собствената
+> страница за авторски права на wiki-то казва, че съдържанието „may not
+> be used for commercial purposes or without attribution“ и иска връзка
+> към `resources.allsetlearning.com/chinese/grammar/` на всяка страница,
+> където се появява. Затова атрибуцията е на екрана с граматиката и е
+> записана в `sources.json` и в манифеста на `content.db`.
+>
+> Това е същото ограничение, което блокираше модела за превод, докато
+> не беше заменен с MIT лицензирания M2M-100. Съдържанието на
+> приложението **не може да се разпространява комерсиално**, докато
+> грамматиката е в него.
+>
+> Отделно: wiki-то вече е зад Cloudflare, който отговаря с `403` и
+> предизвикателство на всеки запрос — и на браузър. Затова
+> `04_build_grammar.py` чете от огледалото `github.com/ivankra/asg`, което
+> носи същия лиценз и същия текст, а нивото се взима от архива на
+> интернет. Виж `pipeline/_grammar_mirror.py`.
 
 > **Моделът за превод е MIT, не CC-BY-NC.** Преводът влиза в APK-а
 > и се раздава на всеки, който го инсталира, затова лицензът на модела

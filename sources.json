@@ -35,8 +35,12 @@
   {
    "name": "Chinese Grammar Wiki (AllSet Learning)",
    "url": "https://resources.allsetlearning.com/chinese/grammar/Main_Page",
-   "license": "Creative Commons",
-   "used_for": "the grammar points and their example sentences"
+   "license": "CC BY-NC-SA 3.0",
+   "license_url": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+   "non_commercial": true,
+   "used_for": "the grammar points and their example sentences",
+   "attribution": "AllSet Learning Chinese Grammar Wiki (https://resources.allsetlearning.com/chinese/grammar/)",
+   "note": "The wiki's own copyright page says the content may not be used for commercial purposes or without attribution, and it asks for a link to https://resources.allsetlearning.com/chinese/grammar/ on every page or view where the content appears. The grammar is built from the GitHub mirror ivankra/asg, which carries the same licence."
   },
   {
    "name": "Tatoeba",

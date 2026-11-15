@@ -172,7 +172,7 @@ export ANDROID_HOME="C:/tools/android-sdk"
 | Учебна програма | HSK 3.0 (ноември 2025, сила от 13.12.2026) | 9 нива, ~11 000 думи | публична |
 | Речник | CC-CEDICT (MDBG) | 125 356 записа, проверени live | CC BY-SA 4.0 |
 | Йероглифи | Make Me a Hanzi (Arphic) | 9 000+ знака, stroke-order SVG | Arphic Public License |
-| Граматика | Chinese Grammar Wiki (AllSet Learning) | 506 точки, 3 286 примера, проверени live | Creative Commons |
+| Граматика | Chinese Grammar Wiki (AllSet Learning) | 506 точки, 4 014 примера, проверени live | **CC BY-NC-SA 3.0** (некомерсиално) |
 | Изречения | Tatoeba (cmn) | 89 289 изречения, 5 826 с аудио | CC BY 2.0 FR |
 | Транскрипция | mozillazg/pinyin-data + phrase-pinyin-data | стандарт, тона по фраза | MIT |
 | Аудио | Microsoft Edge TTS `zh-CN-XiaoxiaoNeural` | без API ключ | безплатно |
