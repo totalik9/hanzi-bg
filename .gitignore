@@ -36,6 +36,12 @@ captures/
 # Kotlin
 .kotlin/
 
+# ---- CI diagnostics ----
+# The emulator job writes what it saw into instrumented-diagnostics/ so
+# a failing run can be read without admin rights on the repository. It
+# is an output, not code.
+/instrumented-diagnostics/
+
 # ---- Simulation output ----
 # results.json and analysis_output.txt are run outputs and are not tracked.
 /simulation/results.json

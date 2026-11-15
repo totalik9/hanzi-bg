@@ -190,8 +190,10 @@ jobs:
     name: Instrumented tests (emulator)
     runs-on: ubuntu-latest
     # The emulator is the slowest step in the pipeline. A timeout stops
-    # a wedged emulator from holding the whole workflow open.
-    timeout-minutes: 45
+    # a wedged emulator from holding the whole workflow open. It has
+    # to be generous: the emulator alone can take half an hour to boot
+    # on a cold runner.
+    timeout-minutes: 50
     # The emulator needs nested virtualisation, which is not available
     # on every runner, and a runner that cannot start one fails this
     # job rather than the code. The job still runs and its result is
@@ -230,7 +232,7 @@ jobs:
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0" \
-            "system-images;android-34;google_apis;x86_64"
+            "system-images;android-34;default;x86_64"
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -251,10 +253,14 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          # The system image installed above is the google_apis one,
-          # and the action's default target is the plain AOSP image.
-          # They are different packages.
-          target: google_apis
+          # The plain AOSP image, not google_apis. The app has no
+          # Play Services dependency, so it needs nothing from the
+          # Google image -- and the Google image carries all of it.
+          # The emulator took 30 minutes to boot on a cold runner,
+          # which is what the boot timeout below was raised for; the
+          # AOSP image is much lighter and starts in a fraction of
+          # the time.
+          target: default
           disable-animations: true
           # The device is the one the action picks for the API level.
           # A named profile that does not exist for this image leaves
@@ -278,7 +284,13 @@ jobs:
           # another timeout -- so the budget is raised rather than
           # left to chance.
           emulator-boot-timeout: 1800
-          script: cd android && ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
+          # The wrapper keeps the output and collects the device state
+          # while the emulator is still alive. The Actions job log
+          # needs admin rights on the repository, so a failing run used
+          # to say only "the process failed with exit code 1" -- there
+          # was nothing to read and nothing to diagnose. The
+          # diagnostics are uploaded as an artefact below.
+          script: bash "$GITHUB_WORKSPACE/ci/run-instrumented.sh"
 
       - name: Upload the test report
         if: always()
@@ -288,6 +300,17 @@ jobs:
           path: |
             android/app/build/reports/androidTests/connected/**
             android/app/build/outputs/androidTest-results/**
+          if-no-files-found: ignore
+
+      # What the emulator was doing when it failed. Without this the
+      # job is a black box: the log needs admin rights, so a failure
+      # cannot be read by the people who have to fix it.
+      - name: Upload the emulator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-diagnostics
+          path: instrumented-diagnostics/**
           if-no-files-found: ignore
 
   lint:
