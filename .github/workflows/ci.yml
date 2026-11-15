@@ -202,21 +202,21 @@ jobs:
     timeout-minutes: 50
     # The emulator needs nested virtualisation, which is not available
     # on every runner, and a runner that cannot start one fails this
-    # job rather than the code. The job still runs and its result is
-    # reported, but it does not block the pipeline: the three jobs
-    # that can run anywhere -- the simulation self-checks, the unit
-    # tests and the release build -- are the ones that gate.
+    # job rather than the code. So the job was non-blocking for a long
+    # time -- and it failed on every single run, which meant it gated
+    # nothing and nobody could tell it apart from a job that was never
+    # wired up.
     #
-    # The tests themselves pass on an emulator: they were written
-    # against a local API 34 image and run green there.
+    # It passes now: run 18 was the first green instrumented job in the
+    # repository's history. The causes were two TEST bugs, not the
+    # emulator -- a LazyRow chip that was off the screen and a Home
+    # screen that was still loading. Both are fixed, and the job
+    # gates the pipeline from now on: the five practice modes are
+    # covered only here, and a check that cannot fail is not a check.
     #
-    # This job failed on EVERY run before (4 failures, 5 cancelled, 0
-    # passes) because the action's default "-gpu swiftshader_indirect"
-    # is not a mode emulator 37 accepts -- it was deprecated in 36.4.9
-    # and the runner image ships 37.x. The emulator died on the flag
-    # and the action then waited for a device that would never come.
-    # The flag and the boot timeout are set explicitly below.
-    continue-on-error: true
+    # If a runner turns out to have no hardware virtualisation at all,
+    # the job fails for that reason and not for the app's -- which is
+    # the honest outcome, and the diagnostics say which it was.
     # The emulator action has to find the SDK that the step below
     # installs the system image into, so the path is set for the whole
     # job and not only for the step that uses it.
