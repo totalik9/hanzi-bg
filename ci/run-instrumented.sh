@@ -53,6 +53,22 @@ capture logcat-tail.txt "$ADB" logcat -d -t 400
 capture emulator-info.txt "$ADB" shell getprop
 capture disk.txt df -h "$ROOT"
 
+# The last lines of the Gradle output go into the job summary. The
+# job LOG needs admin rights on the repository, so it cannot be read
+# by the people who have to fix the failure -- but the summary is on
+# the run page, and it is what the next person reads first.
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  {
+    echo "## Instrumented tests"
+    echo
+    echo "Gradle exit code: \`$status\`"
+    echo
+    echo '```'
+    tail -60 "$OUT/gradle.log"
+    echo '```'
+  } >> "$GITHUB_STEP_SUMMARY"
+fi
+
 echo
 echo "== gradle exit: $status =="
 exit "$status"
