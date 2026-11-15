@@ -327,12 +327,6 @@ class MirrorSource:
         self._load()
         out: dict[str, str] = {}
         for page in INDEX_PAGES:
-            # Only the level index pages matter here: they carry the
-            # grammar points. Main_Page and New_Main_Page are the
-            # wiki's front doors, and they hold no points -- so they
-            # are not worth a request the archive will rate-limit.
-            if page not in LEVEL_PAGES:
-                continue
             html = fetch_rendered_page(page, attempts=1)
             if html:
                 out[page.replace(" ", "_")] = html
@@ -1040,6 +1034,21 @@ def main() -> int:
     for title, text in index_pages.items():
         slug = title.replace(" ", "_")
         summary, examples = source.extract(slug, text)
+        # The index pages are the WIKI's navigation, not grammar points.
+        #
+        # They were shipped as flashcards, and what the learner saw was
+        # the wiki's own markup:
+        #
+        #     "A2 grammar points" -> "800px|link=http //amzn.to/2iioVRP"
+        #
+        # -- a broken image link to an Amazon affiliate page, read out
+        # as the summary of a grammar card. Eleven of the 506 grammar
+        # rows were these pages, and the grammar screen lists them
+        # like any other.
+        #
+        # They carry no examples and no teaching, so they are kept in
+        # the JSON (the file records what the source said) but they
+        # are not grammar points.
         entries.append({
             "slug": slug,
             "title": slug.replace("_", " "),
@@ -1050,7 +1059,6 @@ def main() -> int:
             "examples": examples,
             "source_url": WIKI_BASE + slug,
         })
-
     # sort: level, then category, then title
     def sort_key(e):
         lv = e["level"] or "ZZ"

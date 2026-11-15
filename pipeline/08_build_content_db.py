@@ -278,6 +278,7 @@ def build_grammar(conn: sqlite3.Connection) -> int:
         return 0
 
     rows = []
+    skipped = 0
     for e in entries:
         slug = e.get("slug") or ""
         title = e.get("title") or slug
@@ -285,6 +286,26 @@ def build_grammar(conn: sqlite3.Connection) -> int:
         body = e.get("wiki_text") or ""
         summary = e.get("summary") or ""
         examples = e.get("examples") or []
+
+        # The index pages are the WIKI's navigation, not grammar points.
+        #
+        # They were shipped as flashcards, and what the learner saw was
+        # the wiki's own markup:
+        #
+        #     "A2 grammar points" -> "800px|link=http //amzn.to/2iioVRP"
+        #
+        # -- a broken image link to an Amazon affiliate page, read out
+        # as the summary of a grammar card. Eleven of the 506 grammar
+        # rows were these pages, and the grammar screen lists them like
+        # any other.
+        #
+        # They carry no examples and no teaching, so they are recorded
+        # in grammar.json (the file says what the source said) but they
+        # are not grammar points in the app.
+        if e.get("category") == "Grammar index":
+            skipped += 1
+            continue
+
         rows.append((
             title,
             e.get("title_bg") or "",
@@ -301,6 +322,8 @@ def build_grammar(conn: sqlite3.Connection) -> int:
         "VALUES (?,?,?,?,?,?,?,?)",
         rows,
     )
+    if skipped:
+        print(f"  skipped {skipped} wiki index pages (navigation, not grammar points)")
     return len(rows)
 
 
