@@ -21,11 +21,22 @@ The order matters and was not obvious from the scripts alone:
   * 06_build_audio.py writes the manifest that 08_build_content_db.py
     looks the clips up in, so it has to run before the database build.
 
+  * 11_translate_grammar.py and 12_translate_sentences.py were not in
+    this list at all, so a full build produced an app with no Bulgarian
+    grammar and a sentence pool that stops after a few dozen exercises.
+    They run after the files they read (04 and 05) and before the
+    database build, which is what puts their work into the app.
+
   * 08_build_content_db.py comes last: it assembles everything else.
 
 The full run takes a long time: the Bulgarian translation alone is ~95
-minutes on a CPU and needs a ~2.5 GB model. --fast skips the model steps
-and leaves whatever translations are already in data/ in place.
+minutes on a CPU and needs a translation model. --fast skips the model
+steps and leaves whatever translations are already in data/ in place.
+
+The translation model is chosen with --model and defaults to
+facebook/m2m100_418M, which is licensed MIT. The pipeline used to
+hard-code facebook/nllb-200-distilled-600M, which is CC-BY-NC-4.0:
+non-commercial, and the translations end up inside the APK.
 """
 
 from __future__ import annotations
@@ -45,6 +56,14 @@ def script(name: str) -> str:
     return os.path.join(HERE, name)
 
 
+# The steps that translate, and so take a --model.
+TRANSLATION_STEPS = {
+    "07_translate_bulgarian.py",
+    "11_translate_grammar.py",
+    "12_translate_sentences.py",
+}
+
+
 # (step name, script, args, needs network, slow)
 STEPS: list[tuple[str, str, list[str], bool, bool]] = [
     ("01", "01_fetch_sources.py", [], True, False),
@@ -56,14 +75,16 @@ STEPS: list[tuple[str, str, list[str], bool, bool]] = [
     ("09", "09_clean_glosses.py", [], False, False),
     ("07", "07_translate_bulgarian.py", [], False, True),
     ("04", "04_build_grammar.py", [], True, False),
+    ("11", "11_translate_grammar.py", [], False, True),
     ("05", "05_build_sentences.py", [], False, False),
+    ("12", "12_translate_sentences.py", [], False, True),
     ("06", "06_build_audio.py", [], True, True),
     ("08", "08_build_content_db.py", [], False, False),
 ]
 
-# The steps --fast leaves out: they need a ~2.5 GB model (07) or run for
-# a long time over the network (06).
-FAST_SKIP = {"07", "06"}
+# The steps --fast leaves out: they need a translation model (07, 11,
+# 12) or run for a long time over the network (06).
+FAST_SKIP = {"07", "11", "12", "06"}
 
 
 def main() -> int:
@@ -77,6 +98,9 @@ def main() -> int:
     ap.add_argument("--allow-degraded", action="store_true",
                     help="carry on when an input is missing (the output is "
                          "then NOT fit for the app)")
+    ap.add_argument("--model", help="the translation model for the three "
+                                   "translation steps; the default is the "
+                                   "permissive one (MIT)")
     args = ap.parse_args()
 
     skip = set(args.skip)
@@ -109,6 +133,8 @@ def main() -> int:
         cmd = [PYTHON, script(script_name)] + extra
         if args.allow_degraded:
             cmd.append("--allow-degraded")
+        if args.model and script_name in TRANSLATION_STEPS:
+            cmd += ["--model", args.model]
         # The scripts are run from their own directory so that their
         # relative paths resolve the way they do when run by hand.
         result = subprocess.run(cmd, cwd=HERE)

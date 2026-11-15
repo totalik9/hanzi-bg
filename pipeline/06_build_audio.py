@@ -1,11 +1,11 @@
-"""Generate pronunciation audio with Microsoft Edge TTS (data/audio/*.mp3).
+"""Generate pronunciation audio with Microsoft Edge TTS (data/audio/*.ogg).
 
 Inputs:
     data/vocab_hsk.json     the graded HSK vocabulary (from 03_build_vocab.py)
     data/sentences.json     the Tatoeba corpus (from 05_build_sentences.py)
 
 Output:
-    data/audio/<name>.mp3   one file per spoken text
+    data/audio/<name>.ogg   one file per spoken text
     data/audio/manifest.json  {filename: text} for every generated clip
 
 File names are CONTENT-ADDRESSED: the sanitised text plus the first 12 hex
@@ -14,9 +14,18 @@ which means the script can be re-run over a growing vocabulary without
 regenerating what already exists, and the same word spoken in two lessons
 costs one file instead of two.
 
-The app reads the clips from the APK's assets under "audio/<name>.mp3", so
+The app reads the clips from the APK's assets under "audio/<name>.ogg", so
 the file name must survive a round trip through the APK unchanged: only
 ASCII letters, digits and underscores are kept.
+
+THE FORMAT
+----------
+Edge TTS serves MP3 and nothing else, but the MP3 is a poor thing to ship:
+it is a fixed 11 232 bytes with 83 % digital silence, and it cannot be
+compressed again in the APK. The clip is therefore encoded to Opus in an
+Ogg container with the silence trimmed off, which is about seven times
+smaller and is decoded by the platform since Android 5.0 -- so the app
+needs no new dependency for it. ffmpeg does the encoding; see _opus.py.
 
 Usage:
     python pipeline/06_build_audio.py                 # everything
@@ -29,15 +38,18 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import concurrent.futures
 import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import DATA, sanitize_speech  # noqa: E402
+from _opus import EXTENSION, convert, ffmpeg_path  # noqa: E402
 
 AUDIO_DIR = os.path.join(DATA, "audio")
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
@@ -62,6 +74,10 @@ MAX_SENTENCE_CHARS = 24
 # request used to stop the whole run.
 REQUEST_TIMEOUT = 30
 
+# How many clips are encoded at the same time. The encoding is CPU-bound
+# and independent per clip, so it runs in a thread pool.
+ENCODE_JOBS = min(8, os.cpu_count() or 4)
+
 
 def sanitize(text: str) -> str:
     """Reduce a text to the characters that will actually be spoken."""
@@ -81,7 +97,7 @@ def filename_for(text: str, label: str = "") -> str:
     prefix = re.sub(r"[^A-Za-z0-9]+", "_", label).strip("_").lower()[:24]
     if not prefix:
         prefix = "audio"
-    return f"{prefix}_{digest}.mp3"
+    return f"{prefix}_{digest}{EXTENSION}"
 
 
 async def synthesize(text: str, path: str, voice: str) -> bool:
@@ -90,6 +106,10 @@ async def synthesize(text: str, path: str, voice: str) -> bool:
     The stream is read under a timeout: edge-tts occasionally leaves a
     request open forever instead of ending it, and without the timeout
     the whole run stops on one word.
+
+    The bytes arrive as MP3 and are written to a temporary file next to
+    the target; the caller encodes them to Opus and removes the
+    temporary file.
     """
     import edge_tts
 
@@ -97,7 +117,7 @@ async def synthesize(text: str, path: str, voice: str) -> bool:
     for attempt in range(3):
         try:
             communicate = edge_tts.Communicate(text, voice)
-            tmp = path + ".part"
+            tmp = path + ".mp3.part"
             with open(tmp, "wb") as fh:
 
                 async def pump() -> int:
@@ -112,13 +132,12 @@ async def synthesize(text: str, path: str, voice: str) -> bool:
             if written == 0 or os.path.getsize(tmp) == 0:
                 os.remove(tmp)
                 raise RuntimeError("empty audio stream")
-            os.replace(tmp, path)
             return True
         except Exception as exc:  # noqa: BLE001
             last_error = exc
-            if os.path.exists(path + ".part"):
+            if os.path.exists(path + ".mp3.part"):
                 try:
-                    os.remove(path + ".part")
+                    os.remove(path + ".mp3.part")
                 except OSError:
                     pass
             # Edge TTS rate-limits; back off and retry.
@@ -127,7 +146,23 @@ async def synthesize(text: str, path: str, voice: str) -> bool:
     return False
 
 
-async def run(texts: list[tuple[str, str]], voice: str, limit: int | None) -> tuple[int, int, dict[str, str]]:
+def encode_one(ffmpeg: str, ffprobe: str | None, src: str, dst: str) -> bool:
+    """Encode one fetched MP3 to Opus. Returns True on success.
+
+    The MP3 is deleted only once the Ogg has been verified to be a
+    playable file, so a broken clip never loses its audio.
+    """
+    if not convert(ffmpeg, ffprobe, src, dst):
+        print(f"    FAILED to encode {os.path.basename(dst)}", file=sys.stderr)
+        return False
+    return True
+
+
+async def run(
+    texts: list[tuple[str, str]],
+    voice: str,
+    limit: int | None,
+) -> tuple[int, int, dict[str, str]]:
     """Synthesise every text that has no file yet."""
     os.makedirs(AUDIO_DIR, exist_ok=True)
 
@@ -145,28 +180,43 @@ async def run(texts: list[tuple[str, str]], voice: str, limit: int | None) -> tu
     if limit:
         unique = unique[:limit]
 
+    ffmpeg = ffmpeg_path()
+    ffprobe = shutil.which("ffprobe")
+
     done = 0
     failed = 0
     spoken: dict[str, str] = {}
-    for i, (text, label) in enumerate(unique, 1):
-        name = filename_for(text, label)
-        path = os.path.join(AUDIO_DIR, name)
-        spoken[name] = text
-        if os.path.exists(path) and os.path.getsize(path) > 0:
-            done += 1
-            continue
-        ok = await synthesize(text, path, voice)
-        if ok:
-            done += 1
-        else:
-            failed += 1
-        if i % 25 == 0:
-            print(f"    {i}/{len(unique)} clips ({done} ok, {failed} failed)")
-            await asyncio.sleep(0.2)
-            # Write the manifest as we go: a run that is interrupted
-            # (or stalls on one word) must still leave a manifest that
-            # matches the files on disk.
-            write_manifest(spoken)
+    # The encodings that are still running. The fetch is the slow part
+    # and the encoder is CPU-bound, so they overlap.
+    running: list[concurrent.futures.Future] = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=ENCODE_JOBS) as pool:
+        for i, (text, label) in enumerate(unique, 1):
+            name = filename_for(text, label)
+            path = os.path.join(AUDIO_DIR, name)
+            spoken[name] = text
+            if os.path.exists(path) and os.path.getsize(path) > 0:
+                done += 1
+                continue
+            ok = await synthesize(text, path, voice)
+            if not ok:
+                failed += 1
+                continue
+            running.append(
+                pool.submit(encode_one, ffmpeg, ffprobe, path + ".mp3.part", path)
+            )
+            if i % 25 == 0:
+                print(f"    {i}/{len(unique)} clips ({done} ok, {failed} failed)")
+                await asyncio.sleep(0.2)
+                # Write the manifest as we go: a run that is interrupted
+                # (or stalls on one word) must still leave a manifest that
+                # matches the files on disk.
+                write_manifest(spoken)
+        for future in running:
+            if future.result():
+                done += 1
+            else:
+                failed += 1
     return done, failed, spoken
 
 

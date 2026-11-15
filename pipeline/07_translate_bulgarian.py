@@ -1,4 +1,4 @@
-"""Translate the vocabulary into Bulgarian with NLLB-200 (local, no API).
+"""Translate the vocabulary into Bulgarian with a local model (no API).
 
 Input:
     data/vocab_hsk.json       the graded HSK vocabulary
@@ -20,18 +20,23 @@ Two things decide the quality of a Bulgarian gloss:
    time and then de-duplicating gives a clean list.
 
 The human glosses from Chinese Wiktionary always win: they are written by
-people and are the reference. NLLB-200 fills the gap for the words that
+people and are the reference. The model fills the gap for the words that
 have no human gloss, and every machine translation is marked as such so
 the app can tell the learner which is which.
 
-NLLB-200 is licensed CC-BY-NC, which is fine for this non-commercial
-project. It is NOT fine for a commercial release: the Bulgarian glosses
-would have to be replaced before any paid distribution.
+The model is chosen with --model. The default is facebook/m2m100_418M,
+which is licensed MIT. The licence matters more than it looks: the
+Bulgarian glosses are baked into the APK and shipped to whoever
+installs the app, so a non-commercial licence on the model would be a
+non-commercial licence on the app. The old default,
+facebook/nllb-200-distilled-600M, is CC-BY-NC-4.0 and is still
+selectable -- but it must not be used for a release that is sold.
 
 Usage:
     python pipeline/07_translate_bulgarian.py
     python pipeline/07_translate_bulgarian.py --level 1        # one level first
     python pipeline/07_translate_bulgarian.py --limit 200
+    python pipeline/07_translate_bulgarian.py --model m2m100_418M
 """
 
 from __future__ import annotations
@@ -47,6 +52,15 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import DATA, RAW  # noqa: E402
 from importlib import import_module  # noqa: E402
+from _guards import set_allow_degraded  # noqa: E402
+from _translation_model import (  # noqa: E402
+    Translator,
+    cache_path,
+    load_or_migrate_cache,
+    record_provenance,
+    resolve_model,
+    save_cache,
+)
 
 # The cleaning of the English senses lives in 09_clean_glosses.py and is
 # used from here too: the translation must not see a sense the cleaning
@@ -56,14 +70,13 @@ clean_sense = import_module("09_clean_glosses").clean_sense
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
 BG_GLOSS = os.path.join(RAW, "bg_zh_wiktionary.json")
 OUT = os.path.join(DATA, "bg_translations.json")
-CACHE = os.path.join(DATA, "bg_sense_cache.json")
+# The cache belongs to the model that wrote it, so the file name carries
+# the model name: data/bg_sense_cache.m2m100_418M.json. Two models must
+# not share a cache -- the cached translations are the model's own
+# output, and mixing two translation styles in one word list is worse
+# than having no cache at all.
+CACHE_BASE = os.path.join(DATA, "bg_sense_cache.json")
 CONTENT_DB = os.path.join(DATA, "content.db")
-
-MODEL_ID = "facebook/nllb-200-distilled-600M"
-
-# The gloss is built from the English sense list, so English is the source.
-SOURCE_LANG = "eng_Latn"
-TARGET_LANG = "bul_Cyrl"
 
 # How many senses a Bulgarian gloss carries. Three is enough to recognise
 # a word; more turns the card into a dictionary entry.
@@ -119,12 +132,31 @@ def clean_translation(text: str) -> str:
     'да говоря; да казва'
     >>> clean_translation("вода")
     'вода'
+
+    The English source with something stuck to it is not Bulgarian
+    either:
+
+    >>> clean_translation("Wording →")
+    ''
+    >>> clean_translation("5")
+    '5'
     """
     text = text.strip()
     text = text.rstrip(" .")
     text = " ".join(text.split())
     # The model sometimes returns the source text unchanged.
     if re.fullmatch(r"[A-Za-z\s\-']+", text):
+        return ""
+
+    # The model sometimes returns the English source with something
+    # stuck to it -- "Wording ->" for 字眼 -- so the check above, which
+    # only accepts a whole string of English, misses it. A Bulgarian
+    # gloss has to contain Bulgarian letters: Latin letters without a
+    # single Cyrillic one means the model handed back the English.
+    #
+    # A gloss that is only a number ("5" for 五) is left alone: it has
+    # no Latin letters either, and it is a correct answer.
+    if re.search(r"[A-Za-z]", text) and not re.search(r"[\u0400-\u04ff]", text):
         return ""
 
     # The model sometimes starts the answer with a dash: "- Не", "- Татко".
@@ -247,43 +279,9 @@ def _duplicate_key(part: str) -> str:
     return s
 
 
-def load_cache(path: str) -> dict[str, str]:
-    """Read the English sense -> Bulgarian translation cache.
-
-    The cache is what makes a re-run cheap. A full translation of the
-    vocabulary is 16 135 senses and takes about 95 minutes on the CPU;
-    a re-run after a change to the English glosses only needs the senses
-    that are actually new.
-
-    >>> import tempfile, os
-    >>> path = os.path.join(tempfile.mkdtemp(), "cache.json")
-    >>> save_cache(path, {"water": "вода"})
-    >>> load_cache(path)
-    {'water': 'вода'}
-    """
-    data = load_json(path)
-    if not isinstance(data, dict):
-        return {}
-    return {str(k): str(v) for k, v in data.items()}
-
-
-def save_cache(path: str, cache: dict[str, str]) -> None:
-    """Write the cache atomically.
-
-    The write goes to a temporary file that is then moved into place, so
-    a run that is killed halfway never leaves a half-written cache
-    behind: the old one stays valid and the work is simply redone.
-
-    >>> import tempfile, os
-    >>> path = os.path.join(tempfile.mkdtemp(), "cache.json")
-    >>> save_cache(path, {"a": "а"})
-    >>> load_cache(path)
-    {'a': 'а'}
-    """
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(cache, fh, ensure_ascii=False, indent=1, sort_keys=True)
-    os.replace(tmp, path)
+# The cache helpers are shared with the other translation steps, so
+# every step treats a cache the same way: a killed run never leaves a
+# half-written cache behind, and a re-run only translates what is new.
 
 
 def seed_cache_from_previous_run(
@@ -368,7 +366,18 @@ def main() -> int:
     ap.add_argument("--level", help="only this HSK level")
     ap.add_argument("--limit", type=int, help="stop after N words")
     ap.add_argument("--batch", type=int, default=24, help="sentences per batch")
+    ap.add_argument("--model", help="the translation model; the default is "
+                                   "the permissive one (MIT)")
+    ap.add_argument("--allow-degraded", action="store_true",
+                    help="carry on when an input is missing")
     args = ap.parse_args()
+
+    if args.allow_degraded:
+        set_allow_degraded()
+
+    spec = resolve_model(args.model)
+    CACHE = cache_path(CACHE_BASE, spec)
+    print(f"model: {spec.model_id} ({spec.license}) -- {spec.note}")
 
     if not os.path.exists(VOCAB_JSON):
         print(f"ERROR: missing {VOCAB_JSON} - run 03_build_vocab.py first")
@@ -424,8 +433,36 @@ def main() -> int:
     # The cache holds the senses that are already translated. A first run
     # has to translate everything; a re-run after a change to the English
     # glosses only translates the senses that are new.
-    cache = load_cache(CACHE)
-    if not cache:
+    cache, adopted = load_or_migrate_cache(CACHE_BASE, spec)
+    if adopted:
+        print(f"  adopted the old cache: it was {spec.name}'s work")
+
+    # The cache holds the model's output, cleaned. When the cleaner
+    # changes, the values it already cleaned are stale: the cleaner
+    # gets a second pass over them, and the ones it now rejects are
+    # dropped so they are translated again.
+    #
+    # Without this, a gloss the cleaner used to accept stays in the
+    # cache for ever -- "Wording →" for 字眼 was an English answer the
+    # cleaner did not recognise at the time it was cached.
+    recleaned = 0
+    dropped = 0
+    for sense, value in list(cache.items()):
+        cleaned = clean_translation(value)
+        if not cleaned:
+            del cache[sense]
+            dropped += 1
+        elif cleaned != value:
+            cache[sense] = cleaned
+            recleaned += 1
+    if recleaned or dropped:
+        print(f"  re-cleaned {recleaned:,} cached glosses, dropped {dropped:,}")
+        save_cache(CACHE, cache)
+    if not cache and spec.family == "nllb":
+        # The previous run's output was NLLB's, so only NLLB may seed
+        # its cache from it. Seeding the MIT model's cache with NLLB's
+        # Bulgarian would put one model's translation under another
+        # model's name.
         seeded, skipped = seed_cache_from_previous_run(cache, CONTENT_DB, OUT)
         if seeded:
             save_cache(CACHE, cache)
@@ -441,29 +478,16 @@ def main() -> int:
     started = time.time()
 
     if todo_senses:
-        print(f"loading {MODEL_ID} ...")
-        import torch
-        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, src_lang=SOURCE_LANG)
-        model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
-        model.eval()
-        print(f"  device: cpu, threads: {torch.get_num_threads()}")
-
-        bos = tokenizer.convert_tokens_to_ids(TARGET_LANG)
+        print(f"loading {spec.model_id} ...")
+        translator = Translator(spec)
+        print(f"  licence: {spec.license} ({spec.license_url})")
+        print(f"  device: cpu, threads: {translator.threads}")
 
         for i in range(0, len(todo_senses), args.batch):
             chunk = todo_senses[i:i + args.batch]
-            tokenizer.src_lang = SOURCE_LANG
-            encoded = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True)
-            with torch.no_grad():
-                generated = model.generate(
-                    **encoded,
-                    forced_bos_token_id=bos,
-                    max_new_tokens=32,
-                    num_beams=2,
-                )
-            decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
+            decoded = translator.translate(
+                chunk, max_new_tokens=32, batch_size=args.batch
+            )
             for source, out in zip(chunk, decoded):
                 cache[source] = clean_translation(out)
             # The cache is written after every batch: a run that is killed
@@ -539,6 +563,7 @@ def main() -> int:
         json.dump(merged, fh, ensure_ascii=False, indent=1, sort_keys=True)
 
     machine = sum(1 for v in merged.values() if v["source"] == "machine")
+    record_provenance("vocabulary", spec, len(results))
     print()
     print(f"SUMMARY 07_translate_bulgarian: translated={len(results)} "
           f"human={len(human)} machine={machine} total={len(merged)} -> {OUT}")

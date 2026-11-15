@@ -222,6 +222,10 @@ def main() -> int:
             "pinyin": pinyin,
             "translations_en": translations_en,
             "translations_bg": translations_bg,
+            # These translations come from Bulgarian speakers on
+            # Tatoeba. They are PEOPLE'S work, not a model's output, and
+            # the marker is what lets a model switch leave them alone.
+            "translations_bg_source": "human" if translations_bg else "",
             "audio_url": audio_url,
             "license": TATOEBA_LICENSE,
             "audio_license": AUDIO_LICENSE if audio_url else "",

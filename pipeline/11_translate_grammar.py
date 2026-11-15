@@ -1,4 +1,4 @@
-"""Translate the grammar points into Bulgarian with NLLB-200.
+"""Translate the grammar points into Bulgarian.
 
 Input:
     data/grammar.json         the grammar points (04_build_grammar.py)
@@ -42,18 +42,28 @@ translation. The English title and summary are kept in the database as
 well: they are the source of the translation, and they are useful to a
 learner who gets stuck.
 
+THE MODEL
+
+The model is chosen with --model. The default is facebook/m2m100_418M
+(MIT); facebook/nllb-200-distilled-600M (CC-BY-NC-4.0) is still
+selectable but must not be used for a release that is sold. The grammar
+screen is shipped inside the app, so the licence of the model is part
+of the licence of the app.
+
 THE CACHE
 
 The translation goes through the same kind of sense cache as
 07_translate_bulgarian.py: English text -> Bulgarian text, in
-data/bg_grammar_cache.json. A re-run after a change to the English only
-translates what is new, so the work is never repeated and a run that is
-killed halfway keeps what it already did.
+data/bg_grammar_cache.json -- one file per model, because the cached
+translations are the model's own output. A re-run after a change to the
+English only translates what is new, so the work is never repeated and
+a run that is killed halfway keeps what it already did.
 
 Usage:
     python pipeline/11_translate_grammar.py
     python pipeline/11_translate_grammar.py --limit 50   # a quick check
     python pipeline/11_translate_grammar.py --titles-only
+    python pipeline/11_translate_grammar.py --model m2m100_418M
 """
 
 from __future__ import annotations
@@ -67,14 +77,21 @@ from importlib import import_module
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import DATA, RAW  # noqa: E402
+from _guards import set_allow_degraded  # noqa: E402
+from _translation_model import (  # noqa: E402
+    Translator,
+    cache_path,
+    load_or_migrate_cache,
+    record_provenance,
+    resolve_model,
+    save_cache,
+)
 
 GRAMMAR_JSON = os.path.join(DATA, "grammar.json")
-CACHE = os.path.join(DATA, "bg_grammar_cache.json")
+# One cache file per model: the cached translations are the model's own
+# output, so two models must not share one.
+CACHE_BASE = os.path.join(DATA, "bg_grammar_cache.json")
 SYLLABLES_JSON = os.path.join(RAW, "pinyin_syllables.json")
-
-MODEL_ID = "facebook/nllb-200-distilled-600M"
-SOURCE_LANG = "eng_Latn"
-TARGET_LANG = "bul_Cyrl"
 
 # The model can only translate so much at once. 512 tokens is enough for
 # a wiki summary.
@@ -292,9 +309,9 @@ def unmask(text: str, terms: dict[str, str]) -> str:
 def strip_echo(text: str, source: str) -> str:
     """Remove the English word the model echoes back at the end.
 
-    NLLB sometimes appends the first word of the source: "Expressing
-    "excessively" with "tai"" comes back as 'Изразяване на "прекалено"
-    с "тай" Expressing'. The trailing "Expressing" is noise.
+    The model sometimes appends the first word of the source:
+    "Expressing "excessively" with "tai"" comes back as 'Изразяване на
+    "прекалено" с "тай" Expressing'. The trailing "Expressing" is noise.
     """
     source_words = _LATIN_WORD.findall(source)
     if not source_words:
@@ -308,48 +325,27 @@ def strip_echo(text: str, source: str) -> str:
     return text
 
 
-def load_cache(path: str) -> dict[str, str]:
-    data = None
-    if os.path.exists(path):
-        try:
-            with open(path, encoding="utf-8") as fh:
-                data = json.load(fh)
-        except (OSError, ValueError):
-            data = None
-    if not isinstance(data, dict):
-        return {}
-    return {str(k): str(v) for k, v in data.items()}
+# The cache helpers are shared with the other translation steps, so
+# every step treats a cache the same way.
 
 
-def save_cache(path: str, cache: dict[str, str]) -> None:
-    """Write the cache atomically.
-
-    A run that is killed halfway must not leave a half-written cache
-    behind: the old cache stays valid and the work is simply redone.
-    """
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(cache, fh, ensure_ascii=False, indent=1, sort_keys=True)
-    os.replace(tmp, path)
-
-
-def translate(texts: list[str], cache: dict[str, str], batch: int) -> dict[str, str]:
+def translate(
+    texts: list[str],
+    cache: dict[str, str],
+    batch: int,
+    spec,
+) -> dict[str, str]:
     """Translate the texts that are not in the cache yet."""
     todo = [t for t in dict.fromkeys(texts) if t not in cache]
     if not todo:
         return cache
 
     syllables = _syllables()
-    print(f"loading {MODEL_ID} ...")
-    import torch
-    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    print(f"loading {spec.model_id} ...")
+    translator = Translator(spec)
+    print(f"  licence: {spec.license} ({spec.license_url})")
+    print(f"  device: cpu, threads: {translator.threads}")
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, src_lang=SOURCE_LANG)
-    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
-    model.eval()
-    print(f"  device: cpu, threads: {torch.get_num_threads()}")
-
-    bos = tokenizer.convert_tokens_to_ids(TARGET_LANG)
     started = time.time()
 
     for i in range(0, len(todo), batch):
@@ -361,25 +357,15 @@ def translate(texts: list[str], cache: dict[str, str], batch: int) -> dict[str, 
             masked_texts.append(masked)
             terms_per_text.append(terms)
 
-        tokenizer.src_lang = SOURCE_LANG
-        encoded = tokenizer(
-            masked_texts, return_tensors="pt", padding=True, truncation=True,
-            max_length=MAX_TOKENS,
+        decoded = translator.translate(
+            masked_texts, max_new_tokens=MAX_TOKENS, batch_size=batch
         )
-        with torch.no_grad():
-            generated = model.generate(
-                **encoded,
-                forced_bos_token_id=bos,
-                max_new_tokens=MAX_TOKENS,
-                num_beams=2,
-            )
-        decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
         for source, out, terms in zip(chunk, decoded, terms_per_text):
             text = unmask(out.strip(), terms)
             cache[source] = strip_echo(text, source)
         # The cache is written after every batch, so a run that is
         # killed keeps the work it already did.
-        save_cache(CACHE, cache)
+        save_cache(cache_path(CACHE_BASE, spec), cache)
 
         done = i + len(chunk)
         if done % (batch * 10) == 0 or done == len(todo):
@@ -400,7 +386,17 @@ def main() -> int:
                          "or the example glosses")
     ap.add_argument("--examples-only", action="store_true",
                     help="translate only the example glosses")
+    ap.add_argument("--model", help="the translation model; the default is "
+                                   "the permissive one (MIT)")
+    ap.add_argument("--allow-degraded", action="store_true",
+                    help="carry on when an input is missing")
     args = ap.parse_args()
+
+    if args.allow_degraded:
+        set_allow_degraded()
+
+    spec = resolve_model(args.model)
+    print(f"model: {spec.model_id} ({spec.license}) -- {spec.note}")
 
     if not os.path.exists(GRAMMAR_JSON):
         print(f"ERROR: missing {GRAMMAR_JSON} - run 04_build_grammar.py first")
@@ -434,26 +430,66 @@ def main() -> int:
         wanted = wanted[:args.limit]
     print(f"texts to consider: {len(wanted):,}")
 
-    cache = load_cache(CACHE)
+    cache, adopted = load_or_migrate_cache(CACHE_BASE, spec)
+    if adopted:
+        print(f"  adopted the old cache: it was {spec.name}'s work")
     todo = [t for t in dict.fromkeys(wanted) if t not in cache]
     print(f"  already in the cache: {len(wanted) - len(todo):,}")
     print(f"  to translate: {len(todo):,}")
 
     if todo:
-        cache = translate(todo, cache, args.batch)
+        cache = translate(todo, cache, args.batch, spec)
 
     # Fill the Bulgarian fields in.
+    #
+    # The Bulgarian grammar is machine-made -- it all comes from the
+    # English wiki text -- so when the model changes, the old model's
+    # Bulgarian is stale and has to be replaced.
+    #
+    # The marker is PER FIELD, not per entry. An entry-level marker
+    # would lie: a run that translated the title but not yet the
+    # summary would claim that both were written by the current model,
+    # and the summary would still be the old model's Bulgarian.
     n_titles = n_summaries = n_examples = 0
+    stale = 0
     for e in entries:
+        # Every Bulgarian string in this file is machine-made -- it all
+        # comes from the English wiki text. So when the model changes,
+        # the OLD model's Bulgarian is stale and has to go: it is
+        # licensed CC-BY-NC and the app must not ship it. It is
+        # cleared first and refilled from the current model's cache,
+        # and anything the current model cannot translate falls back
+        # to the English original rather than keeping the text that
+        # cannot be distributed.
+        #
+        # The file is written once, at the end, so an interrupted run
+        # leaves the old file untouched.
+        if e.get("title_bg_model") != spec.name:
+            e.pop("title_bg", None)
+            e.pop("title_bg_model", None)
+        if e.get("summary_bg_model") != spec.name:
+            e.pop("summary_bg", None)
+            e.pop("summary_bg_model", None)
+        for ex in (e.get("examples") or []):
+            if isinstance(ex, dict) and ex.get("bg_model") != spec.name:
+                ex.pop("bg", None)
+                ex.pop("bg_model", None)
+
         title = e.get("title") or ""
         if title and title in cache:
             e["title_bg"] = cache[title]
+            e["title_bg_model"] = spec.name
             n_titles += 1
+        elif e.get("title_bg") and e.get("title_bg_model") != spec.name:
+            stale += 1
 
         summary = e.get("summary") or ""
         if summary and summary in cache:
             e["summary_bg"] = cache[summary]
+            e["summary_bg_model"] = spec.name
             n_summaries += 1
+        elif e.get("summary_bg") and e.get("summary_bg_model") != spec.name:
+            stale += 1
 
         for ex in (e.get("examples") or []):
             if not isinstance(ex, dict):
@@ -461,11 +497,18 @@ def main() -> int:
             en = (ex.get("en") or "").strip()
             if en and en in cache:
                 ex["bg"] = cache[en]
+                ex["bg_model"] = spec.name
                 n_examples += 1
+            elif ex.get("bg") and ex.get("bg_model") != spec.name:
+                stale += 1
 
     with open(GRAMMAR_JSON, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, indent=1)
 
+    record_provenance("grammar", spec, n_titles + n_summaries + n_examples)
+    if stale:
+        print(f"  WARNING: {stale:,} grammar fields still hold another "
+              f"model's Bulgarian -- run this step again to translate them")
     print()
     print(f"SUMMARY 11_translate_grammar: titles={n_titles} summaries={n_summaries} "
           f"examples={n_examples} -> {GRAMMAR_JSON}")

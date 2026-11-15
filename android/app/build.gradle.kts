@@ -118,9 +118,18 @@ val syncContentDb by tasks.registering(Copy::class) {
     onlyIf { task -> task.inputs.files.files.any { f -> f.exists() } }
 }
 
-val syncAudio by tasks.registering(Copy::class) {
+// Sync, not Copy: a Copy task leaves behind whatever was in the
+// destination before, so a corpus that was MP3 and is now Opus would
+// ship BOTH -- 97 MB of assets instead of 14 MB. Sync removes the
+// files that are no longer in the source.
+val syncAudio by tasks.registering(Sync::class) {
     from(audioSourceDir) {
-        include("*.mp3")
+        // The clips are Opus in an Ogg container: the Edge TTS MP3s were
+        // a fixed 11 232 bytes each, 83 % of them digital silence, and
+        // an MP3 cannot be compressed again in the APK. Media3 plays Ogg
+        // through the platform decoder, which has had Opus since
+        // Android 5.0, so no extra dependency is needed.
+        include("*.ogg")
     }
     into(audioAssetDir)
     onlyIf { task -> task.inputs.files.files.any { f -> f.exists() } }
