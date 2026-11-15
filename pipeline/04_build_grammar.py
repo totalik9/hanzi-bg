@@ -184,10 +184,23 @@ class LiveSource:
         "host and returns HTTP 403)"
     )
 
+    def __init__(self) -> None:
+        # Cloudflare refuses the whole site now, not just api.php. The
+        # flag is set when the export is refused, so the rendered
+        # pages are not asked for as well: the same request to the
+        # same host would be refused too, and eight of them at thirty
+        # seconds each is four minutes of waiting for nothing.
+        self.blocked = False
+
     def index_pages(self) -> dict[str, str]:
-        return fetch_wikitext_titles(INDEX_PAGES)
+        pages = fetch_wikitext_titles(INDEX_PAGES)
+        if not pages:
+            self.blocked = True
+        return pages
 
     def rendered_links(self, page: str) -> list[tuple[str, str]]:
+        if self.blocked:
+            return []
         return fetch_rendered_links(WIKI_BASE + page)
 
     def point_pages(self, slugs: list[str]) -> dict[str, str]:
@@ -327,7 +340,12 @@ class MirrorSource:
         self._load()
         out: dict[str, str] = {}
         for page in INDEX_PAGES:
-            html = fetch_rendered_page(page, attempts=1)
+            # The index pages are fetched best-effort and are NOT
+            # needed: the level of every point is in the checked-in
+            # mapping. The archive is not asked at all, because it
+            # rate-limits hard enough that a cold run spends minutes
+            # being refused and collects nothing.
+            html = fetch_rendered_page(page, attempts=0)
             if html:
                 out[page.replace(" ", "_")] = html
         return out
@@ -462,7 +480,7 @@ def fetch_rendered_links(url: str) -> list[tuple[str, str]]:
     wikitext.
     """
     try:
-        r = requests.get(url, headers={"User-Agent": UA}, timeout=60)
+        r = requests.get(url, headers={"User-Agent": UA}, timeout=30)
         r.raise_for_status()
     except Exception as exc:  # noqa: BLE001
         print(f"   WARNING: could not render {url}: {exc}")
@@ -933,10 +951,16 @@ def main() -> int:
     else:
         # The live site first: it has the newest content and it is the
         # source the licence names. Then the mirror, which holds the
-        # same wikitext in one download. Then the archive, which holds
-        # the same pages but one request at a time and rate-limits
-        # hard enough to collect nothing.
-        sources = [LiveSource(), MirrorSource(), WaybackSource()]
+        # same wikitext in one download.
+        #
+        # The archive is NOT in the default chain. It holds the same
+        # pages but one request at a time, and it rate-limits hard
+        # enough that a cold run spent six minutes being refused and
+        # then collected nothing. What the archive was needed for --
+        # the level of the points whose own wikitext has no level
+        # category -- is in the checked-in mapping now, so the
+        # archive is only worth asking for on purpose.
+        sources = [LiveSource(), MirrorSource()]
 
     source = None
     index_pages: dict[str, str] = {}
