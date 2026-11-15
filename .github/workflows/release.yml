@@ -121,16 +121,59 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # The `release: published` event fires the moment the release is
+      # published -- which, for a release whose assets are uploaded
+      # afterwards, is BEFORE the assets exist. The workflow then finds
+      # an empty release and fails on a download that had nothing to
+      # download. So the assets are waited for.
+      #
+      # The upload order is the real fix (publish last, upload first),
+      # but a person who publishes first and uploads afterwards must not
+      # get a red X for it.
+      - name: Wait for the assets to be there
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.release.tag_name }}"
+          for attempt in $(seq 1 30); do
+            count=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag" \
+              | python3 -c 'import json,sys; print(len(json.load(sys.stdin).get("assets", [])))')
+            if [ "$count" -ge 2 ]; then
+              echo "the release has $count assets"
+              exit 0
+            fi
+            echo "attempt $attempt: $count assets so far, waiting"
+            sleep 10
+          done
+          echo "::error::the release still has no assets after five minutes"
+          exit 1
+
+      # The REST API and not the gh CLI: the download is three lines,
+      # it can be run and checked outside Actions, and it does not
+      # depend on a second tool being present on the runner.
       - name: Download the published assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          gh release download "${{ github.event.release.tag_name }}" \
-            --dir release-assets \
-            --pattern '*.apk' --pattern '*.sha256'
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.event.release.tag_name }}" \
+            | python3 -c 'import json,sys; [print(a["id"], a["name"]) for a in json.load(sys.stdin)["assets"]]' \
+            > /tmp/assets.txt
+          while read -r id name; do
+            echo "downloading $name"
+            curl -sSL -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id" \
+              -o "release-assets/$name"
+          done < /tmp/assets.txt
           ls -la release-assets
+          test -s release-assets/hanzi-bg-v0.1.0-release.apk
 
       - name: The checksum has to match the file
         run: |
@@ -142,7 +185,11 @@ jobs:
         run: |
           set -euo pipefail
           apk=$(ls release-assets/*.apk | head -1)
-          build_tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          build_tools=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$build_tools" ] || [ ! -x "$build_tools/apksigner" ]; then
+            echo "::error::apksigner is not in the runner's build-tools - the signing certificate cannot be checked"
+            exit 1
+          fi
           "$build_tools/apksigner" verify --verbose --print-certs "$apk" | tee /tmp/certs.txt
           actual=$(grep -oE 'SHA-256 digest: [0-9A-Fa-f]+' /tmp/certs.txt | head -1 \
             | sed 's/SHA-256 digest: //' | tr 'a-f' 'A-F')
