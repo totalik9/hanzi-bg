@@ -231,8 +231,12 @@ class PracticeModesTest {
         // match is on the substring.
         val hasClip = composeRule.onAllNodesWithText("Изслушай", substring = true)
             .fetchSemanticsNodes().isNotEmpty()
+        // The notice is the NO_AUDIO one: the fixture has no clips at
+        // all, which is a content gap, not an exhausted session. The
+        // text is a learner-facing message -- it must not name a build
+        // script.
         val hasNotice = composeRule.onAllNodesWithText(
-            "Няма думи с аудио. Стартирай 06_build_audio.py."
+            "За това ниво няма записани аудио клипове", substring = true
         ).fetchSemanticsNodes().isNotEmpty()
         assertTrue(
             "the listening mode must either offer a clip or say there is none",
