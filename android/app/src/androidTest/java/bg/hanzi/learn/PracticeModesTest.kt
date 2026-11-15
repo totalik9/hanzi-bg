@@ -93,11 +93,29 @@ class PracticeModesTest {
         // The fixture has levels 1 and 2, so the Home screen must offer
         // both. This is the check that the whole chain works: the
         // fixture is found, the database opens, the levels are read.
-        composeRule.waitForIdle()
-        assertTrue(
-            "the level selector must be on the Home screen",
-            composeRule.onAllNodesWithText("Избери ниво").fetchSemanticsNodes().isNotEmpty(),
-        )
+        //
+        // The Home screen shows a SPINNER until the database has been
+        // read, and that read is on a background thread: Compose's
+        // waitForIdle does not wait for it -- it waits for the main
+        // thread. So the assertion has to wait for the level selector
+        // to appear, the same way waitForThePool() does for the
+        // practice screen.
+        //
+        // It passed on a fast machine and failed on a slow one, which
+        // is how it got to fail on the CI runner for nine runs.
+        //
+        // The budget is 60 seconds, not 20: the Home screen clears its
+        // spinner only after EVERY query has finished -- the levels,
+        // the word count of each level, the learned count of each
+        // level, the cards due today and the daily statistics -- and
+        // two of those databases have to be created first. On a cold
+        // runner that is a lot of waiting, and the wait is bounded by
+        // how long the work takes, not by a fixed guess.
+        composeRule.waitUntil(timeoutMillis = 60_000) {
+            composeRule.onAllNodesWithText("Избери ниво")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
         assertTrue(
             "HSK 1 must be offered",
             composeRule.onAllNodesWithText("HSK 1").fetchSemanticsNodes().isNotEmpty(),
