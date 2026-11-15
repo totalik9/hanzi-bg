@@ -29,6 +29,11 @@
 
     <!-- Practice -->
     <string name="practice_level">Ниво: %1$s</string>
+    <!-- The listening mode has nothing to show. The two cases are
+         different: one is a content gap (this level has no audio), the
+         other is the end of the session. -->
+    <string name="practice_listening_no_audio">За това ниво няма записани аудио клипове. Избери по-ниско ниво или изчакай да бъдат добавени.</string>
+    <string name="practice_listening_exhausted">Изслуша всички думи с аудио от това ниво. Избери друго ниво или започни нова сесия.</string>
 
     <!-- Flashcard -->
     <string name="card_show_answer">Покажи отговор</string>
@@ -55,6 +60,9 @@
 
     <!-- Grammar -->
     <string name="grammar_empty">Все още няма граматични теми.</string>
+    <!-- The attribution the Chinese Grammar Wiki's licence requires:
+         a link to the wiki on every view where its content appears. -->
+    <string name="grammar_attribution">Грамтиката е от AllSet Learning Chinese Grammar Wiki (resources.allsetlearning.com/chinese/grammar/), лиценз CC BY-NC-SA 3.0.</string>
 
     <!-- Content -->
     <string name="content_loading">Зареждане на речника…</string>

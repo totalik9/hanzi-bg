@@ -120,6 +120,30 @@ data class WritingExercise(
     val character: CharacterEntry?,
 )
 
+/**
+ * Why the listening mode has nothing to show.
+ *
+ * The two cases look identical from the outside -- the panel is empty
+ * either way -- but they are not the same thing to the learner:
+ *
+ *   NO_AUDIO   the level has no pronunciation clips at all. HSK 7-9 is
+ *              in this state: 5 562 words and no audio, because the
+ *              clips for that level were never generated. The mode
+ *              cannot work here and never will, until the audio is
+ *              built.
+ *
+ *   EXHAUSTED  every word that has a clip has already been used in
+ *              this session. The mode works; the session is over.
+ *
+ * Telling them apart matters, because the level selector lets the
+ * learner pick HSK 7-9, and "Няма повече думи за упражнение" there
+ * reads like a broken app rather than like missing audio.
+ */
+enum class ListeningEmptyReason {
+    NO_AUDIO,
+    EXHAUSTED,
+}
+
 data class PracticeUiState(
     val loading: Boolean = true,
     val mode: PracticeMode = PracticeMode.PRODUCTION,
@@ -133,6 +157,12 @@ data class PracticeUiState(
     val totalCount: Int = 0,
     /** The levels the pool is drawn from, for the screen's title. */
     val levelLabel: String = "",
+    /**
+     * Why the listening mode is empty, when it is.
+     *
+     * Null while the mode has something to show.
+     */
+    val listeningEmptyReason: ListeningEmptyReason? = null,
 )
 
 /**
@@ -160,7 +190,23 @@ class PracticeViewModel @Inject constructor(
     private var grammarExamples: List<GrammarExample> = emptyList()
     private var usedWords = mutableSetOf<String>()
     private var usedSentences = mutableSetOf<Long>()
-    private val random = Random(42)
+
+    /**
+     * The source of the shuffle.
+     *
+     * It used to be `Random(42)`, a fixed seed. That made every
+     * exercise of every learner identical, in the same order, for ever:
+     * the learner who failed word #1 met it again in the identical
+     * position on the next run, and the app never varied between two
+     * people using it. A fixed seed is a fine thing for a test and a
+     * terrible thing for a shuffle.
+     *
+     * The seed is now random for each process, so two learners get two
+     * different orders and two runs of the same learner differ. The
+     * order within a session is still stable, because the pool is
+     * drawn in order from this one generator.
+     */
+    private val random = Random(Random.nextInt().toLong())
 
     /**
      * The levels the pool is drawn from.
@@ -219,6 +265,10 @@ class PracticeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             loading = false,
             levelLabel = LevelSelection.labelOf(levelSelection),
+            // The reason the listening mode was empty belongs to the
+            // old pool. The new level may have audio where the old one
+            // had none, and the panel is redrawn below.
+            listeningEmptyReason = null,
         )
         // The learner may have switched to another mode while the pool
         // was still loading. Without this, that mode would be left
@@ -368,15 +418,26 @@ class PracticeViewModel @Inject constructor(
         // hold an empty string for a word that has no clip yet, and
         // such a word would put the learner in front of a button that
         // plays nothing.
-        val pool = wordPool.filter { !it.audio.isNullOrBlank() && it.hanzi !in usedWords }
-        if (pool.isEmpty()) {
-            _uiState.value = _uiState.value.copy(finished = true, listening = null)
+        //
+        // The two empty cases are told apart. A level with no clips at
+        // all -- HSK 7-9 has 5 562 words and no audio -- is a content
+        // gap, and the learner is told so. A level whose clips have all
+        // been used in this session is simply over, and says so.
+        val reason = ListeningPool.emptyReason(wordPool, usedWords)
+        if (reason != null) {
+            _uiState.value = _uiState.value.copy(
+                finished = true,
+                listening = null,
+                listeningEmptyReason = reason,
+            )
             return
         }
+        val withAudio = wordPool.filter { !it.audio.isNullOrBlank() }
+        val pool = withAudio.filter { it.hanzi !in usedWords }
         val word = pool[random.nextInt(pool.size)]
         usedWords += word.hanzi
 
-        val distractors = wordPool
+        val distractors = withAudio
             .filter { it.hanzi != word.hanzi && it.hanzi !in usedWords }
             .shuffled(random)
             .take(3)
@@ -385,6 +446,7 @@ class PracticeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             listening = ListeningExercise(word = word, options = options),
             finished = false,
+            listeningEmptyReason = null,
         )
     }
 

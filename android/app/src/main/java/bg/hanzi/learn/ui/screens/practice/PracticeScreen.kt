@@ -204,8 +204,18 @@ private fun ProductionPanel(state: PracticeUiState, viewModel: PracticeViewModel
 private fun ListeningPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
     val exercise = state.listening
     if (exercise == null) {
+        // Two different situations, two different messages. The old
+        // text was "Няма думи с аудио. Стартирай 06_build_audio.py." --
+        // which names a build script to a learner who has never heard of
+        // one, and it also appeared when the session was simply over.
         Text(
-            text = "Няма думи с аудио. Стартирай 06_build_audio.py.",
+            text = when (state.listeningEmptyReason) {
+                ListeningEmptyReason.NO_AUDIO ->
+                    stringResource(R.string.practice_listening_no_audio)
+                ListeningEmptyReason.EXHAUSTED ->
+                    stringResource(R.string.practice_listening_exhausted)
+                null -> stringResource(R.string.practice_listening_no_audio)
+            },
             modifier = Modifier.padding(16.dp),
         )
         return

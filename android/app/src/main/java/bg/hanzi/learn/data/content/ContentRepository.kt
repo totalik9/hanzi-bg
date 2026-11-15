@@ -122,6 +122,15 @@ class ContentRepository @Inject constructor(
 
     val isAvailable: Boolean get() = provider.database != null
 
+    /**
+     * The IME index, built on the first request and kept.
+     *
+     * The content database is read-only, so the index cannot change
+     * under the app and there is nothing to invalidate it.
+     */
+    @Volatile
+    private var cachedImeIndex: ImeIndex? = null
+
     private fun <T> read(block: (SQLiteDatabase) -> T): T? {
         val db = provider.database ?: return null
         return try {
@@ -392,39 +401,55 @@ class ContentRepository @Inject constructor(
     /**
      * The syllables the IME index knows, and the words each one appears in.
      *
-     * The whole index is a few thousand rows, so it is loaded once and
-     * kept in memory: a pinyin IME has to answer on every keystroke.
+     * A pinyin IME has to answer on every keystroke, so the index
+     * cannot be queried from SQLite each time.
+     *
+     * It is built ONCE and kept. It used to be rebuilt every time the
+     * practice screen loaded, which happens on every level change --
+     * and the index is not small: 21 408 IME rows over 399 syllables,
+     * plus the pinyin, the gloss and the frequency of all 10 896
+     * words. That is several megabytes of maps and strings, thrown
+     * away and rebuilt every time the learner picked another level.
+     *
+     * The content database is read-only, so the index cannot change
+     * under the app. It is built lazily on the first call and reused
+     * afterwards.
      */
-    fun imeIndex(): ImeIndex = read { db ->
-        val syllableToWords = mutableMapOf<String, MutableList<String>>()
-        db.rawQuery("SELECT syllable, hanzi FROM ime", null).use { c ->
-            while (c.moveToNext()) {
-                syllableToWords.getOrPut(c.str("syllable")) { mutableListOf() }
-                    .add(c.str("hanzi"))
-            }
-        }
-
-        val wordToPinyin = mutableMapOf<String, String>()
-        val wordToGloss = mutableMapOf<String, String>()
-        val wordToFreq = mutableMapOf<String, Int>()
-        db.rawQuery(
-            "SELECT hanzi, pinyin_plain, pinyin, gloss_bg, gloss_en, freq FROM words",
-            null,
-        ).use { c ->
-            while (c.moveToNext()) {
-                val hanzi = c.str("hanzi")
-                // The IME matches against the TONELESS pinyin: the learner
-                // types letters, not tone marks.
-                wordToPinyin[hanzi] = c.str("pinyin_plain").ifBlank { c.str("pinyin") }
-                wordToGloss[hanzi] = c.str("gloss_bg").ifBlank { c.str("gloss_en") }
-                if (!c.isNull("freq")) {
-                    wordToFreq[hanzi] = c.getInt("freq")
+    fun imeIndex(): ImeIndex {
+        cachedImeIndex?.let { return it }
+        val built = read { db ->
+            val syllableToWords = mutableMapOf<String, MutableList<String>>()
+            db.rawQuery("SELECT syllable, hanzi FROM ime", null).use { c ->
+                while (c.moveToNext()) {
+                    syllableToWords.getOrPut(c.str("syllable")) { mutableListOf() }
+                        .add(c.str("hanzi"))
                 }
             }
-        }
 
-        ImeIndex(syllableToWords, wordToPinyin, wordToGloss, wordToFreq)
-    } ?: ImeIndex(emptyMap(), emptyMap(), emptyMap())
+            val wordToPinyin = mutableMapOf<String, String>()
+            val wordToGloss = mutableMapOf<String, String>()
+            val wordToFreq = mutableMapOf<String, Int>()
+            db.rawQuery(
+                "SELECT hanzi, pinyin_plain, pinyin, gloss_bg, gloss_en, freq FROM words",
+                null,
+            ).use { c ->
+                while (c.moveToNext()) {
+                    val hanzi = c.str("hanzi")
+                    // The IME matches against the TONELESS pinyin: the learner
+                    // types letters, not tone marks.
+                    wordToPinyin[hanzi] = c.str("pinyin_plain").ifBlank { c.str("pinyin") }
+                    wordToGloss[hanzi] = c.str("gloss_bg").ifBlank { c.str("gloss_en") }
+                    if (!c.isNull("freq")) {
+                        wordToFreq[hanzi] = c.getInt("freq")
+                    }
+                }
+            }
+
+            ImeIndex(syllableToWords, wordToPinyin, wordToGloss, wordToFreq)
+        } ?: ImeIndex(emptyMap(), emptyMap(), emptyMap())
+        cachedImeIndex = built
+        return built
+    }
 
     /** A character with its stroke-order data, for the writing mode. */
     fun character(char: String): CharacterEntry? = read { db ->
