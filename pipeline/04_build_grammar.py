@@ -406,25 +406,22 @@ def _links_from_index_html(html: str) -> list[tuple[str, str]]:
     return out
 
 
-def fetch_rendered_page(page: str, attempts: int = 1) -> str | None:
+def fetch_rendered_page(page: str, attempts: int = 0) -> str | None:
     """The rendered HTML of a level index page.
 
     The live site is tried first and the Internet Archive is the
     fallback. The archive holds a snapshot of every level index page,
-    and there are only eight of them, so the rate limiting does not
-    bite -- but the archive is slow to answer for a page it has not
-    served recently, so the answer is cached on disk. The index pages
-    change a few times a year, and a cached copy is better than a
-    pipeline that takes ten minutes to start.
+    and there are only eight of them -- but the archive rate-limits
+    hard enough that a cold run can spend minutes being refused, and
+    the level index pages are NOT needed: the level of every grammar
+    point is in the checked-in mapping
+    (pipeline/reference/grammar_levels.json).
 
-    The cache is keyed by the page name and holds the body of a
-    successful fetch, so a run that has the cache does not talk to
-    the archive at all.
-
-    The archive is given a limited number of attempts on purpose. A
-    page that the archive will not serve is not worth waiting for:
-    the level index pages are what matters, and they are eight
-    requests, not twenty.
+    So this is a best-effort fetch. The archive is asked at most
+    `attempts` times, and the default of zero means "do not ask the
+    archive at all" -- the caller has the mapping and does not need
+    the pages. The answer is cached on disk, so a run that has the
+    cache does not talk to the archive at all.
     """
     cache_file = os.path.join(CACHE, f"index_{page}.html")
     if os.path.exists(cache_file):
@@ -435,13 +432,13 @@ def fetch_rendered_page(page: str, attempts: int = 1) -> str | None:
 
     body = None
     try:
-        r = requests.get(WIKI_BASE + page, headers={"User-Agent": UA}, timeout=60)
+        r = requests.get(WIKI_BASE + page, headers={"User-Agent": UA}, timeout=30)
         if r.status_code == 200 and "mw-content-text" in r.text:
             body = r.text
     except Exception as exc:  # noqa: BLE001
         print(f"   the live page {page} failed: {exc}")
 
-    if body is None:
+    if body is None and attempts > 0:
         try:
             import _grammar_wayback
 
@@ -501,6 +498,12 @@ def fetch_wikitext_titles(titles: list[str]) -> dict[str, str]:
     Tries the MediaWiki api.php first; on failure (Cloudflare blocks api.php
     from this host) it falls back to Special:Export, which returns the same
     revision text inside a MediaWiki XML export.
+
+    Cloudflare now challenges the WHOLE site, so Special:Export is
+    refused as well. When that happens the source gives up at once
+    instead of asking for every page: eleven refused requests, each
+    with a timeout, is minutes of waiting for a result that is already
+    known to be 403. The mirror and the archive are the fallbacks.
     """
     result: dict[str, str] = {}
 
@@ -521,6 +524,7 @@ def fetch_wikitext_titles(titles: list[str]) -> dict[str, str]:
 
     # ---- Special:Export (batched) ---------------------------------------
     batch_size = 25
+    blocked = False
     for start in range(0, len(titles), batch_size):
         batch = titles[start:start + batch_size]
         params = {"pages": "\n".join(batch), "curonly": "1", "wpDownload": "1"}
@@ -536,7 +540,18 @@ def fetch_wikitext_titles(titles: list[str]) -> dict[str, str]:
                     result[title.replace(" ", "_")] = text_el.text
         except Exception as exc:  # noqa: BLE001
             print(f"   WARNING: export batch {start // batch_size} failed: {exc}")
+            if "403" in str(exc):
+                # Cloudflare is refusing the whole site, not one page.
+                # Asking for the rest is minutes of waiting for a
+                # result that is already known.
+                print("   the wiki is refusing every request (403) -- "
+                      "giving up on the live source")
+                blocked = True
+                break
         time.sleep(0.4)
+
+    if blocked:
+        return result
 
     # ---- per-page fallback for anything the batch missed ----------------
     for title in titles:
@@ -557,6 +572,10 @@ def fetch_wikitext_titles(titles: list[str]) -> dict[str, str]:
                 result[title.replace(" ", "_")] = text_el.text
         except Exception as exc:  # noqa: BLE001
             print(f"   WARNING: could not fetch {title}: {exc}")
+            if "403" in str(exc):
+                print("   the wiki is refusing every request (403) -- "
+                      "giving up on the live source")
+                break
         time.sleep(0.3)
 
     return result
