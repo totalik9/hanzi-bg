@@ -1,0 +1,421 @@
+--------- beginning of system
+11-16 20:27:03.471  1800  1800 V SystemServerTiming: OnBootPhase_520_com.android.server.appbinding.AppBindingService$Lifecycle took to complete: 0ms
+11-16 20:27:03.471  1800  1800 D SystemServerTiming: OnBootPhase_520_com.android.server.tracing.TracingServiceProxy
+11-16 20:27:03.471  1800  1800 V SystemServerTiming: OnBootPhase_520_com.android.server.tracing.TracingServiceProxy took to complete: 0ms
+11-16 20:27:03.471  1800  1800 D SystemServerTiming: OnBootPhase_520_com.android.server.policy.PermissionPolicyService
+11-16 20:27:03.495  1800  1800 V SystemServerTiming: OnBootPhase_520_com.android.server.policy.PermissionPolicyService took to complete: 24ms
+11-16 20:27:03.496  1800  1800 D SystemServerTiming: OnBootPhase_520_com.android.server.pm.StagingManager$Lifecycle
+11-16 20:27:03.508  1800  1800 V SystemServerTiming: OnBootPhase_520_com.android.server.pm.StagingManager$Lifecycle took to complete: 0ms
+11-16 20:27:03.508  1800  1800 D SystemServerTiming: OnBootPhase_520_com.android.server.app.GameManagerService$Lifecycle
+11-16 20:27:03.509  1800  1800 V SystemServerTiming: OnBootPhase_520_com.android.server.app.GameManagerService$Lifecycle took to complete: 0ms
+11-16 20:27:03.509  1800  1800 V SystemServerTiming: OnBootPhase_520 took to complete: 467ms
+11-16 20:27:03.509  1800  1800 V SystemServerTiming: StartBootPhaseDeviceSpecificServicesReady took to complete: 467ms
+11-16 20:27:03.509  1800  1800 D SystemServerTiming: StartSafetyCenterService
+11-16 20:27:03.510  1800  1800 I SystemServiceManager: Starting com.android.safetycenter.SafetyCenterService
+--------- beginning of main
+11-16 20:27:03.570  1800  1800 I SafetyCenterResContext: Found Safety Center resources APK at: com.android.safetycenter.resources
+11-16 20:27:03.751  1800  1800 I SafetyCenterConfigReade: SafetyCenterConfig read successfully
+11-16 20:27:03.809  1800  1800 I SafetyCenterIssueDis: Safety Center persisted issues read successfully
+11-16 20:27:03.836  1800  1979 W ServiceManagerCppClient: Waited one second for android.hardware.wifi.supplicant.ISupplicant/default (is service started? Number of threads started in the threadpool: 31. Are binder threads started and available?)
+--------- beginning of kernel
+11-16 20:27:03.854     0     0 I servicemanager: Since 'android.hardware.wifi.supplicant.ISupplicant/default' could not be found, trying to start it as a lazy AIDL service. (if it's not configured to be a lazy service, it may be stuck starting or still starting).
+11-16 20:27:03.869     0     0 I init    : service 'wpa_supplicant' requested start, but it is already running (flags: 134)
+11-16 20:27:03.869     0     0 I init    : Control message: Processed ctl.interface_start for 'aidl/android.hardware.wifi.supplicant.ISupplicant/default' from pid: 132 (/system/bin/servicemanager)
+11-16 20:27:03.859  1800  1800 W SystemServiceManager: Service com.android.safetycenter.SafetyCenterService took 301 ms in onStart
+11-16 20:27:03.864  1800  1800 V SystemServerTiming: StartSafetyCenterService took to complete: 351ms
+11-16 20:27:03.864  1800  1800 D SystemServerTiming: AppSearchModule
+11-16 20:27:03.866  1800  1800 I SystemServiceManager: Starting com.android.server.appsearch.AppSearchModule$Lifecycle
+11-16 20:27:03.937  2053  2053 I wpa_supplicant: Processing aidl events on FD 3
+11-16 20:27:03.950  1800  1800 W SystemServiceManager: Service com.android.server.appsearch.AppSearchModule$Lifecycle took 83 ms in onStart
+11-16 20:27:03.950  1800  1800 V SystemServerTiming: AppSearchModule took to complete: 85ms
+11-16 20:27:03.950  1800  1800 D SystemServerTiming: StartMediaCommunicationService
+11-16 20:27:03.954  2053  2053 I wpa_supplicant: Starting AIDL supplicant
+11-16 20:27:03.954  2053  2053 I wpa_supplicant: Interface version: 2
+11-16 20:27:03.957  1800  1800 I SystemServiceManager: Starting com.android.server.media.MediaCommunicationService
+11-16 20:27:03.965  1800  1800 V SystemServerTiming: StartMediaCommunicationService took to complete: 14ms
+11-16 20:27:03.966  1800  1800 D SystemServerTiming: AppCompatOverridesService
+11-16 20:27:03.966  1800  1800 I SystemServiceManager: Starting com.android.server.compat.overrides.AppCompatOverridesService$Lifecycle
+11-16 20:27:04.015  1800  1800 V SystemServerTiming: AppCompatOverridesService took to complete: 49ms
+11-16 20:27:04.016  1800  1800 D SystemServerTiming: HealthConnectManagerService
+11-16 20:27:04.018  1800  1800 I SystemServiceManager: Starting com.android.server.healthconnect.HealthConnectManagerService
+11-16 20:27:04.041     0     0 I servicemanager: Found android.hardware.wifi.supplicant.ISupplicant/default in device VINTF manifest.
+11-16 20:27:04.043     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+11-16 20:27:04.030  2053  2053 I wpa_supplicant: Successfully initialized wpa_supplicant
+11-16 20:27:04.033  1800  1979 I SupplicantStaIfaceHalAidlImpl: Obtained ISupplicant binder.
+11-16 20:27:04.048  1800  1979 I SupplicantStaIfaceHalAidlImpl: Local Version: 2
+11-16 20:27:04.133     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2054 n tail=0 logMask=10 pid=0 start=0ns deadline=0ns
+11-16 20:27:04.155  2053  2053 I wpa_supplicant: rfkill: Cannot open RFKILL control device
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: Attempted to fetch resources before Health Connect resources APK is loaded!
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: java.lang.IllegalStateException
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.migration.notification.HealthConnectResourcesContext.resolvePackageInfo(HealthConnectResourcesContext.java:129)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.migration.notification.HealthConnectResourcesContext.initialisePackageNames(HealthConnectResourcesContext.java:87)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.migration.notification.HealthConnectResourcesContext.<init>(HealthConnectResourcesContext.java:83)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.migration.notification.HealthConnectResourcesContext.<init>(HealthConnectResourcesContext.java:70)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.migration.notification.MigrationNotificationFactory.<init>(MigrationNotificationFactory.java:107)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.migration.notification.MigrationNotificationSender.<init>(MigrationNotificationSender.java:60)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.healthconnect.HealthConnectManagerService.<init>(HealthConnectManagerService.java:105)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.SystemServiceManager.startService(SystemServiceManager.java:218)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.SystemServiceManager.startService(SystemServiceManager.java:142)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.SystemServer.startOtherServices(SystemServer.java:2864)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.SystemServer.run(SystemServer.java:942)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.server.SystemServer.main(SystemServer.java:664)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at java.lang.reflect.Method.invoke(Native Method)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-16 20:27:04.278  1800  1800 E HealthConnectResContext: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:949)
+11-16 20:27:04.294  2053  2053 I wpa_supplicant: Init sm=0x7b3869f2dbd0
+11-16 20:27:04.379  1800  1800 W SystemServiceManager: Service com.android.server.healthconnect.HealthConnectManagerService took 77 ms in onStart
+11-16 20:27:04.380  1800  1800 V SystemServerTiming: HealthConnectManagerService took to complete: 364ms
+11-16 20:27:04.381  1800  1800 D SystemServerTiming: PhaseActivityManagerReady
+11-16 20:27:04.381  1800  1800 D SystemServerTiming: controllersReady
+11-16 20:27:04.400  2053  2053 I wpa_supplicant: rfkill: Cannot get wiphy information
+11-16 20:27:04.431  2053  2053 I wpa_supplicant: Init sm=0x7b3869f2c890
+11-16 20:27:04.489  1800  1979 I SupplicantStaIfaceHalAidlImpl: Remote service version was cached
+11-16 20:27:04.490  1800  1979 I SupplicantStaIfaceHalAidlImpl: Remote Version: 2
+11-16 20:27:04.504  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.providers.media.module changed
+11-16 20:27:04.505  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.providers.media.module changed
+11-16 20:27:04.507  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.uwb.resources changed
+11-16 20:27:04.520  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.uwb.resources changed
+11-16 20:27:04.532  1800  1979 I SupplicantStaIfaceHalAidlImpl: Non-standard cert callback was registered
+11-16 20:27:04.540  2053  2053 I wpa_supplicant: Iface already exists, return existing
+11-16 20:27:04.545  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.providers.media.module changed
+11-16 20:27:04.545  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.providers.media.module changed took to complete: 40ms
+11-16 20:27:04.545  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.rkpdapp changed
+11-16 20:27:04.546  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.rkpdapp changed
+11-16 20:27:04.546  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.rkpdapp changed
+11-16 20:27:04.546  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.rkpdapp changed took to complete: 0ms
+11-16 20:27:04.546  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package android.ext.services changed
+11-16 20:27:04.547  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package android.ext.services changed
+11-16 20:27:04.547  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package android.ext.services changed
+11-16 20:27:04.547  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package android.ext.services changed took to complete: 0ms
+11-16 20:27:04.547  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cts.ctsshim changed
+11-16 20:27:04.608  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.cts.ctsshim changed
+11-16 20:27:04.610  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.uwb.resources changed
+11-16 20:27:04.618  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.uwb.resources changed took to complete: 110ms
+11-16 20:27:04.633  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.cts.ctsshim changed
+11-16 20:27:04.634  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cts.ctsshim changed took to complete: 26ms
+11-16 20:27:04.634  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cts.priv.ctsshim changed
+11-16 20:27:04.636  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.cts.priv.ctsshim changed
+11-16 20:27:04.637  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.cts.priv.ctsshim changed
+11-16 20:27:04.638  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cts.priv.ctsshim changed took to complete: 2ms
+11-16 20:27:04.652  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.virtualmachine.res changed
+11-16 20:27:04.653  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.virtualmachine.res changed
+11-16 20:27:04.654  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.virtualmachine.res changed
+11-16 20:27:04.655  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.virtualmachine.res changed took to complete: 2ms
+11-16 20:27:04.660  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.connectivity.resources changed
+11-16 20:27:04.684  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.connectivity.resources changed
+11-16 20:27:04.689  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.connectivity.resources changed
+11-16 20:27:04.690  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.connectivity.resources changed took to complete: 6ms
+11-16 20:27:04.690  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.nearby.halfsheet changed
+11-16 20:27:04.691  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.nearby.halfsheet changed
+11-16 20:27:04.694  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.nearby.halfsheet changed
+11-16 20:27:04.694  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.nearby.halfsheet changed took to complete: 3ms
+11-16 20:27:04.695  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.ondevicepersonalization.services changed
+11-16 20:27:04.700  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.ondevicepersonalization.services changed
+11-16 20:27:04.701  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.ondevicepersonalization.services changed
+11-16 20:27:04.701  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.ondevicepersonalization.services changed took to complete: 1ms
+11-16 20:27:04.701  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.federatedcompute.services changed
+11-16 20:27:04.701  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.federatedcompute.services changed
+11-16 20:27:04.705  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.sdksandbox changed
+11-16 20:27:04.706  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.sdksandbox changed
+11-16 20:27:04.707  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.sdksandbox changed
+11-16 20:27:04.711  1800  1800 V SystemServerTiming: controllersReady took to complete: 330ms
+11-16 20:27:04.724  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.federatedcompute.services changed
+11-16 20:27:04.725  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.federatedcompute.services changed took to complete: 24ms
+11-16 20:27:04.726  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.adservices.api changed
+11-16 20:27:04.727  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.adservices.api changed
+11-16 20:27:04.730  1800  1800 D SystemServerTiming: killProcesses
+11-16 20:27:04.731  1800  1800 V SystemServerTiming: killProcesses took to complete: 0ms
+11-16 20:27:04.732  1800  1800 I ActivityManager: System now ready
+11-16 20:27:04.734  1800  1800 D SystemServerTiming: updateTopComponentForFactoryTest
+11-16 20:27:04.737  1800  1800 V SystemServerTiming: updateTopComponentForFactoryTest took to complete: 0ms
+11-16 20:27:04.737  1800  1800 D SystemServerTiming: registerActivityLaunchObserver
+11-16 20:27:04.740  1800  1800 V SystemServerTiming: registerActivityLaunchObserver took to complete: 2ms
+11-16 20:27:04.741  1800  1800 D SystemServerTiming: watchDeviceProvisioning
+11-16 20:27:04.743  1800  1800 V SystemServerTiming: watchDeviceProvisioning took to complete: 1ms
+11-16 20:27:04.744  1800  1800 D SystemServerTiming: retrieveSettings
+11-16 20:27:04.747  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.sdksandbox changed took to complete: 2ms
+11-16 20:27:04.757  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wifi.dialog changed
+11-16 20:27:04.758  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.wifi.dialog changed
+11-16 20:27:04.759  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.wifi.dialog changed
+11-16 20:27:04.780  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wifi.dialog changed took to complete: 22ms
+11-16 20:27:04.781  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.hotspot2.osulogin changed
+11-16 20:27:04.781  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.hotspot2.osulogin changed
+11-16 20:27:04.781  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.hotspot2.osulogin changed
+11-16 20:27:04.782  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.hotspot2.osulogin changed took to complete: 1ms
+11-16 20:27:04.782  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wifi.resources changed
+11-16 20:27:04.782  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.wifi.resources changed
+11-16 20:27:04.782  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.wifi.resources changed
+11-16 20:27:04.783  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wifi.resources changed took to complete: 1ms
+11-16 20:27:04.783  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.permissioncontroller changed
+11-16 20:27:04.783  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.permissioncontroller changed
+11-16 20:27:04.783  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.permissioncontroller changed
+11-16 20:27:04.784  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.adservices.api changed
+11-16 20:27:04.784  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.adservices.api changed took to complete: 57ms
+11-16 20:27:04.785  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.safetycenter.resources changed
+11-16 20:27:04.785  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.safetycenter.resources changed
+11-16 20:27:04.785  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.safetycenter.resources changed
+11-16 20:27:04.785  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.safetycenter.resources changed took to complete: 0ms
+11-16 20:27:04.786  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.devicelockcontroller changed
+11-16 20:27:04.786  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.devicelockcontroller changed
+11-16 20:27:04.786  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.devicelockcontroller changed
+11-16 20:27:04.786  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.devicelockcontroller changed took to complete: 0ms
+11-16 20:27:04.787  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.health.connect.backuprestore changed
+11-16 20:27:04.787  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.health.connect.backuprestore changed
+11-16 20:27:04.787  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.health.connect.backuprestore changed
+11-16 20:27:04.787  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.health.connect.backuprestore changed took to complete: 0ms
+11-16 20:27:04.787  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.healthconnect.controller changed
+11-16 20:27:04.797  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.healthconnect.controller changed
+11-16 20:27:04.798  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.healthconnect.controller changed
+11-16 20:27:04.798  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.healthconnect.controller changed took to complete: 1ms
+11-16 20:27:04.798  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cellbroadcastreceiver.module changed
+11-16 20:27:04.798  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.cellbroadcastreceiver.module changed
+11-16 20:27:04.799  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.cellbroadcastreceiver.module changed
+11-16 20:27:04.799  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cellbroadcastreceiver.module changed took to complete: 1ms
+11-16 20:27:04.799  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.systemui changed
+11-16 20:27:04.799  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.systemui changed
+11-16 20:27:04.810  1800  1800 I ActivityTaskManager: Config changes=10000000 {1.0 ?mcc0mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} s.8 fontWeightAdjustment=0}
+11-16 20:27:04.826  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.permissioncontroller changed took to complete: 0ms
+11-16 20:27:04.827  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.systemui.accessibility.accessibilitymenu changed
+11-16 20:27:04.827  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.systemui.accessibility.accessibilitymenu changed
+11-16 20:27:04.841  1800  1800 I WindowManager: Override config changes=10000000 {1.0 ?mcc0mnc [en_US] ldltr sw320dp w320dp h640dp 160dpi nrml long port finger qwerty/v/v -nav/h winConfig={ mBounds=Rect(0, 0 - 320, 640) mAppBounds=Rect(0, 0 - 320, 640) mMaxBounds=Rect(0, 0 - 320, 640) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mDisplayWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0} s.8 fontWeightAdjustment=0} for displayId=0
+11-16 20:27:04.854     0     0 I servicemanager: Found android.hardware.wifi.IWifi/default in device VINTF manifest.
+11-16 20:27:04.848  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.systemui changed
+11-16 20:27:04.849  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.systemui changed took to complete: 50ms
+11-16 20:27:04.850  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.emergency changed
+11-16 20:27:04.850  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.emergency changed
+11-16 20:27:04.851  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.emergency changed
+11-16 20:27:04.874  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.emergency changed took to complete: 24ms
+11-16 20:27:04.891  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wallpapercropper changed
+11-16 20:27:04.909  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.wallpapercropper changed
+11-16 20:27:04.911  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.wallpapercropper changed
+11-16 20:27:04.911  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wallpapercropper changed took to complete: 2ms
+11-16 20:27:04.913  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.emulator.radio.config changed
+11-16 20:27:04.914  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.emulator.radio.config changed
+11-16 20:27:04.915  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.emulator.radio.config changed
+11-16 20:27:04.926  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.emulator.radio.config changed took to complete: 11ms
+11-16 20:27:04.927  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.launcher3 changed
+11-16 20:27:04.930  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.launcher3 changed
+11-16 20:27:04.931  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.launcher3 changed
+11-16 20:27:04.951  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.launcher3 changed took to complete: 22ms
+11-16 20:27:04.966  1800  1979 E WifiChipAidlImpl: getUsableChannels failed with service-specific exception: android.os.ServiceSpecificException:  (code 4)
+11-16 20:27:04.976  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.systemui.accessibility.accessibilitymenu changed
+11-16 20:27:04.977  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.systemui.accessibility.accessibilitymenu changed took to complete: 150ms
+11-16 20:27:04.978  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.storagemanager changed
+11-16 20:27:04.979  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.storagemanager changed
+11-16 20:27:04.980  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.storagemanager changed
+11-16 20:27:04.986  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.storagemanager changed took to complete: 7ms
+11-16 20:27:04.987  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.carrierconfig changed
+11-16 20:27:04.987  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.carrierconfig changed
+11-16 20:27:04.992  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.carrierconfig changed
+11-16 20:27:04.993  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.carrierconfig changed took to complete: 6ms
+11-16 20:27:04.993  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.sdksetup changed
+11-16 20:27:04.993  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.sdksetup changed
+11-16 20:27:04.993  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.sdksetup changed
+11-16 20:27:04.994  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.sdksetup changed took to complete: 1ms
+11-16 20:27:04.994  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.messaging changed
+11-16 20:27:04.994  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.messaging changed
+11-16 20:27:04.994  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.messaging changed
+11-16 20:27:04.995  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.messaging changed took to complete: 1ms
+11-16 20:27:04.995  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.inputmethod.latin changed
+11-16 20:27:04.995  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.inputmethod.latin changed
+11-16 20:27:04.995  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.inputmethod.latin changed
+11-16 20:27:05.006  1800  1800 V SystemServerTiming: retrieveSettings took to complete: 261ms
+11-16 20:27:05.006  1800  1800 D SystemServerTiming: Ugm.onSystemReady
+11-16 20:27:05.009  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.gallery3d changed
+11-16 20:27:05.011  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.gallery3d changed
+11-16 20:27:05.026  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.gallery3d changed
+11-16 20:27:05.027  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.gallery3d changed took to complete: 16ms
+11-16 20:27:05.032  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.quicksearchbox changed
+11-16 20:27:05.033  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.quicksearchbox changed
+11-16 20:27:05.033  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.quicksearchbox changed
+11-16 20:27:05.033  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.quicksearchbox changed took to complete: 1ms
+11-16 20:27:05.033  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.camera2 changed
+11-16 20:27:05.034  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.camera2 changed
+11-16 20:27:05.034  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.camera2 changed
+11-16 20:27:05.034  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.camera2 changed took to complete: 0ms
+11-16 20:27:05.034  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.deskclock changed
+11-16 20:27:05.035  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.deskclock changed
+11-16 20:27:05.035  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.deskclock changed
+11-16 20:27:05.035  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.deskclock changed took to complete: 0ms
+11-16 20:27:05.035  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.music changed
+11-16 20:27:05.059  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.music changed
+11-16 20:27:05.060  1800  1800 V SystemServerTiming: Ugm.onSystemReady took to complete: 30ms
+11-16 20:27:05.060  1800  1800 D SystemServerTiming: updateForceBackgroundCheck
+11-16 20:27:05.061  1800  1800 V SystemServerTiming: updateForceBackgroundCheck took to complete: 0ms
+11-16 20:27:05.062  1800  1800 I SystemServer: Making services ready
+11-16 20:27:05.062  1800  1800 D SystemServerTiming: StartActivityManagerReadyPhase
+11-16 20:27:05.062  1800  1800 I SystemServiceManager: Starting phase 550
+11-16 20:27:05.062  1800  1800 D SystemServerTiming: OnBootPhase_550
+11-16 20:27:05.063  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.security.FileIntegrityService
+11-16 20:27:05.063  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.security.FileIntegrityService took to complete: 0ms
+11-16 20:27:05.063  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.pm.Installer
+11-16 20:27:05.063  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.pm.Installer took to complete: 0ms
+11-16 20:27:05.063  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.os.DeviceIdentifiersPolicyService
+11-16 20:27:05.063  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.os.DeviceIdentifiersPolicyService took to complete: 0ms
+11-16 20:27:05.089  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.uri.UriGrantsManagerService$Lifecycle
+11-16 20:27:05.089  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.uri.UriGrantsManagerService$Lifecycle took to complete: 0ms
+11-16 20:27:05.089  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.powerstats.PowerStatsService
+11-16 20:27:05.089  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.powerstats.PowerStatsService took to complete: 0ms
+11-16 20:27:05.090  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.permission.access.AccessCheckingService
+11-16 20:27:05.090  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.permission.access.AccessCheckingService took to complete: 0ms
+11-16 20:27:05.090  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.wm.ActivityTaskManagerService$Lifecycle
+11-16 20:27:05.090  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.wm.ActivityTaskManagerService$Lifecycle took to complete: 0ms
+11-16 20:27:05.090  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.am.ActivityManagerService$Lifecycle
+11-16 20:27:05.093  1800  1979 I WifiNative: Successfully switched to connectivity mode on iface=Iface:{Name=wlan0,Id=0,Type=STA_CONNECTIVITY}
+11-16 20:27:05.094  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.music changed
+11-16 20:27:05.095  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.music changed took to complete: 36ms
+11-16 20:27:05.095  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.webview changed
+11-16 20:27:05.100  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.webview changed
+11-16 20:27:05.112  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.inputmethod.latin changed took to complete: 1ms
+11-16 20:27:05.112  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.calendar changed
+11-16 20:27:05.113  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.calendar changed
+11-16 20:27:05.113  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.calendar changed
+11-16 20:27:05.114  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.calendar changed took to complete: 1ms
+11-16 20:27:05.114  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package org.chromium.webview_shell changed
+11-16 20:27:05.114  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package org.chromium.webview_shell changed
+11-16 20:27:05.115  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package org.chromium.webview_shell changed
+11-16 20:27:05.115  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package org.chromium.webview_shell changed took to complete: 1ms
+11-16 20:27:05.115  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wallpaperpicker changed
+11-16 20:27:05.115  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.wallpaperpicker changed
+11-16 20:27:05.115  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.wallpaperpicker changed
+11-16 20:27:05.132  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wallpaperpicker changed took to complete: 17ms
+11-16 20:27:05.133  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.dreams.phototable changed
+11-16 20:27:05.133  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.dreams.phototable changed
+11-16 20:27:05.133  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.dreams.phototable changed
+11-16 20:27:05.133  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.dreams.phototable changed took to complete: 0ms
+11-16 20:27:05.134  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.modulemetadata changed
+11-16 20:27:05.134  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.modulemetadata changed
+11-16 20:27:05.134  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.modulemetadata changed
+11-16 20:27:05.134  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.modulemetadata changed took to complete: 0ms
+11-16 20:27:05.135  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.dialer changed
+11-16 20:27:05.148  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.webview changed
+11-16 20:27:05.149  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.webview changed took to complete: 49ms
+11-16 20:27:05.150  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.contacts changed
+11-16 20:27:05.150  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.contacts changed
+11-16 20:27:05.156  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.contacts changed
+11-16 20:27:05.157  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.contacts changed took to complete: 7ms
+11-16 20:27:05.158  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.imsserviceentitlement changed
+11-16 20:27:05.158  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.imsserviceentitlement changed
+11-16 20:27:05.159  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.imsserviceentitlement changed
+11-16 20:27:05.164  1800  1979 D WifiClientModeManager[604252:wlan0]: entering ConnectModeState, starting ClientModeImpl
+11-16 20:27:05.175  1800  1800 W SystemServiceManager: Service com.android.server.am.ActivityManagerService$Lifecycle took 85 ms in onBootPhase
+11-16 20:27:05.175  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.am.ActivityManagerService$Lifecycle took to complete: 85ms
+11-16 20:27:05.175  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.pm.DataLoaderManagerService
+11-16 20:27:05.188  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.pm.DataLoaderManagerService took to complete: 0ms
+11-16 20:27:05.188  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.power.PowerManagerService
+11-16 20:27:05.189  1800  1800 V SystemServerTiming: OnBootPhase_550_com.android.server.power.PowerManagerService took to complete: 0ms
+11-16 20:27:05.189  1800  1800 D SystemServerTiming: OnBootPhase_550_com.android.server.power.ThermalManagerService
+11-16 20:27:05.192  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.imsserviceentitlement changed took to complete: 19ms
+11-16 20:27:05.193  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.settings.intelligence changed
+11-16 20:27:05.194  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.settings.intelligence changed
+11-16 20:27:05.195  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.settings.intelligence changed
+11-16 20:27:05.202  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.settings.intelligence changed took to complete: 8ms
+11-16 20:27:05.202  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.traceur changed
+11-16 20:27:05.203  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.dialer changed
+11-16 20:27:05.212     0     0 I servicemanager: Could not find android.hardware.thermal.IThermal/default in the VINTF manifest.
+11-16 20:27:05.223  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.traceur changed
+11-16 20:27:05.229  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.traceur changed
+11-16 20:27:05.229  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.traceur changed took to complete: 6ms
+11-16 20:27:05.230  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.htmlviewer changed
+11-16 20:27:05.230  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.htmlviewer changed
+11-16 20:27:05.231  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.htmlviewer changed
+11-16 20:27:05.231  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.htmlviewer changed took to complete: 1ms
+11-16 20:27:05.236  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.bookmarkprovider changed
+11-16 20:27:05.236  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.bookmarkprovider changed
+11-16 20:27:05.237  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.bookmarkprovider changed
+11-16 20:27:05.237  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.bookmarkprovider changed took to complete: 1ms
+11-16 20:27:05.237  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.bluetoothmidiservice changed
+11-16 20:27:05.237  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.bluetoothmidiservice changed
+11-16 20:27:05.237  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.bluetoothmidiservice changed
+11-16 20:27:05.238  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.bluetoothmidiservice changed took to complete: 1ms
+11-16 20:27:05.238  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.egg changed
+11-16 20:27:05.238  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.egg changed
+11-16 20:27:05.238  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.egg changed
+11-16 20:27:05.239  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.egg changed took to complete: 1ms
+11-16 20:27:05.239  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.pacprocessor changed
+11-16 20:27:05.239  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.pacprocessor changed
+11-16 20:27:05.239  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.pacprocessor changed
+11-16 20:27:05.239  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.pacprocessor changed took to complete: 0ms
+11-16 20:27:05.259  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.dialer changed
+11-16 20:27:05.264  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.dialer changed took to complete: 87ms
+11-16 20:27:05.265  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.dreams.basic changed
+11-16 20:27:05.265  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.dreams.basic changed
+11-16 20:27:05.266  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.dreams.basic changed
+11-16 20:27:05.266  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.dreams.basic changed took to complete: 1ms
+11-16 20:27:05.267  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.providers.partnerbookmarks changed
+11-16 20:27:05.267  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.providers.partnerbookmarks changed
+11-16 20:27:05.269  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.providers.partnerbookmarks changed
+11-16 20:27:05.269  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.providers.partnerbookmarks changed took to complete: 2ms
+11-16 20:27:05.270  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.companiondevicemanager changed
+11-16 20:27:05.270  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.companiondevicemanager changed
+11-16 20:27:05.271  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.companiondevicemanager changed
+11-16 20:27:05.271  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.companiondevicemanager changed took to complete: 1ms
+11-16 20:27:05.277  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.certinstaller changed
+11-16 20:27:05.277  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.certinstaller changed
+11-16 20:27:05.278  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.certinstaller changed
+11-16 20:27:05.278  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.certinstaller changed took to complete: 1ms
+11-16 20:27:05.279  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.captiveportallogin changed
+11-16 20:27:05.279  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.captiveportallogin changed
+11-16 20:27:05.280  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.captiveportallogin changed
+11-16 20:27:05.281  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.captiveportallogin changed took to complete: 2ms
+11-16 20:27:05.282  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package android.ext.shared changed
+11-16 20:27:05.282  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package android.ext.shared changed
+11-16 20:27:05.283  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package android.ext.shared changed
+11-16 20:27:05.283  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package android.ext.shared changed took to complete: 1ms
+11-16 20:27:05.284  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.printservice.recommendation changed
+11-16 20:27:05.284  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.printservice.recommendation changed
+11-16 20:27:05.285  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.printservice.recommendation changed
+11-16 20:27:05.286  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.printservice.recommendation changed took to complete: 2ms
+11-16 20:27:05.286  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.simappdialog changed
+11-16 20:27:05.287  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.simappdialog changed
+11-16 20:27:05.287  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.simappdialog changed
+11-16 20:27:05.292  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.carrierdefaultapp changed
+11-16 20:27:05.293  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.carrierdefaultapp changed
+11-16 20:27:05.293  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.carrierdefaultapp changed
+11-16 20:27:05.294  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.carrierdefaultapp changed took to complete: 1ms
+11-16 20:27:05.295  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.printspooler changed
+11-16 20:27:05.295  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.printspooler changed
+11-16 20:27:05.300  1800  1979 D WifiNative: enableVerboseLogging false hal false
+11-16 20:27:05.317  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.printspooler changed
+11-16 20:27:05.318  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.printspooler changed took to complete: 23ms
+11-16 20:27:05.319  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cameraextensions changed
+11-16 20:27:05.321  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.cameraextensions changed
+11-16 20:27:05.324  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.simappdialog changed took to complete: 37ms
+11-16 20:27:05.325  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.apps.tag changed
+11-16 20:27:05.326  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.apps.tag changed
+11-16 20:27:05.327  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.apps.tag changed
+11-16 20:27:05.327  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.apps.tag changed took to complete: 1ms
+11-16 20:27:05.328  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.musicfx changed
+11-16 20:27:05.329  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.musicfx changed
+11-16 20:27:05.330  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.cameraextensions changed
+11-16 20:27:05.330  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.cameraextensions changed took to complete: 9ms
+11-16 20:27:05.331  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.backupconfirm changed
+11-16 20:27:05.331  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.backupconfirm changed
+11-16 20:27:05.335  1800  1800 I android_os_HwBinder: HwBinder: Starting thread pool for getting: android.hardware.thermal@2.0::IThermal/default
+11-16 20:27:05.349   349   349 I android.hardware.thermal@2.0-service-mock: A callback has been registered to ThermalHAL, isFilter: 0 Type: CPU
+11-16 20:27:05.358  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.backupconfirm changed
+11-16 20:27:05.359  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.backupconfirm changed took to complete: 28ms
+11-16 20:27:05.367  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.documentsui changed
+11-16 20:27:05.368  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.documentsui changed
+11-16 20:27:05.369  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.documentsui changed
+11-16 20:27:05.369  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.documentsui changed took to complete: 1ms
+11-16 20:27:05.370  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.proxyhandler changed
+11-16 20:27:05.370  1800  1824 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.proxyhandler changed
+11-16 20:27:05.376  1800  1800 I ThermalHalWrapper: Thermal HAL 2.0 service connected.
+11-16 20:27:05.379  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.musicfx changed
+11-16 20:27:05.379  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.musicfx changed took to complete: 50ms
+11-16 20:27:05.382  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.externalstorage changed
+11-16 20:27:05.383  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.externalstorage changed
+11-16 20:27:05.383  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.externalstorage changed
+11-16 20:27:05.393  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.externalstorage changed took to complete: 10ms
+11-16 20:27:05.401  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.managedprovisioning changed
+11-16 20:27:05.401  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.managedprovisioning changed
+11-16 20:27:05.406  1800  1880 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.managedprovisioning changed
+11-16 20:27:05.406  1800  1880 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.managedprovisioning changed took to complete: 5ms
+11-16 20:27:05.407  1800  1880 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.wallpaper.livepicker changed
+11-16 20:27:05.412  1800  1880 D SystemServerInitThreadPool: Started executing Update app-ops uidState in case package com.android.wallpaper.livepicker changed
+11-16 20:27:05.419  1800  1824 D SystemServerInitThreadPool: Finished executing Update app-ops uidState in case package com.android.proxyhandler changed
+11-16 20:27:05.419  1800  1824 V SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.proxyhandler changed took to complete: 49ms
+11-16 20:27:05.423  1800  1824 D SystemServerTimingAsync: InitThreadPoolExec:Update app-ops uidState in case package com.android.bips changed

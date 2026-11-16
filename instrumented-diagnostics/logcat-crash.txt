@@ -1,0 +1,11 @@
+--------- beginning of crash
+11-16 20:24:14.023  1361  1497 F libc    : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 1497 (bt_stack_manage), pid 1361 (droid.bluetooth)
+11-16 20:24:48.781  1440  1440 E AndroidRuntime: FATAL EXCEPTION: main
+11-16 20:24:48.781  1440  1440 E AndroidRuntime: Process: com.android.phone, PID: 1440
+11-16 20:24:48.781  1440  1440 E AndroidRuntime: DeadSystemException: The system died; earlier logs will point to the root cause
+11-16 20:24:50.493   968  1036 E AndroidRuntime: FATAL EXCEPTION: pool-2-thread-1
+11-16 20:24:50.493   968  1036 E AndroidRuntime: Process: com.android.systemui, PID: 968
+11-16 20:24:50.493   968  1036 E AndroidRuntime: DeadSystemException: The system died; earlier logs will point to the root cause
+11-16 20:24:50.993  1593  1593 E AndroidRuntime: FATAL EXCEPTION: main
+11-16 20:24:50.993  1593  1593 E AndroidRuntime: Process: android.ext.services, PID: 1593
+11-16 20:24:50.993  1593  1593 E AndroidRuntime: DeadSystemException: The system died; earlier logs will point to the root cause
