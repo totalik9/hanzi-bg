@@ -3,11 +3,83 @@
     <string name="app_name">Ханзи BG</string>
 
     <!-- Navigation -->
-    <string name="nav_learn">Учене</string>
-    <string name="nav_review">Повторение</string>
-    <string name="nav_practice">Упражнения</string>
+    <string name="nav_learn">Път</string>
     <string name="nav_dict">Речник</string>
-    <string name="nav_grammar">Граматика</string>
+    <string name="more_menu">Още</string>
+    <string name="more_review">Повторение</string>
+    <string name="more_practice">Упражнения</string>
+    <string name="more_grammar">Граматика</string>
+
+    <!-- Path -->
+    <string name="path_subtitle">Китайски от български, дума по дума</string>
+    <string name="path_next_lesson">Следващият урок</string>
+    <string name="path_start_lesson">Започни урока</string>
+    <string name="path_words_count">%1$d думи</string>
+    <string name="path_cards_count">%1$d карти</string>
+    <string name="path_due_reviews">Прегледай %1$d карти за днес</string>
+    <string name="path_all_done">Пътят е минат</string>
+    <string name="path_all_done_hint">Всички уроци са завършени. Продължи с упражненията или преглеждай речника.</string>
+    <string name="path_progress">Напредък</string>
+    <string name="path_words">думи</string>
+    <string name="path_streak">дни поред</string>
+    <string name="path_today">днес</string>
+    <string name="path_badges">Значки</string>
+    <string name="path_the_path">Пътят</string>
+    <string name="path_unit_progress">%1$d от %2$d урока</string>
+    <string name="path_done">Завършен</string>
+    <string name="path_locked">Заключен</string>
+    <string name="path_lesson_score">%1$d%%</string>
+    <string name="path_lesson_words">%1$d думи</string>
+    <string name="path_lesson_locked">Заключен, докато не минеш предходния урок</string>
+    <string name="path_repeat">Повтори</string>
+    <string name="path_start">Започни</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome">Ханзи BG</string>
+    <string name="onboarding_intro">Ще научиш китайски стъпка по стъпка. Първо два въпроса, после първия урок.</string>
+    <string name="onboarding_goal_question">Защо учиш китайски?</string>
+    <string name="onboarding_goal_hsk">За изпит HSK</string>
+    <string name="onboarding_goal_hsk_hint">Целта е да минеш нивата 1 до 3</string>
+    <string name="onboarding_goal_travel">За пътуване</string>
+    <string name="onboarding_goal_travel_hint">Менюта, знаци, разговори</string>
+    <string name="onboarding_goal_work">За работа</string>
+    <string name="onboarding_goal_work_hint">Да общувам с колеги</string>
+    <string name="onboarding_goal_interest">За удоволствие</string>
+    <string name="onboarding_goal_interest_hint">Просто ми харесва езикът</string>
+    <string name="onboarding_time_question">Колко време имаш на ден?</string>
+    <string name="onboarding_time_5">5 минути</string>
+    <string name="onboarding_time_15">15 минути</string>
+    <string name="onboarding_time_30">30 минути</string>
+    <string name="onboarding_time_60">1 час</string>
+    <string name="onboarding_next">Напред</string>
+    <string name="onboarding_back">Назад</string>
+    <string name="onboarding_start">Към уроците</string>
+    <string name="onboarding_skip_hint">Можеш да промениш целта и времето си по-късно в профила.</string>
+
+    <!-- Lesson -->
+    <string name="lesson_listen">Изслушай</string>
+    <string name="lesson_next_word">Следваща дума</string>
+    <string name="lesson_next_card">Следваща карта</string>
+    <string name="lesson_finish_reading">Завърши урока</string>
+    <string name="lesson_what_means">Какво означава?</string>
+    <string name="lesson_right">Правилно!</string>
+    <string name="lesson_wrong">Неправилно</string>
+    <string name="lesson_continue">Продължи</string>
+    <string name="lesson_finish_writing">Готово</string>
+    <string name="lesson_say_hint">Изслушай и повтори на глас</string>
+    <string name="lesson_step_write">4. Напиши</string>
+    <string name="lesson_stroke_order">Ред на щрихите (%1$d)</string>
+    <string name="lesson_trace_hint">Проследи знака с пръст</string>
+    <string name="lesson_strokes_ok">Правилни щрихи: %1$d / %2$d</string>
+    <string name="lesson_trace_start">Пусни пръст по контура на знака.</string>
+    <string name="lesson_next_character">Следващ знак</string>
+    <string name="lesson_previous_character">Предишен знак</string>
+    <string name="lesson_review_progress">Преглед: %1$d от %2$d</string>
+    <string name="lesson_result_passed">Урокът е минат</string>
+    <string name="lesson_result_failed">Още не е минат</string>
+    <string name="lesson_back_to_path">Обратно към пътя</string>
+    <string name="lesson_production_unlocked">Отключено е произвеждането</string>
+    <string name="lesson_production_hint">Вече можеш да пишеш китайски по пиньин. Опитай в раздел „Упражнения“.</string>
 
     <!-- Home -->
     <string name="home_title">Ханзи BG</string>

@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import bg.hanzi.learn.ui.HanziNavHost
+import bg.hanzi.learn.ui.HanziApp
 import bg.hanzi.learn.ui.theme.HanziTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             HanziTheme {
-                HanziNavHost()
+                HanziApp()
             }
         }
     }

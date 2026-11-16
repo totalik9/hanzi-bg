@@ -95,10 +95,41 @@ CREATE TABLE ime (
     PRIMARY KEY (syllable, hanzi)
 );
 
+-- The learning path. The fixture carries two lessons so the Path screen
+-- has something to show and the lesson flow has something to open.
+CREATE TABLE curriculum_units (
+    key   TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    ord   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE curriculum_lessons (
+    key      TEXT PRIMARY KEY,
+    unit_key TEXT NOT NULL,
+    title    TEXT NOT NULL,
+    kind     TEXT NOT NULL DEFAULT 'words',
+    ord      INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE curriculum_words (
+    lesson_key TEXT NOT NULL,
+    ord        INTEGER NOT NULL,
+    hanzi      TEXT NOT NULL,
+    PRIMARY KEY (lesson_key, ord)
+);
+
+CREATE TABLE curriculum_cards (
+    lesson_key TEXT NOT NULL,
+    ord        INTEGER NOT NULL,
+    payload    TEXT NOT NULL,
+    PRIMARY KEY (lesson_key, ord)
+);
+
 CREATE INDEX idx_words_level ON words(hsk_level);
 CREATE INDEX idx_grammar_level ON grammar(level);
 CREATE INDEX idx_lessons_level ON lessons(level);
 CREATE INDEX idx_ime_syllable ON ime(syllable);
+CREATE INDEX idx_curriculum_words_hanzi ON curriculum_words(hanzi);
 """
 
 # The words the tests use. They cover the five practice modes:
@@ -161,6 +192,27 @@ MANIFEST = {
     "hsk_levels": "1,2",
 }
 
+# The learning path of the fixture: one unit with two lessons. The
+# second lesson is LOCKED at the start, because the first one has not
+# been passed -- that is the state the Path screen has to show.
+CURRICULUM_UNITS = [
+    ("fixture", "Тестова тема", 1),
+]
+
+CURRICULUM_LESSONS = [
+    ("fixture-1", "fixture", "Първи урок", "words", 1),
+    ("fixture-2", "fixture", "Втори урок", "words", 2),
+]
+
+CURRICULUM_WORDS = [
+    ("fixture-1", 0, "好"),
+    ("fixture-1", 1, "你好"),
+    ("fixture-1", 2, "水"),
+    ("fixture-1", 3, "人"),
+    ("fixture-1", 4, "吃"),
+    ("fixture-2", 0, "书"),
+]
+
 
 def main() -> int:
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -204,6 +256,22 @@ def main() -> int:
     conn.executemany(
         "INSERT INTO manifest (key, value) VALUES (?,?)",
         list(MANIFEST.items()),
+    )
+
+    conn.executemany(
+        "INSERT INTO curriculum_units (key, title, ord) VALUES (?,?,?)",
+        CURRICULUM_UNITS,
+    )
+
+    conn.executemany(
+        "INSERT INTO curriculum_lessons (key, unit_key, title, kind, ord) "
+        "VALUES (?,?,?,?,?)",
+        CURRICULUM_LESSONS,
+    )
+
+    conn.executemany(
+        "INSERT INTO curriculum_words (lesson_key, ord, hanzi) VALUES (?,?,?)",
+        CURRICULUM_WORDS,
     )
 
     # The IME index: one row per syllable of every word.

@@ -51,6 +51,13 @@ interface SrsCardDao {
     @Query("SELECT * FROM srs_card WHERE itemId = :itemId LIMIT 1")
     suspend fun findById(itemId: String): SrsCardEntity?
 
+    @Query("SELECT COUNT(*) FROM srs_card")
+    fun totalCards(): Flow<Int>
+
+    /** The same count, read once instead of observed. */
+    @Query("SELECT COUNT(*) FROM srs_card")
+    suspend fun totalCardsOnce(): Int
+
     @Query("SELECT COUNT(*) FROM srs_card WHERE level = :level")
     suspend fun learnedCount(level: String): Int
 
@@ -63,6 +70,17 @@ interface SrsCardDao {
      */
     @Query("SELECT itemId FROM srs_card WHERE level IN (:levels)")
     suspend fun learnedItemIds(levels: List<String>): List<String>
+
+    /**
+     * Every word the learner has met, whatever level it is on.
+     *
+     * The learning path is not organised by HSK level, so the words of
+     * the path cannot be found by level: a lesson may hold words of
+     * several levels, and the review of a lesson needs everything the
+     * learner already knows.
+     */
+    @Query("SELECT itemId FROM srs_card")
+    suspend fun allLearnedItemIds(): List<String>
 }
 
 @Dao
@@ -109,11 +127,20 @@ interface DailyStatsDao {
 }
 
 @Database(
-    entities = [SrsCardEntity::class, DailyStatsEntity::class],
-    version = 1,
+    entities = [
+        SrsCardEntity::class,
+        DailyStatsEntity::class,
+        LessonProgressEntity::class,
+        BadgeEntity::class,
+        LearnerSettingEntity::class,
+    ],
+    version = 2,
     exportSchema = true,
 )
 abstract class HanziUserDatabase : RoomDatabase() {
     abstract fun srsCardDao(): SrsCardDao
     abstract fun dailyStatsDao(): DailyStatsDao
+    abstract fun lessonProgressDao(): LessonProgressDao
+    abstract fun badgeDao(): BadgeDao
+    abstract fun learnerSettingDao(): LearnerSettingDao
 }

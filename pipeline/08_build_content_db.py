@@ -6,6 +6,7 @@ Inputs:
     data/sentences.json      Tatoeba sentences       (05_build_sentences.py)
     data/audio/manifest.json text -> audio file map  (06_build_audio.py)
     data/raw/bg_zh_wiktionary.json  human Bulgarian glosses
+    curriculum/*.json        the hand-written learning path
 
 Output:
     data/content.db
@@ -18,6 +19,21 @@ Schema (read by android/.../ContentRepository.kt):
     lessons(id, title, title_bg, level, ord)
     sentences(id, hanzi, pinyin, translation_en, translation_bg, audio_path)
     manifest(key, value)
+
+The curriculum is NOT generated. It is hand-written, in curriculum/, and it
+decides the order the learner meets the words: units -> lessons -> words.
+It lives in the repository (not in data/, which is gitignored) because a
+hand-written file that the build overwrites is a file that gets lost.
+
+Two shapes are read from curriculum/:
+  - {"units": [...]}  the learning path (00_intro.json, 10_hsk1.json, ...)
+  - {hanzi: gloss}    a hand-written Bulgarian gloss patch
+                       (20_glosses_hsk1.json) that OVERRIDES the machine
+                       translation for the words of the learning path
+
+The gloss patch exists because the machine translations are not fit to
+teach: 个 was glossed "(основателна форма на индивидуалността)" and 的
+carried a 200-character dump of every sense it has in a dictionary.
 
 The database ships inside the APK as an asset and is never mutated at
 runtime, so it carries no indexes beyond the ones the app actually uses
@@ -131,10 +147,46 @@ CREATE TABLE ime (
     PRIMARY KEY (syllable, hanzi)
 );
 
+-- The learning path. It is hand-written, not derived: the order the
+-- learner meets the words is a teaching decision, not a property of the
+-- corpus. A unit holds lessons; a lesson holds words.
+CREATE TABLE curriculum_units (
+    key   TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    ord   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE curriculum_lessons (
+    key      TEXT PRIMARY KEY,
+    unit_key TEXT NOT NULL,
+    title    TEXT NOT NULL,
+    -- "teach" lessons teach the sound system and carry cards instead of
+    -- words; "words" lessons carry the vocabulary.
+    kind     TEXT NOT NULL DEFAULT 'words',
+    ord      INTEGER NOT NULL DEFAULT 0
+);
+
+-- One row per word in a lesson, in the order the learner meets it.
+CREATE TABLE curriculum_words (
+    lesson_key TEXT NOT NULL,
+    ord        INTEGER NOT NULL,
+    hanzi      TEXT NOT NULL,
+    PRIMARY KEY (lesson_key, ord)
+);
+
+-- The teaching cards of a "teach" lesson, as JSON.
+CREATE TABLE curriculum_cards (
+    lesson_key TEXT NOT NULL,
+    ord        INTEGER NOT NULL,
+    payload    TEXT NOT NULL,
+    PRIMARY KEY (lesson_key, ord)
+);
+
 CREATE INDEX idx_words_level ON words(hsk_level);
 CREATE INDEX idx_grammar_level ON grammar(level);
 CREATE INDEX idx_lessons_level ON lessons(level);
 CREATE INDEX idx_ime_syllable ON ime(syllable);
+CREATE INDEX idx_curriculum_words_hanzi ON curriculum_words(hanzi);
 """
 
 
@@ -147,6 +199,54 @@ def load_json(path: str):
     except (OSError, ValueError) as exc:
         print(f"  WARNING: cannot read {path}: {exc}")
         return None
+
+
+CURRICULUM_DIR = os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "curriculum")
+
+
+def load_curriculum() -> tuple[list[dict], dict[str, str]]:
+    """Read the hand-written learning path.
+
+    Two shapes live in curriculum/, distinguished by their content and not
+    by their name:
+
+      {"units": [...]}  the path itself
+      {hanzi: gloss}    a Bulgarian gloss patch, which overrides the
+                         machine translation for the words it names
+
+    The files are read in name order, so 00_intro.json comes before
+    10_hsk1.json. A file that is neither shape is an error, not a
+    warning: a typo in a hand-written file must not silently empty the
+    learning path.
+    """
+    units: list[dict] = []
+    glosses: dict[str, str] = {}
+
+    if not os.path.isdir(CURRICULUM_DIR):
+        print(f"  WARNING: no curriculum directory at {CURRICULUM_DIR}")
+        return units, glosses
+
+    for name in sorted(os.listdir(CURRICULUM_DIR)):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(CURRICULUM_DIR, name)
+        data = load_json(path)
+        if data is None:
+            raise SystemExit(f"ERROR: cannot read {path}")
+        if isinstance(data, dict) and "units" in data:
+            units.extend(data["units"])
+        elif isinstance(data, dict) and data and all(
+            isinstance(k, str) and isinstance(v, str) for k, v in data.items()
+        ):
+            glosses.update(data)
+        else:
+            raise SystemExit(
+                f"ERROR: {path} is neither a curriculum (an object with "
+                f"'units') nor a gloss patch (an object of hanzi -> gloss)"
+            )
+
+    return units, glosses
 
 
 def audio_index() -> dict[str, str]:
@@ -169,11 +269,15 @@ def audio_index() -> dict[str, str]:
     return {text: name for name, text in data.items() if text}
 
 
-def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, int]:
+def build_words(
+    conn: sqlite3.Connection,
+    audio: dict[str, str],
+    hand_glosses: dict[str, str],
+) -> tuple[int, int, int]:
     data = load_json(VOCAB_JSON)
     if not data:
         print(f"ERROR: missing {VOCAB_JSON} - run 03_build_vocab.py first")
-        return 0, 0
+        return 0, 0, 0
 
     words = data["words"] if isinstance(data, dict) else data
 
@@ -216,7 +320,16 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
 
         # The combined gloss comes first: it already carries the human
         # gloss and the machine senses that it does not cover.
-        if hanzi in human_bg_combined:
+        # The hand-written gloss wins over everything. It was written
+        # for a beginner, and the machine translation is not fit to
+        # teach: 个 was glossed "(основателна форма на индивидуалността)"
+        # and 的 carried a 200-character dump of every dictionary sense.
+        # The provenance is "human", so the app's own note about the
+        # machine translation does not appear next to it.
+        if hanzi in hand_glosses:
+            gloss_bg = hand_glosses[hanzi]
+            source = "human"
+        elif hanzi in human_bg_combined:
             gloss_bg = human_bg_combined[hanzi]
             source = "human+machine"
         else:
@@ -264,6 +377,87 @@ def build_words(conn: sqlite3.Connection, audio: dict[str, str]) -> tuple[int, i
         rows,
     )
     return len(rows), with_bg, with_machine
+
+
+def build_curriculum(conn: sqlite3.Connection, units: list[dict]) -> tuple[int, int, int]:
+    """Load the hand-written learning path.
+
+    The order the learner meets the words in is a teaching decision, so
+    it is written by hand and stored as it was written. Nothing here is
+    derived from the corpus.
+
+    A word named by a lesson must exist in the words table: a lesson
+    that names a word the app cannot show is a broken lesson, and it is
+    an error rather than a warning.
+    """
+    if not units:
+        print("  WARNING: the curriculum is empty - no learning path")
+        return 0, 0, 0
+
+    unit_rows = []
+    lesson_rows = []
+    word_rows = []
+    card_rows = []
+
+    known = {h for (h,) in conn.execute("SELECT hanzi FROM words")}
+    missing: list[str] = []
+
+    unit_ord = 0
+    lesson_ord = 0
+    for unit in units:
+        unit_key = unit.get("key") or ""
+        if not unit_key:
+            raise SystemExit("ERROR: a curriculum unit has no key")
+        unit_rows.append((unit_key, unit.get("title") or unit_key, unit_ord))
+        unit_ord += 1
+
+        for lesson in unit.get("lessons") or []:
+            lesson_key = lesson.get("key") or ""
+            if not lesson_key:
+                raise SystemExit(f"ERROR: a lesson in unit '{unit_key}' has no key")
+            kind = lesson.get("kind") or "words"
+            lesson_rows.append((
+                lesson_key,
+                unit_key,
+                lesson.get("title") or lesson_key,
+                kind,
+                lesson_ord,
+            ))
+            lesson_ord += 1
+
+            for i, hanzi in enumerate(lesson.get("words") or []):
+                if hanzi not in known:
+                    missing.append(f"{lesson_key}: {hanzi}")
+                    continue
+                word_rows.append((lesson_key, i, hanzi))
+
+            for i, card in enumerate(lesson.get("cards") or []):
+                card_rows.append((lesson_key, i, json.dumps(card, ensure_ascii=False)))
+
+    if missing:
+        raise SystemExit(
+            "ERROR: the curriculum names words that are not in the "
+            f"vocabulary ({len(missing)}): " + ", ".join(missing[:10])
+        )
+
+    conn.executemany(
+        "INSERT OR REPLACE INTO curriculum_units (key, title, ord) VALUES (?,?,?)",
+        unit_rows,
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO curriculum_lessons (key, unit_key, title, kind, ord) "
+        "VALUES (?,?,?,?,?)",
+        lesson_rows,
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO curriculum_words (lesson_key, ord, hanzi) VALUES (?,?,?)",
+        word_rows,
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO curriculum_cards (lesson_key, ord, payload) VALUES (?,?,?)",
+        card_rows,
+    )
+    return len(unit_rows), len(lesson_rows), len(word_rows)
 
 
 def build_grammar(conn: sqlite3.Connection) -> int:
@@ -585,6 +779,64 @@ def check_content_quality(conn: sqlite3.Connection) -> list[str]:
             "IME index: empty - run pipeline/03_build_vocab.py"
         )
 
+    # The learning path. An app without it still builds and still shows
+    # a dictionary, and the learner is the one who finds out that there
+    # is no route from one word to the next. A curriculum with no
+    # lessons is the same failure in a different place.
+    lessons_in_path = count("SELECT COUNT(*) FROM curriculum_lessons")
+    if lessons_in_path == 0:
+        problems.append(
+            "curriculum: no lessons - the learning path is empty "
+            "(curriculum/*.json is missing or has no 'units')"
+        )
+
+    words_in_path = count("SELECT COUNT(*) FROM curriculum_words")
+    if words_in_path == 0:
+        problems.append(
+            "curriculum: no words in the learning path - "
+            "the lessons name no vocabulary"
+        )
+
+    # A duplicated word in the path is a silent loss: one of the two
+    # lessons that name it teaches it twice, and the level it belongs
+    # to is one word short of what the learner was promised. The
+    # curriculum of HSK 1 was written by hand and it DID have a
+    # duplicate -- 到 was in two lessons and 再 and 这 were in none.
+    # Nothing else in the build noticed.
+    duplicated = conn.execute(
+        "SELECT hanzi, COUNT(*) FROM curriculum_words "
+        "GROUP BY hanzi HAVING COUNT(*) > 1"
+    ).fetchall()
+    if duplicated:
+        listed = ", ".join(f"{h} x{n}" for h, n in duplicated[:10])
+        problems.append(
+            f"curriculum: {len(duplicated)} words are in the path more than "
+            f"once ({listed}) - every word belongs to exactly one lesson"
+        )
+
+    # A level that the path touches has to be covered by it. A level
+    # where some words are on the path and some are not is a path that
+    # stops in the middle without saying so.
+    partial = []
+    for level, level_words in conn.execute(
+        "SELECT hsk_level, COUNT(*) FROM words WHERE hsk_level != '' "
+        "GROUP BY hsk_level"
+    ):
+        covered = conn.execute(
+            "SELECT COUNT(DISTINCT w.hanzi) FROM curriculum_words cw "
+            "JOIN words w ON w.hanzi = cw.hanzi WHERE w.hsk_level = ?",
+            (level,),
+        ).fetchone()[0]
+        if 0 < covered < level_words:
+            partial.append(f"{level}: {covered}/{level_words}")
+
+    if partial:
+        problems.append(
+            "curriculum: some levels are only partly on the path ("
+            + ", ".join(partial)
+            + ") - a level that is on the path has to be on it whole"
+        )
+
     return problems
 
 
@@ -664,10 +916,20 @@ def main() -> int:
     audio = audio_index()
     print(f"audio files available: {len(audio)}")
 
+    curriculum_units, hand_glosses = load_curriculum()
+    print(f"curriculum: {len(curriculum_units)} units, "
+          f"{len(hand_glosses)} hand-written glosses")
+
     print("building words ...")
-    n_words, n_bg, n_machine = build_words(conn, audio)
+    n_words, n_bg, n_machine = build_words(conn, audio, hand_glosses)
     print(f"  words: {n_words:,}  with a Bulgarian gloss: {n_bg:,} "
           f"(machine: {n_machine:,})")
+
+    print("building the curriculum ...")
+    n_curriculum_units, n_curriculum_lessons, n_curriculum_words = build_curriculum(
+        conn, curriculum_units)
+    print(f"  units: {n_curriculum_units}  lessons: {n_curriculum_lessons}  "
+          f"words in the path: {n_curriculum_words}")
 
     print("building grammar ...")
     n_grammar = build_grammar(conn)
@@ -721,6 +983,8 @@ def main() -> int:
     print()
     print(f"SUMMARY 08_build_content_db: words={n_words} grammar={n_grammar} "
           f"lessons={n_lessons} sentences={n_sentences} "
+          f"path_units={n_curriculum_units} path_lessons={n_curriculum_lessons} "
+          f"path_words={n_curriculum_words} "
           f"bytes={size:,} -> {OUT}")
     for key in ("word_count", "words_with_bg_gloss", "grammar_count",
                 "sentence_count", "sentences_with_bg"):

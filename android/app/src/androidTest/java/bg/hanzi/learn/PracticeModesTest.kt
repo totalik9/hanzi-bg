@@ -17,7 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The five practice modes, on a real device.
+ * The learning path and the five practice modes, on a real device.
  *
  * The pure logic of the modes is covered by unit tests, but the modes
  * themselves were not tested at all: nothing checked that the
@@ -27,7 +27,8 @@ import org.junit.runner.RunWith
  * as the gap: "Няма тест за нито един от 5-те учебни режима".
  *
  * These tests drive the real app against the fixture content database
- * -- six words -- so they are fast enough to run on every commit.
+ * -- six words and two lessons -- so they are fast enough to run on
+ * every commit.
  */
 @RunWith(AndroidJUnit4::class)
 class PracticeModesTest {
@@ -49,11 +50,74 @@ class PracticeModesTest {
         }
     }
 
-    /** Open the practice screen from the bottom navigation. */
+    /**
+     * Waits until the app has shown something.
+     *
+     * The app shows a spinner while it reads the content database, and
+     * the questions are asked after that. A test that looks for the
+     * questions too early finds nothing and decides that the learner
+     * is already past them -- and then the test waits for a screen
+     * that is not there yet.
+     */
+    private fun waitForApp() {
+        composeRule.waitUntil(timeoutMillis = 60_000) {
+            val questions = composeRule.onAllNodesWithText("За изпит HSK")
+                .fetchSemanticsNodes().isNotEmpty()
+            val path = composeRule.onAllNodesWithText("Следващият урок")
+                .fetchSemanticsNodes().isNotEmpty()
+            questions || path
+        }
+    }
+
+    /**
+     * Answers the two first-run questions.
+     *
+     * They are asked once, and the answer is kept in the user's own
+     * database, so a test run that starts from a fresh install has to
+     * get past them. When they are already answered the screen is not
+     * there and nothing is tapped.
+     */
+    private fun skipOnboarding() {
+        waitForApp()
+        val goal = composeRule.onAllNodesWithText("За изпит HSK")
+            .fetchSemanticsNodes()
+        if (goal.isEmpty()) return
+        composeRule.onAllNodesWithText("За изпит HSK")[0].performClick()
+        composeRule.onNodeWithText("Напред").performClick()
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithText("15 минути")[0].performClick()
+        composeRule.onNodeWithText("Към уроците").performClick()
+        composeRule.waitForIdle()
+    }
+
+    /**
+     * Goes back to the path screen.
+     *
+     * The path is where the "More" menu lives, and it is where every
+     * test starts: the activity is created afresh for each test, so
+     * the navigation starts at the path again.
+     */
+    private fun goToPath() {
+        skipOnboarding()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithText("Следващият урок")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    /**
+     * The practice modes are under the "More" menu of the path.
+     */
     private fun openPractice() {
-        // The tag, not the text: "Упражнения" is also on the button of
-        // every level card on the Home screen.
-        composeRule.onNodeWithTag("nav_practice").performClick()
+        skipOnboarding()
+        goToPath()
+        // The tag, not the text: "Упражнения" is also a button on the
+        // Path screen.
+        composeRule.onNodeWithTag("more_menu", useUnmergedTree = true)
+            .performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("more_practice", useUnmergedTree = true)
+            .performClick()
         composeRule.waitForIdle()
         waitForThePool()
     }
@@ -89,36 +153,43 @@ class PracticeModesTest {
     }
 
     @Test
-    fun theHomeScreenShowsTheLevelsOfTheFixture() {
-        // The fixture has levels 1 and 2, so the Home screen must offer
-        // both. This is the check that the whole chain works: the
-        // fixture is found, the database opens, the levels are read.
-        //
-        // The Home screen shows a SPINNER until the database has been
-        // read, and that read is on a background thread: Compose's
-        // waitForIdle does not wait for it -- it waits for the main
-        // thread. So the assertion has to wait for the level selector
-        // to appear, the same way waitForThePool() does for the
-        // practice screen.
-        //
-        // It passed on a fast machine and failed on a slow one, which
-        // is how it got to fail on the CI runner for nine runs.
-        //
-        // The budget is 60 seconds, not 20: the Home screen clears its
-        // spinner only after EVERY query has finished -- the levels,
-        // the word count of each level, the learned count of each
-        // level, the cards due today and the daily statistics -- and
-        // two of those databases have to be created first. On a cold
-        // runner that is a lot of waiting, and the wait is bounded by
-        // how long the work takes, not by a fixed guess.
+    fun thePathScreenShowsTheLearningPath() {
+        skipOnboarding()
+
+        // The path is the first screen, and it names the lesson that
+        // comes next. The fixture has two lessons; the second is locked
+        // until the first is passed.
         composeRule.waitUntil(timeoutMillis = 60_000) {
-            composeRule.onAllNodesWithText("Избери ниво")
+            composeRule.onAllNodesWithText("Следващият урок")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-
         assertTrue(
-            "HSK 1 must be offered",
-            composeRule.onAllNodesWithText("HSK 1").fetchSemanticsNodes().isNotEmpty(),
+            "the first lesson of the fixture must be offered",
+            composeRule.onAllNodesWithText("Първи урок")
+                .fetchSemanticsNodes().isNotEmpty(),
+        )
+        assertTrue(
+            "the second lesson must be locked",
+            composeRule.onAllNodesWithText("Заключен, докато не минеш предходния урок")
+                .fetchSemanticsNodes().isNotEmpty(),
+        )
+    }
+
+    @Test
+    fun theLessonOpensAndAsksTheLearnerToListenFirst() {
+        skipOnboarding()
+        composeRule.waitUntil(timeoutMillis = 60_000) {
+            composeRule.onAllNodesWithText("Започни урока")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Започни урока").performClick()
+        composeRule.waitForIdle()
+
+        // The first step of a lesson is hearing the word.
+        assertTrue(
+            "the lesson must start by playing the word",
+            composeRule.onAllNodesWithText("1. Чуй")
+                .fetchSemanticsNodes().isNotEmpty(),
         )
     }
 
