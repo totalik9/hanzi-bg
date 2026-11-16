@@ -45,6 +45,23 @@ fun GrammarScreen(
         items(state.entries) { entry ->
             GrammarCard(entry)
         }
+
+        // The attribution the licence asks for.
+        //
+        // The Chinese Grammar Wiki is CC BY-NC-SA 3.0, and its own
+        // copyright page says the content "may not be used for
+        // commercial purposes or without attribution" and asks for a
+        // link to the wiki "on every page/view where the content
+        // appears". This screen shows the grammar, so this screen is
+        // one of those views.
+        item {
+            Text(
+                text = stringResource(R.string.grammar_attribution),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
     }
 }
 

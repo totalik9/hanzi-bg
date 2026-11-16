@@ -1,0 +1,1733 @@
+{
+ "_comment": [
+  "Which HSK/CEFR level each grammar point belongs to.",
+  "",
+  "The Chinese Grammar Wiki builds its level tables with Semantic",
+  "MediaWiki queries, so the list of points per level exists only in",
+  "the rendered index pages -- and the wiki is behind a Cloudflare",
+  "challenge that answers every request with HTTP 403. The Internet",
+  "Archive has snapshots of those eight index pages, but it",
+  "rate-limits hard enough that a fresh clone cannot be sure of",
+  "getting them.",
+  "",
+  "So the mapping is kept here, in version control. It was read from",
+  "the archive snapshots of the eight level index pages, and it is",
+  "checked against the mirror: the mirror's own category tags agree",
+  "with this file for every point that has both.",
+  "",
+  "The value is the list of level pages the point appears on:",
+  "",
+  "    A1, A2, B1, B2, C1   the CEFR level",
+  "    HSK_1, HSK_2, HSK_3 the HSK level",
+  "",
+  "A point can appear under both, which is what the wiki does.",
+  "",
+  "This file is content, not code, and it is refreshed by",
+  "pipeline/04_build_grammar.py --refresh-levels."
+ ],
+ "levels": {
+  "ASG004ZK": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG04ZCI": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASG06EA8": [
+   "B1"
+  ],
+  "ASG0A67E": [
+   "C1"
+  ],
+  "ASG0C825": [
+   "B2"
+  ],
+  "ASG0D90L": [
+   "C1"
+  ],
+  "ASG0EQQJ": [
+   "B1"
+  ],
+  "ASG0K25S": [
+   "C1"
+  ],
+  "ASG0NDS6": [
+   "B2"
+  ],
+  "ASG0UFR4": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG10CAE": [
+   "B1"
+  ],
+  "ASG11DA8": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG13ALM": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG16EF6": [
+   "B2"
+  ],
+  "ASG17BLH": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASG18JOA": [
+   "B2"
+  ],
+  "ASG19S1M": [
+   "B1"
+  ],
+  "ASG1CCAP": [
+   "B1"
+  ],
+  "ASG1CEA8": [
+   "B1"
+  ],
+  "ASG1DXUD": [
+   "B2"
+  ],
+  "ASG1F4D1": [
+   "B1"
+  ],
+  "ASG1HNBU": [
+   "B2"
+  ],
+  "ASG1MD4N": [
+   "B2"
+  ],
+  "ASG1NAXO": [
+   "A2"
+  ],
+  "ASG1PTJX": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG1QB4K": [
+   "B2"
+  ],
+  "ASG1RE80": [
+   "B2"
+  ],
+  "ASG25773": [
+   "B2"
+  ],
+  "ASG25C48": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASG2KQZI": [
+   "B1"
+  ],
+  "ASG2UB2B": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG2ZC5S": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASG30A60": [
+   "B1"
+  ],
+  "ASG3544U": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG35CD7": [
+   "B1"
+  ],
+  "ASG35T4H": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASG38F8A": [
+   "C1"
+  ],
+  "ASG3AD49": [
+   "C1"
+  ],
+  "ASG3GX2H": [
+   "C1"
+  ],
+  "ASG3IR71": [
+   "B2"
+  ],
+  "ASG3JELV": [
+   "B2"
+  ],
+  "ASG3ORNN": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG3ROPY": [
+   "B1"
+  ],
+  "ASG3WTCJ": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG3ZS9G": [
+   "C1"
+  ],
+  "ASG44TBS": [
+   "B2"
+  ],
+  "ASG47D26": [
+   "C1"
+  ],
+  "ASG4807F": [
+   "B2"
+  ],
+  "ASG49889": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG49BE6": [
+   "B1"
+  ],
+  "ASG4D8XB": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASG4FB55": [
+   "B2"
+  ],
+  "ASG4GVRX": [
+   "B1"
+  ],
+  "ASG4K5WH": [
+   "B2"
+  ],
+  "ASG4NDHB": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASG4NIPB": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG4OM4T": [
+   "B2"
+  ],
+  "ASG4V36Q": [
+   "B2"
+  ],
+  "ASG50341": [
+   "B2"
+  ],
+  "ASG50DR1": [
+   "C1"
+  ],
+  "ASG516F9": [
+   "B2"
+  ],
+  "ASG5334C": [
+   "B2"
+  ],
+  "ASG54932": [
+   "B2"
+  ],
+  "ASG56QKW": [
+   "B2"
+  ],
+  "ASG59C66": [
+   "B1"
+  ],
+  "ASG5A494": [
+   "B2"
+  ],
+  "ASG5AODR": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG5BOGP": [
+   "B1"
+  ],
+  "ASG5C89R": [
+   "B2"
+  ],
+  "ASG5DG95": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG5HZG6": [
+   "C1"
+  ],
+  "ASG5KNWW": [
+   "B1"
+  ],
+  "ASG5MOMM": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASG5RWKO": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASG5T7XC": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG6120A": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG626D3": [
+   "B2"
+  ],
+  "ASG64BTE": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG64E96": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG6509E": [
+   "C1"
+  ],
+  "ASG68DA5": [
+   "B2"
+  ],
+  "ASG68F61": [
+   "B1"
+  ],
+  "ASG68RBX": [
+   "B1"
+  ],
+  "ASG69RR8": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASG6B21A": [
+   "B1"
+  ],
+  "ASG6ESWW": [
+   "B1"
+  ],
+  "ASG6F157": [
+   "B2"
+  ],
+  "ASG6HYOU": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASG6KUS5": [
+   "B1",
+   "HSK_2",
+   "HSK_3"
+  ],
+  "ASG6SPYK": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASG6TB4J": [
+   "B2"
+  ],
+  "ASG6ZI8L": [
+   "B2"
+  ],
+  "ASG700A5": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG72HKP": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG73H8K": [
+   "C1"
+  ],
+  "ASG75EE1": [
+   "B2"
+  ],
+  "ASG765HD": [
+   "B1"
+  ],
+  "ASG767A2": [
+   "B2"
+  ],
+  "ASG78FDE": [
+   "B2"
+  ],
+  "ASG79STE": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG7AE5C": [
+   "B2"
+  ],
+  "ASG7AUNJ": [
+   "B2"
+  ],
+  "ASG7D4EC": [
+   "B1"
+  ],
+  "ASG7ED89": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG7R8US": [
+   "B2"
+  ],
+  "ASG7UE4H": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG81QV3": [
+   "B2"
+  ],
+  "ASG846EA": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASG84D65": [
+   "C1"
+  ],
+  "ASG84RE9": [
+   "B1"
+  ],
+  "ASG863DE": [
+   "B2"
+  ],
+  "ASG87D22": [
+   "B2"
+  ],
+  "ASG890CA": [
+   "B2"
+  ],
+  "ASG8DVSO": [
+   "B2"
+  ],
+  "ASG8F7D4": [
+   "B2"
+  ],
+  "ASG8GSXY": [
+   "B1"
+  ],
+  "ASG8HVFN": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASG8ICO9": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG8KUHG": [
+   "B1"
+  ],
+  "ASG8LWBJ": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG8NM5E": [
+   "A2"
+  ],
+  "ASG8OLAE": [
+   "B2"
+  ],
+  "ASG8QS6H": [
+   "B2"
+  ],
+  "ASG8R2V8": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG8RW47": [
+   "B2"
+  ],
+  "ASG8SI2K": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG8VJM8": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG8YTSF": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG90DXK": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG920B7": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG95AL1": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG98C1A": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASG98FZK": [
+   "B1"
+  ],
+  "ASG9B0M8": [
+   "B1"
+  ],
+  "ASG9B1E3": [
+   "B1"
+  ],
+  "ASG9B210": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASG9D48A": [
+   "C1"
+  ],
+  "ASG9E5BB": [
+   "B2"
+  ],
+  "ASG9E9A6": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASG9JK0B": [
+   "C1"
+  ],
+  "ASG9K0F8": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASG9LLJU": [
+   "A2",
+   "HSK_1",
+   "HSK_2"
+  ],
+  "ASG9PQ40": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASG9W0UX": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASG9YK09": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGA0098": [
+   "B2"
+  ],
+  "ASGA0S4T": [
+   "B1"
+  ],
+  "ASGA1B87": [
+   "C1"
+  ],
+  "ASGA632B": [
+   "C1"
+  ],
+  "ASGA77KW": [
+   "C1"
+  ],
+  "ASGA8NIB": [
+   "A1",
+   "HSK_3"
+  ],
+  "ASGAA381": [
+   "C1"
+  ],
+  "ASGAC1P9": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGAC619": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGACMNQ": [
+   "B2"
+  ],
+  "ASGAD070": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGAGDCQ": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGAQV6C": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGATDLX": [
+   "B1"
+  ],
+  "ASGAUCXK": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGAY164": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGB0MXK": [
+   "B2"
+  ],
+  "ASGB316B": [
+   "C1"
+  ],
+  "ASGB33AE": [
+   "B2"
+  ],
+  "ASGB449A": [
+   "B2"
+  ],
+  "ASGB44F6": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGB6L4M": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGB781C": [
+   "B2"
+  ],
+  "ASGB8BWA": [
+   "B2"
+  ],
+  "ASGBA782": [
+   "B2"
+  ],
+  "ASGBAIMA": [
+   "C1"
+  ],
+  "ASGBC7A0": [
+   "B1"
+  ],
+  "ASGBPXOB": [
+   "B1"
+  ],
+  "ASGBUXN7": [
+   "B2"
+  ],
+  "ASGBVSWQ": [
+   "C1"
+  ],
+  "ASGBZ578": [
+   "B1"
+  ],
+  "ASGC01S0": [
+   "B2"
+  ],
+  "ASGC06N0": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGC11D0": [
+   "C1"
+  ],
+  "ASGC1BI5": [
+   "C1"
+  ],
+  "ASGC3SCN": [
+   "B2"
+  ],
+  "ASGC4C1F": [
+   "B2"
+  ],
+  "ASGC5Y86": [
+   "B2"
+  ],
+  "ASGC6E1C": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGC701A": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGC885D": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGC8A38": [
+   "C1"
+  ],
+  "ASGC8CB8": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGCC713": [
+   "C1"
+  ],
+  "ASGCED31": [
+   "B1"
+  ],
+  "ASGCI0KG": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGCPDSR": [
+   "B1"
+  ],
+  "ASGCPJPQ": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGCRH6P": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGCUSIV": [
+   "B2"
+  ],
+  "ASGCWHNF": [
+   "B1"
+  ],
+  "ASGCZ37R": [
+   "C1"
+  ],
+  "ASGD19DA": [
+   "B2"
+  ],
+  "ASGD1LNT": [
+   "B2"
+  ],
+  "ASGD2A08": [
+   "B2"
+  ],
+  "ASGD3C4S": [
+   "B1"
+  ],
+  "ASGD3FE5": [
+   "B1"
+  ],
+  "ASGD4BA3": [
+   "B2"
+  ],
+  "ASGD4EC8": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGD60A6": [
+   "B1"
+  ],
+  "ASGD7NS3": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGD88UO": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGDF1F7": [
+   "B1"
+  ],
+  "ASGDFQP7": [
+   "B1"
+  ],
+  "ASGDHC1H": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGDHE8S": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGDIDAC": [
+   "B1"
+  ],
+  "ASGDK0BR": [
+   "B2"
+  ],
+  "ASGDTO07": [
+   "A2",
+   "HSK_1",
+   "HSK_3"
+  ],
+  "ASGDU0XL": [
+   "C1"
+  ],
+  "ASGDUZ55": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGDZIO0": [
+   "C1"
+  ],
+  "ASGE09B4": [
+   "B2"
+  ],
+  "ASGE2U25": [
+   "C1"
+  ],
+  "ASGE4B94": [
+   "B2"
+  ],
+  "ASGE5Q4J": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGE662E": [
+   "B1",
+   "HSK_1"
+  ],
+  "ASGE8FLP": [
+   "B1"
+  ],
+  "ASGEA938": [
+   "C1"
+  ],
+  "ASGEAH5M": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGEB54D": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGEB7F5": [
+   "B2"
+  ],
+  "ASGECD0E": [
+   "B1"
+  ],
+  "ASGEEA2D": [
+   "B1"
+  ],
+  "ASGEG2QB": [
+   "B2"
+  ],
+  "ASGEHTV5": [
+   "B2"
+  ],
+  "ASGELOTT": [
+   "B1"
+  ],
+  "ASGETNCO": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGEXR6R": [
+   "B2"
+  ],
+  "ASGEYQ9O": [
+   "B1"
+  ],
+  "ASGEZ2HN": [
+   "B2"
+  ],
+  "ASGF00B7": [
+   "B1"
+  ],
+  "ASGF08B6": [
+   "B2"
+  ],
+  "ASGF1TQ2": [
+   "B2"
+  ],
+  "ASGF205D": [
+   "B2"
+  ],
+  "ASGF273F": [
+   "B2"
+  ],
+  "ASGF3F2Y": [
+   "B2"
+  ],
+  "ASGF561D": [
+   "C1"
+  ],
+  "ASGF763H": [
+   "B1"
+  ],
+  "ASGF9320": [
+   "B2"
+  ],
+  "ASGFBWZL": [
+   "A2"
+  ],
+  "ASGFNS52": [
+   "C1"
+  ],
+  "ASGFPV2C": [
+   "B1"
+  ],
+  "ASGFR96B": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGFYNCL": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGFZOLQ": [
+   "C1"
+  ],
+  "ASGG1ZBL": [
+   "B2"
+  ],
+  "ASGG25MD": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGG4BX9": [
+   "B2"
+  ],
+  "ASGGB3IV": [
+   "B2"
+  ],
+  "ASGGGIW8": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGGH7RR": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGGI66V": [
+   "C1"
+  ],
+  "ASGGIVT0": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGGJA6A": [
+   "B2"
+  ],
+  "ASGGL59D": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGGNXVR": [
+   "B2"
+  ],
+  "ASGGOUJB": [
+   "B2"
+  ],
+  "ASGGPG97": [
+   "B2"
+  ],
+  "ASGGXSIR": [
+   "C1"
+  ],
+  "ASGH13JY": [
+   "B1"
+  ],
+  "ASGH2MNO": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGH4A7W": [
+   "C1"
+  ],
+  "ASGHC9CA": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGHF9F1": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGHFPGG": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGHNDX4": [
+   "B2"
+  ],
+  "ASGHOI8S": [
+   "B2"
+  ],
+  "ASGHQRI1": [
+   "B1"
+  ],
+  "ASGHVFRA": [
+   "B2"
+  ],
+  "ASGI0T9S": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGI2KHC": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGI2OAG": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGI96BQ": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGI9PNV": [
+   "B2"
+  ],
+  "ASGI9WXT": [
+   "B1"
+  ],
+  "ASGID0E8": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGIHS2L": [
+   "B2"
+  ],
+  "ASGII66E": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGIKHUH": [
+   "C1"
+  ],
+  "ASGIM3AX": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGINBWJ": [
+   "B2"
+  ],
+  "ASGIPYFV": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGIQPUJ": [
+   "B2"
+  ],
+  "ASGIRILI": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGIVGZO": [
+   "B2"
+  ],
+  "ASGIVZJU": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGIZQJ2": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGJ1VZQ": [
+   "B2"
+  ],
+  "ASGJ2OJC": [
+   "A2",
+   "HSK_1",
+   "HSK_3"
+  ],
+  "ASGJ36VN": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGJ46H1": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGJBZKC": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGJDV3Y": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGJFFWG": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGJIFI9": [
+   "C1"
+  ],
+  "ASGJIP2E": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGJOGGG": [
+   "B2"
+  ],
+  "ASGJPQ0Q": [
+   "B2"
+  ],
+  "ASGJQPSC": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGJQU93": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGK0ZG7": [
+   "C1"
+  ],
+  "ASGK4CGK": [
+   "C1"
+  ],
+  "ASGK904U": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGKITRZ": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGKQEG9": [
+   "B2"
+  ],
+  "ASGKU8FU": [
+   "C1"
+  ],
+  "ASGKWV6F": [
+   "B2"
+  ],
+  "ASGL1V0A": [
+   "C1"
+  ],
+  "ASGL4O5E": [
+   "B2"
+  ],
+  "ASGL6JOE": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGL90MR": [
+   "B2"
+  ],
+  "ASGL9KQM": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGLEVUV": [
+   "A2"
+  ],
+  "ASGLFX54": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGLHAV3": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGLI513": [
+   "B2"
+  ],
+  "ASGLI7GW": [
+   "B2"
+  ],
+  "ASGLJM55": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGLKGZP": [
+   "B1"
+  ],
+  "ASGLNKZR": [
+   "B1"
+  ],
+  "ASGLOS9C": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGLQKD2": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGLQNS3": [
+   "C1"
+  ],
+  "ASGLRWT8": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGM055L": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGM5ZAB": [
+   "B2"
+  ],
+  "ASGMAFSX": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGMCP9V": [
+   "B2"
+  ],
+  "ASGMCX2H": [
+   "C1"
+  ],
+  "ASGMD0YY": [
+   "B2"
+  ],
+  "ASGMDJTD": [
+   "C1"
+  ],
+  "ASGMJHZO": [
+   "A1",
+   "HSK_1",
+   "HSK_3"
+  ],
+  "ASGMMHTQ": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGMPZ6D": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGMT1M1": [
+   "B1"
+  ],
+  "ASGMX0ZS": [
+   "B2"
+  ],
+  "ASGN1JR5": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGN3IGH": [
+   "B2"
+  ],
+  "ASGN4S8O": [
+   "B2"
+  ],
+  "ASGN4VUU": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGN6BBU": [
+   "A1",
+   "HSK_1",
+   "HSK_3"
+  ],
+  "ASGN6O6J": [
+   "B1"
+  ],
+  "ASGN8C8R": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGNEMXP": [
+   "B1"
+  ],
+  "ASGNGEU8": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGNKKP6": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGNLGGX": [
+   "C1"
+  ],
+  "ASGNNMST": [
+   "B1",
+   "HSK_2",
+   "HSK_3"
+  ],
+  "ASGNP0WV": [
+   "B1"
+  ],
+  "ASGNPJ7T": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGNPO4V": [
+   "B2"
+  ],
+  "ASGNQUC1": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGNVE15": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGNXI27": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGOB1BF": [
+   "B1"
+  ],
+  "ASGOIDEO": [
+   "B1",
+   "HSK_2",
+   "HSK_3"
+  ],
+  "ASGOOCVO": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGOR3M4": [
+   "C1"
+  ],
+  "ASGOUD8U": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGOWBSL": [
+   "B1"
+  ],
+  "ASGP000J": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGP0KFF": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGP69JD": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGP6LVA": [
+   "B2"
+  ],
+  "ASGP8DXU": [
+   "B2"
+  ],
+  "ASGPFUM2": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGPINA4": [
+   "B1"
+  ],
+  "ASGPM3MY": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGPNV3Q": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGPRGAX": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGPS9NY": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGPV5Z2": [
+   "C1"
+  ],
+  "ASGPVFU1": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGPW8PP": [
+   "B1"
+  ],
+  "ASGPXLP9": [
+   "B1"
+  ],
+  "ASGPY23Z": [
+   "B1"
+  ],
+  "ASGQ1KOY": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGQ2AZA": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGQAN74": [
+   "B2"
+  ],
+  "ASGQFW44": [
+   "B2"
+  ],
+  "ASGQGJXT": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGQGV3P": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGQJ5IC": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGQJJYO": [
+   "A2"
+  ],
+  "ASGQRS3P": [
+   "B2"
+  ],
+  "ASGQUKJF": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGQXARS": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGR6Q2J": [
+   "B2"
+  ],
+  "ASGRBC43": [
+   "B1"
+  ],
+  "ASGRBKSL": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGRHM0E": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGRJ1BI": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGRLQGY": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGRURCZ": [
+   "B1"
+  ],
+  "ASGS4DBY": [
+   "B2"
+  ],
+  "ASGS6UKN": [
+   "B2"
+  ],
+  "ASGSCN01": [
+   "B2"
+  ],
+  "ASGSJYZ2": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGSPAKW": [
+   "B2"
+  ],
+  "ASGSVF28": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGSZ0HP": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGT0GYL": [
+   "B2"
+  ],
+  "ASGT185D": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGT1CIR": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGT3KF6": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGT8AUA": [
+   "B2"
+  ],
+  "ASGT97VF": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGT9Y8P": [
+   "B1"
+  ],
+  "ASGTBHBG": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGTD3L3": [
+   "B1"
+  ],
+  "ASGTDUJO": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGTFUD0": [
+   "B1"
+  ],
+  "ASGTIMTS": [
+   "B2"
+  ],
+  "ASGTKXFR": [
+   "B1"
+  ],
+  "ASGTPGXK": [
+   "B2"
+  ],
+  "ASGTVEHJ": [
+   "B2"
+  ],
+  "ASGTVKAR": [
+   "C1"
+  ],
+  "ASGTYJ3E": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGU3ZV1": [
+   "B2"
+  ],
+  "ASGU98B7": [
+   "C1"
+  ],
+  "ASGUD25J": [
+   "B1"
+  ],
+  "ASGUD81S": [
+   "A2"
+  ],
+  "ASGUEFAL": [
+   "B2"
+  ],
+  "ASGUGWVZ": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGUHQD2": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGUN7RX": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGUNMHU": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGUQ861": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGUQUPG": [
+   "B2"
+  ],
+  "ASGV01X9": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGV55Y4": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGVA70K": [
+   "B2",
+   "HSK_3"
+  ],
+  "ASGVACYB": [
+   "B2"
+  ],
+  "ASGVBH2H": [
+   "C1"
+  ],
+  "ASGVCWLU": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGVDOXL": [
+   "B2"
+  ],
+  "ASGVEP8S": [
+   "C1"
+  ],
+  "ASGVH4Q5": [
+   "A1",
+   "HSK_1"
+  ],
+  "ASGVMC4B": [
+   "B1"
+  ],
+  "ASGVME5V": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGVRGW2": [
+   "C1"
+  ],
+  "ASGVT2KN": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGVUFKX": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGVYIZT": [
+   "B1"
+  ],
+  "ASGW0911": [
+   "C1"
+  ],
+  "ASGW66JM": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGW7YXP": [
+   "B2"
+  ],
+  "ASGW863F": [
+   "B2"
+  ],
+  "ASGW9737": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGWAR65": [
+   "B1"
+  ],
+  "ASGWCESP": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGWDWFN": [
+   "B1"
+  ],
+  "ASGWH1D5": [
+   "B2"
+  ],
+  "ASGWI5CV": [
+   "C1"
+  ],
+  "ASGWN185": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGWNEYM": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGWNGEP": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGWSSQL": [
+   "C1"
+  ],
+  "ASGWVZ0T": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGX0Z0N": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGX298Z": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGX5QTV": [
+   "B2"
+  ],
+  "ASGXGADL": [
+   "B2"
+  ],
+  "ASGXHQEF": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGXI560": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGXJPJS": [
+   "A2",
+   "HSK_3"
+  ],
+  "ASGXJYJD": [
+   "C1"
+  ],
+  "ASGXU2H4": [
+   "C1"
+  ],
+  "ASGXVEAR": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGXX3NY": [
+   "B2"
+  ],
+  "ASGXXP6M": [
+   "C1"
+  ],
+  "ASGY0UDC": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGY21RK": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGYC77J": [
+   "A2",
+   "HSK_2",
+   "HSK_3"
+  ],
+  "ASGYDKT3": [
+   "B2"
+  ],
+  "ASGYJQAG": [
+   "B2"
+  ],
+  "ASGYKDNF": [
+   "A2",
+   "HSK_1"
+  ],
+  "ASGYKH5G": [
+   "B2"
+  ],
+  "ASGYW5RS": [
+   "B1",
+   "HSK_3"
+  ],
+  "ASGYXI5X": [
+   "B2"
+  ],
+  "ASGYYOXD": [
+   "C1"
+  ],
+  "ASGZ8MJM": [
+   "B2"
+  ],
+  "ASGZ8OIF": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGZC42B": [
+   "A2",
+   "HSK_2"
+  ],
+  "ASGZH7K3": [
+   "A1",
+   "HSK_2"
+  ],
+  "ASGZL717": [
+   "B1",
+   "HSK_2"
+  ],
+  "ASGZRKTG": [
+   "B2"
+  ],
+  "ASGZRPCK": [
+   "B2"
+  ],
+  "ASGZVM27": [
+   "B2"
+  ]
+ }
+}
