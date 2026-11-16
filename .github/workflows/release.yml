@@ -173,7 +173,12 @@ jobs:
               -o "release-assets/$name"
           done < /tmp/assets.txt
           ls -la release-assets
-          test -s release-assets/hanzi-bg-v0.1.0-release.apk
+          # The name of the APK carries the version, so it is found
+          # rather than written down: a hard-coded name stops the
+          # check from ever passing for the next release.
+          apk=$(ls release-assets/*.apk | head -1)
+          test -s "$apk"
+          echo "the release carries $apk"
 
       - name: The checksum has to match the file
         run: |
