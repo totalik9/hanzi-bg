@@ -199,7 +199,7 @@ jobs:
     # a wedged emulator from holding the whole workflow open. It has
     # to be generous: the emulator alone can take half an hour to boot
     # on a cold runner.
-    timeout-minutes: 50
+    timeout-minutes: 75
     # The emulator needs nested virtualisation, which is not available
     # on every runner, and a runner that cannot start one fails this
     # job rather than the code. So the job was non-blocking for a long
@@ -223,6 +223,19 @@ jobs:
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      # The runner has no hardware acceleration, and the emulator action
+      # starts the emulator with "-accel off". Emulator 37.3 refuses to
+      # start that way and says so:
+      #
+      #   ERROR | Software CPU emulation (-accel off) is not supported.
+      #   A hardware CPU accelerator is required (or set
+      #   ANDROID_I_WANT_MY_TCG=yes to force TCG software emulation).
+      #
+      # So the emulator died at launch, the job polled a device that
+      # was never there for half an hour, and the install failed with a
+      # NullPointerException in the framework -- a failure that said
+      # nothing about the app and everything about the runner.
+      ANDROID_I_WANT_MY_TCG: "yes"
     steps:
       - uses: actions/checkout@v4
 
@@ -289,7 +302,9 @@ jobs:
           # rendering is slower than that, and the failure mode is
           # another timeout -- so the budget is raised rather than
           # left to chance.
-          emulator-boot-timeout: 1800
+          # The emulator runs in software mode on this runner (no KVM),
+          # so it boots slower than on a machine with acceleration.
+          emulator-boot-timeout: 2400
           # The wrapper keeps the output and collects the device state
           # while the emulator is still alive. The Actions job log
           # needs admin rights on the repository, so a failing run used
