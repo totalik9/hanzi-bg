@@ -45,6 +45,7 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -71,6 +72,11 @@ SOURCES_JSON = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "sources.json")
 
 OUT = os.path.join(DATA, "content.db")
+
+# The stamp of the database, read by the app to decide whether the copy it
+# holds is the one in the APK. It is a hash of the bytes and not the
+# length: a rebuilt database can be exactly as long as the old one.
+VERSION_OUT = os.path.join(DATA, "content_version.txt")
 
 SCHEMA = """
 CREATE TABLE words (
@@ -921,6 +927,29 @@ def install_db(tmp: str, out: str) -> None:
         pass
 
 
+def write_version(db_path: str) -> str:
+    """Write the version stamp of the database next to it.
+
+    The app copies the database out of the APK once and re-copies it
+    when the content changes. It used to decide that by the LENGTH of
+    the asset, and that is not enough: a rebuilt database with two more
+    lessons in it came out exactly as long as the old one, so the app
+    kept the old content and the new lessons never appeared.
+
+    So the stamp is a hash of the bytes. The file is tiny and it ships
+    next to the database, so the app can read it without touching the
+    23 MB it is there to compare.
+    """
+    digest = hashlib.sha1()
+    with open(db_path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(chunk)
+    stamp = f"{os.path.getsize(db_path)}-{digest.hexdigest()[:16]}"
+    with open(VERSION_OUT, "w", encoding="utf-8") as fh:
+        fh.write(stamp)
+    return stamp
+
+
 def main() -> int:
     # The database is built under a temporary name. The quality gate runs
     # on it, and only a database that passes is put in place -- a degraded
@@ -1001,6 +1030,7 @@ def main() -> int:
     conn.close()
 
     install_db(tmp_out, OUT)
+    write_version(OUT)
 
     size = os.path.getsize(OUT)
     print()

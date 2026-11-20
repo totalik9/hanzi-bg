@@ -211,6 +211,7 @@ if (hasReleaseSigning) {
  * by a task predicate.
  */
 val contentDbFile = rootProject.layout.projectDirectory.file("../data/content.db").asFile
+val contentVersionFile = rootProject.layout.projectDirectory.file("../data/content_version.txt").asFile
 val audioSourceDir = rootProject.layout.projectDirectory.dir("../data/audio").asFile
 val generatedAssetDir = layout.buildDirectory.dir("generated/assets").get().asFile
 val contentAssetDir = File(generatedAssetDir, "content")
@@ -218,6 +219,13 @@ val audioAssetDir = File(generatedAssetDir, "audio")
 
 val syncContentDb by tasks.registering(Copy::class) {
     from(contentDbFile)
+    // The stamp of the database, so the app can tell whether the copy it
+    // holds is the one in this APK. Without it the app compares the
+    // LENGTH of the asset, and a rebuild that does not change the length
+    // is never picked up.
+    from(contentVersionFile) {
+        rename { "version.txt" }
+    }
     into(contentAssetDir)
     // The predicate reads the task's own inputs rather than a script
     // property: a lambda that captures the Gradle script cannot be
