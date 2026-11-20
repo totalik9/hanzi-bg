@@ -14,9 +14,24 @@
     <string name="path_subtitle">Китайски от български, дума по дума</string>
     <string name="path_next_lesson">Следващият урок</string>
     <string name="path_start_lesson">Започни урока</string>
-    <string name="path_words_count">%1$d думи</string>
-    <string name="path_cards_count">%1$d карти</string>
-    <string name="path_due_reviews">Прегледай %1$d карти за днес</string>
+    <!-- "1 карта", "2 карти". Българският има една форма за множествено
+         число, но не и за едното: една карта, две карти. -->
+    <plurals name="path_cards_count">
+        <item quantity="one">%1$d карта</item>
+        <item quantity="other">%1$d карти</item>
+    </plurals>
+    <plurals name="path_words_count">
+        <item quantity="one">%1$d дума</item>
+        <item quantity="other">%1$d думи</item>
+    </plurals>
+    <plurals name="path_lesson_words">
+        <item quantity="one">%1$d дума</item>
+        <item quantity="other">%1$d думи</item>
+    </plurals>
+    <plurals name="path_due_reviews">
+        <item quantity="one">Прегледай %1$d карта за днес</item>
+        <item quantity="other">Прегледай %1$d карти за днес</item>
+    </plurals>
     <string name="path_all_done">Пътят е минат</string>
     <string name="path_all_done_hint">Всички уроци са завършени. Продължи с упражненията или преглеждай речника.</string>
     <string name="path_progress">Напредък</string>

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -182,9 +183,17 @@ private fun NextLessonCard(
                     // one: the learner is being told the lesson is
                     // empty.
                     text = if (next.lesson.isTeach) {
-                        stringResource(R.string.path_cards_count, next.lesson.cards.size)
+                        pluralStringResource(
+                            R.plurals.path_cards_count,
+                            next.lesson.cards.size,
+                            next.lesson.cards.size,
+                        )
                     } else {
-                        stringResource(R.string.path_words_count, next.wordCount)
+                        pluralStringResource(
+                            R.plurals.path_words_count,
+                            next.wordCount,
+                            next.wordCount,
+                        )
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -208,7 +217,13 @@ private fun NextLessonCard(
                     onClick = onOpenReview,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(stringResource(R.string.path_due_reviews, state.dueCount))
+                    Text(
+                        pluralStringResource(
+                            R.plurals.path_due_reviews,
+                            state.dueCount,
+                            state.dueCount,
+                        ),
+                    )
                 }
             }
         }
@@ -399,9 +414,17 @@ private fun LessonRow(
                         stringResource(R.string.path_lesson_score, lesson.bestScore)
                     PathRules.LessonState.CURRENT ->
                         if (lesson.lesson.isTeach) {
-                            stringResource(R.string.path_cards_count, lesson.lesson.cards.size)
+                            pluralStringResource(
+                                R.plurals.path_cards_count,
+                                lesson.lesson.cards.size,
+                                lesson.lesson.cards.size,
+                            )
                         } else {
-                            stringResource(R.string.path_lesson_words, lesson.wordCount)
+                            pluralStringResource(
+                                R.plurals.path_lesson_words,
+                                lesson.wordCount,
+                                lesson.wordCount,
+                            )
                         }
                     PathRules.LessonState.LOCKED ->
                         stringResource(R.string.path_lesson_locked)
