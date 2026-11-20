@@ -331,10 +331,20 @@ jobs:
         run: |
           set -euo pipefail
           [ -d instrumented-diagnostics ] || exit 0
+          # The diagnostics have to be MOVED out of the working tree
+          # before the branch is checked out. The branch carries the
+          # diagnostics of the last failing run, so checking it out
+          # OVERWRITES the fresh ones with the old ones -- and then
+          # there is nothing to commit, the commit fails silently, and
+          # the branch keeps the evidence of a run from days ago.
+          rm -rf /tmp/hanzi-diagnostics
+          mv instrumented-diagnostics /tmp/hanzi-diagnostics
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin ci-diagnostics || true
           git checkout -B ci-diagnostics
+          rm -rf instrumented-diagnostics
+          mv /tmp/hanzi-diagnostics instrumented-diagnostics
           git add -f instrumented-diagnostics
           git commit -m "ci diagnostics from run ${GITHUB_RUN_ID}" || true
           git push --force origin ci-diagnostics

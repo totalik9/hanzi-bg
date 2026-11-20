@@ -45,15 +45,31 @@ cd "$ROOT/android"
 # null") and the job fails with "0 tests" -- the tests never ran, and
 # the failure says nothing about the app.
 #
-# So the script waits for the package manager to answer before it starts.
-echo "== waiting for the package manager =="
-for _ in $(seq 1 60); do
-  if "$ADB" shell cmd package list packages 2>/dev/null | grep -q "^package:"; then
-    echo "   the package manager answers"
-    break
-  fi
-  sleep 5
-done
+# The system can also die under the emulator (the crash buffer shows
+# "The system died"), and the install that follows hits the window in
+# which the package manager is back but the storage service is not yet.
+#
+# So the script waits for the system to be really ready -- the boot
+# property, the package manager and the storage service -- before it
+# starts, and an install failure gets more than one more chance.
+wait_for_the_system() {
+  for _ in $(seq 1 120); do
+    local booted
+    booted=$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+    if [ "$booted" = "1" ] && \
+       "$ADB" shell cmd package list packages 2>/dev/null | grep -q "^package:" && \
+       "$ADB" shell service check package 2>/dev/null | grep -q "found"; then
+      echo "   the system is ready"
+      return 0
+    fi
+    sleep 5
+  done
+  echo "   the system did not become ready"
+  return 1
+}
+
+echo "== waiting for the system =="
+wait_for_the_system
 
 # The Gradle output goes to the log AND to the console. pipefail keeps
 # Gradle's exit code, which a pipeline would otherwise throw away.
@@ -68,15 +84,19 @@ run_tests() {
 run_tests
 status="$GRADLE_STATUS"
 
-# An install failure is the emulator, not the app, so it gets one more
-# chance with a fresh attempt.
-if [ "$status" != "0" ] && grep -q "Failed to install" "$OUT/gradle.log"; then
+# An install failure is the emulator, not the app. It gets three more
+# chances, each after the system has been given time to come back.
+attempt=1
+while [ "$status" != "0" ] && [ "$attempt" -le 3 ] && \
+      grep -q "Failed to install" "$OUT/gradle.log"; do
   echo
-  echo "== the install failed; the emulator was not ready. Retrying in 30s =="
+  echo "== the install failed (attempt $attempt); waiting for the system =="
+  attempt=$((attempt + 1))
   sleep 30
+  wait_for_the_system
   run_tests
   status="$GRADLE_STATUS"
-fi
+done
 
 # What the device was doing when it failed.
 capture adb-devices.txt "$ADB" devices -l
