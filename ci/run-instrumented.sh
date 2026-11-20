@@ -39,12 +39,44 @@ echo "   diagnostics: $OUT"
 
 cd "$ROOT/android"
 
+# The emulator can report itself booted before the package manager is
+# able to install anything. The install then dies with a
+# NullPointerException inside InstallLocationUtils ("StorageManager is
+# null") and the job fails with "0 tests" -- the tests never ran, and
+# the failure says nothing about the app.
+#
+# So the script waits for the package manager to answer before it starts.
+echo "== waiting for the package manager =="
+for _ in $(seq 1 60); do
+  if "$ADB" shell cmd package list packages 2>/dev/null | grep -q "^package:"; then
+    echo "   the package manager answers"
+    break
+  fi
+  sleep 5
+done
+
 # The Gradle output goes to the log AND to the console. pipefail keeps
 # Gradle's exit code, which a pipeline would otherwise throw away.
 set -o pipefail
-./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace 2>&1 \
-  | tee "$OUT/gradle.log"
-status="${PIPESTATUS[0]}"
+
+run_tests() {
+  ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace 2>&1 \
+    | tee "$OUT/gradle.log"
+  GRADLE_STATUS="${PIPESTATUS[0]}"
+}
+
+run_tests
+status="$GRADLE_STATUS"
+
+# An install failure is the emulator, not the app, so it gets one more
+# chance with a fresh attempt.
+if [ "$status" != "0" ] && grep -q "Failed to install" "$OUT/gradle.log"; then
+  echo
+  echo "== the install failed; the emulator was not ready. Retrying in 30s =="
+  sleep 30
+  run_tests
+  status="$GRADLE_STATUS"
+fi
 
 # What the device was doing when it failed.
 capture adb-devices.txt "$ADB" devices -l
