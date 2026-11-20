@@ -87,9 +87,7 @@ object TeachingCardParser {
                 pinyin = it.string("pinyin").orEmpty(),
                 text = it.string("text").orEmpty(),
             ) },
-            rows = obj.array("rows").map { row ->
-                row.jsonArray.map { it.jsonPrimitive.content }
-            },
+            rows = obj.arrayOfArrays("rows"),
             lines = obj.array("lines").map { TeachingLine(
                 hanzi = it.string("hanzi").orEmpty(),
                 pinyin = it.string("pinyin").orEmpty(),
@@ -121,6 +119,21 @@ private fun JsonObject.array(key: String): List<JsonObject> =
 private fun JsonObject.arrayOfStrings(key: String): List<String> =
     (this[key] as? JsonArray).orEmpty()
         .mapNotNull { element -> (element as? JsonPrimitive)?.content }
+
+/**
+ * Reads a table: a list of rows, each row a list of cells.
+ *
+ * The rows are ARRAYS and not objects, so they cannot be read with
+ * [array]: that helper keeps the objects and drops everything else,
+ * and a table read that way is an empty table. The two table cards of
+ * the sound system lesson were blank because of it.
+ */
+private fun JsonObject.arrayOfArrays(key: String): List<List<String>> =
+    (this[key] as? JsonArray).orEmpty()
+        .map { row ->
+            (row as? JsonArray).orEmpty()
+                .mapNotNull { cell -> (cell as? JsonPrimitive)?.content }
+        }
 
 /**
  * Reads an integer that may be missing or of the wrong type.
