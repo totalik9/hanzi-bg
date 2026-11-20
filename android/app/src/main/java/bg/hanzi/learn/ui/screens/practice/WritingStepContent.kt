@@ -40,6 +40,7 @@ import bg.hanzi.learn.ui.theme.LangType
  * goes through the characters one by one.
  *
  * @param hanzi the word to write
+ * @param gloss the meaning of the word, in the learner's language
  * @param characters the characters of the word, with their stroke data
  * @param onDone called when every character has been traced
  */
@@ -48,6 +49,7 @@ fun WritingStepContent(
     hanzi: String,
     pinyin: String,
     characters: List<CharacterEntry>,
+    gloss: String = "",
     answered: Boolean = false,
     onDone: () -> Unit,
     onNext: () -> Unit = onDone,
@@ -88,6 +90,16 @@ fun WritingStepContent(
                     LangType.Kind.TRANSLITERATION,
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        // The word behind the character, so the learner writes a word
+        // and not a shape.
+        if (gloss.isNotBlank()) {
+            Text(
+                text = gloss,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
 

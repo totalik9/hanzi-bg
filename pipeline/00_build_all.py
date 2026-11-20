@@ -79,12 +79,13 @@ STEPS: list[tuple[str, str, list[str], bool, bool]] = [
     ("05", "05_build_sentences.py", [], False, False),
     ("12", "12_translate_sentences.py", [], False, True),
     ("06", "06_build_audio.py", [], True, True),
+    ("13", "13_build_reading_audio.py", [], True, False),
     ("08", "08_build_content_db.py", [], False, False),
 ]
 
 # The steps --fast leaves out: they need a translation model (07, 11,
-# 12) or run for a long time over the network (06).
-FAST_SKIP = {"07", "11", "12", "06"}
+# 12) or run for a long time over the network (06, 13).
+FAST_SKIP = {"07", "11", "12", "06", "13"}
 
 
 def main() -> int:

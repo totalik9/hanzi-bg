@@ -57,6 +57,10 @@ data class LessonUiState(
      * The teaching cards name their examples as text, and the app has
      * to look the pronunciation up: a lesson that teaches how Chinese
      * sounds without a way to hear it is a lesson about letters.
+     *
+     * The key is whatever the card names: the hanzi of an example, or
+     * the clip name of a line of a passage. The value is the file name
+     * under "audio/" in the APK.
      */
     val teachAudio: Map<String, String> = emptyMap(),
 ) {
@@ -130,9 +134,19 @@ class LessonViewModel @Inject constructor(
                 // it is a lesson about letters.
                 val audio = mutableMapOf<String, String>()
                 lesson.cards.forEach { payload ->
-                    TeachingCardParser.parse(payload)?.items?.forEach { item ->
+                    val card = TeachingCardParser.parse(payload) ?: return@forEach
+                    card.items.forEach { item ->
                         content.wordByHanzi(item.hanzi)?.audio?.takeIf { it.isNotBlank() }?.let {
                             audio[item.hanzi] = it
+                        }
+                    }
+                    // A line of a passage names its own clip: the text is
+                    // hand-written, so there is no word in the dictionary
+                    // that holds it. The clip name is the key as well,
+                    // because there is nothing else to look it up by.
+                    card.lines.forEach { line ->
+                        line.audio.takeIf { it.isNotBlank() }?.let {
+                            audio[it] = it
                         }
                     }
                 }

@@ -1,0 +1,104 @@
+{
+  "units": [
+    {
+      "key": "situations",
+      "title": "Ситуации",
+      "lessons": [
+        {
+          "key": "situations-market",
+          "title": "На пазара",
+          "kind": "teach",
+          "cards": [
+            {
+              "kind": "reading",
+              "title": "На пазара",
+              "body": "Прочети съобщението и отговори на въпроса. Значението на отделен ред се отваря с бутона „?“.",
+              "lines": [
+                {
+                  "hanzi": "你好，你要买什么？",
+                  "pinyin": "Nǐ hǎo, nǐ yào mǎi shénme?",
+                  "bg": "Здравейте, какво искате да купите?",
+                  "audio": "reading_market_0.ogg"
+                },
+                {
+                  "hanzi": "我要三个苹果。",
+                  "pinyin": "Wǒ yào sān gè píngguǒ.",
+                  "bg": "Искам три ябъка.",
+                  "audio": "reading_market_1.ogg"
+                },
+                {
+                  "hanzi": "这个多少钱？",
+                  "pinyin": "Zhège duōshao qián?",
+                  "bg": "Колко струва това?",
+                  "audio": "reading_market_2.ogg"
+                },
+                {
+                  "hanzi": "十五块。",
+                  "pinyin": "Shíwǔ kuài.",
+                  "bg": "Петнадесет юани.",
+                  "audio": "reading_market_3.ogg"
+                }
+              ],
+              "question": {
+                "text": "Какво иска купувачът?",
+                "options": [
+                  "Три ябъка",
+                  "Пет мандарина",
+                  "Десет ябъка"
+                ],
+                "answer": 0
+              }
+            }
+          ]
+        },
+        {
+          "key": "situations-restaurant",
+          "title": "В ресторанта",
+          "kind": "teach",
+          "cards": [
+            {
+              "kind": "reading",
+              "title": "В ресторанта",
+              "body": "Прочети разговора и отговори на въпроса. Значението на отделен ред се отваря с бутона „?“.",
+              "lines": [
+                {
+                  "hanzi": "您要吃什么？",
+                  "pinyin": "Nín yào chī shénme?",
+                  "bg": "Какво ще ядете?",
+                  "audio": "reading_restaurant_0.ogg"
+                },
+                {
+                  "hanzi": "我要面条和茶。",
+                  "pinyin": "Wǒ yào miàntiáo hé chá.",
+                  "bg": "Искам нудли и чай.",
+                  "audio": "reading_restaurant_1.ogg"
+                },
+                {
+                  "hanzi": "好，请稍等。",
+                  "pinyin": "Hǎo, qǐng shānděng.",
+                  "bg": "Добре, моля изчакайте.",
+                  "audio": "reading_restaurant_2.ogg"
+                },
+                {
+                  "hanzi": "谢谢。",
+                  "pinyin": "Xièxie.",
+                  "bg": "Благодаря.",
+                  "audio": "reading_restaurant_3.ogg"
+                }
+              ],
+              "question": {
+                "text": "Какво поръчва гостанинът?",
+                "options": [
+                  "Нудли и чай",
+                  "Ориз и мляко",
+                  "Джин и хляб"
+                ],
+                "answer": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

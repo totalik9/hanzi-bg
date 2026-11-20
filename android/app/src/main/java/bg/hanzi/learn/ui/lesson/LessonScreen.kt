@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
@@ -103,10 +105,17 @@ fun LessonScreen(
             return
         }
 
+        // The meaning of the word, in the language the learner reads.
+        // Every card of the lesson shows it: a learner who is shown a
+        // symbol and a sound without the word behind them does not know
+        // what they are learning.
+        val gloss = card.word.glossBg.ifBlank { card.word.glossEn }
+
         when (card.step) {
             LessonStep.LISTEN -> ListenStep(
                 hanzi = card.word.hanzi,
                 pinyin = card.word.pinyin,
+                gloss = gloss,
                 hasAudio = !card.word.audio.isNullOrBlank(),
                 onPlay = { viewModel.playAudio(card.word) },
                 onNext = viewModel::next,
@@ -115,6 +124,7 @@ fun LessonScreen(
             LessonStep.RECOGNISE -> RecogniseStep(
                 hanzi = card.word.hanzi,
                 pinyin = card.word.pinyin,
+                gloss = gloss,
                 options = card.options,
                 correctIndex = card.correctIndex,
                 answered = state.answered,
@@ -126,7 +136,7 @@ fun LessonScreen(
             LessonStep.SAY -> SayStep(
                 hanzi = card.word.hanzi,
                 pinyin = card.word.pinyin,
-                gloss = card.word.glossBg.ifBlank { card.word.glossEn },
+                gloss = gloss,
                 hasAudio = !card.word.audio.isNullOrBlank(),
                 onPlay = { viewModel.playAudio(card.word) },
                 onNext = viewModel::next,
@@ -135,6 +145,7 @@ fun LessonScreen(
             LessonStep.WRITE -> WriteStep(
                 hanzi = card.word.hanzi,
                 pinyin = card.word.pinyin,
+                gloss = gloss,
                 characters = card.characters,
                 answered = state.answered,
                 onDone = viewModel::onWritingDone,
@@ -186,6 +197,7 @@ private fun LessonHeader(
 private fun ListenStep(
     hanzi: String,
     pinyin: String,
+    gloss: String,
     hasAudio: Boolean,
     onPlay: () -> Unit,
     onNext: () -> Unit,
@@ -221,6 +233,17 @@ private fun ListenStep(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        // The word behind the character. The first card of a lesson is
+        // where the learner finds out what the symbol means; without it
+        // the card is a symbol and a sound with nothing to remember.
+        if (gloss.isNotBlank()) {
+            Text(
+                text = gloss,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
         Spacer(modifier = Modifier.height(32.dp))
         FilledTonalButton(onClick = onPlay, enabled = hasAudio) {
             Text("🔊 " + stringResource(R.string.lesson_listen))
@@ -236,6 +259,7 @@ private fun ListenStep(
 private fun RecogniseStep(
     hanzi: String,
     pinyin: String,
+    gloss: String,
     options: List<String>,
     correctIndex: Int,
     answered: Boolean,
@@ -243,76 +267,103 @@ private fun RecogniseStep(
     onAnswer: (Int) -> Unit,
     onNext: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = hanzi,
-            style = LangType.scaled(
-                MaterialTheme.typography.displayMedium,
-                LangType.Kind.TARGET,
-            ),
-            textAlign = TextAlign.Center,
-        )
-        if (pinyin.isNotBlank()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // The question scrolls; the answer and the button do not.
+        //
+        // The card holds a character, a title and four options, and the
+        // answer block adds two lines and a button on top of that. On a
+        // 320x640 screen that does not fit, and a button that is pushed
+        // off the bottom of the screen is a card the learner cannot
+        // leave -- the lesson would stop on its first question.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = pinyin,
+                text = hanzi,
                 style = LangType.scaled(
-                    MaterialTheme.typography.headlineSmall,
-                    LangType.Kind.TRANSLITERATION,
+                    MaterialTheme.typography.displayMedium,
+                    LangType.Kind.TARGET,
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.lesson_what_means),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            if (pinyin.isNotBlank()) {
+                Text(
+                    text = pinyin,
+                    style = LangType.scaled(
+                        MaterialTheme.typography.headlineSmall,
+                        LangType.Kind.TRANSLITERATION,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.lesson_what_means),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        options.forEachIndexed { index, option ->
-            // The right answer is the one the card says it is, not the
-            // first option that happens to have the same text: two
-            // words can share a meaning.
-            val isRight = index == correctIndex
-            AnswerOption(
-                text = option,
-                state = when {
-                    !answered -> AnswerState.NONE
-                    correct && isRight -> AnswerState.RIGHT
-                    answered -> AnswerState.WRONG
-                    else -> AnswerState.NONE
-                },
-                enabled = !answered,
-                onClick = { onAnswer(index) },
-            )
+            options.forEachIndexed { index, option ->
+                // The right answer is the one the card says it is, not
+                // the first option that happens to have the same text:
+                // two words can share a meaning.
+                val isRight = index == correctIndex
+                AnswerOption(
+                    text = option,
+                    state = when {
+                        !answered -> AnswerState.NONE
+                        correct && isRight -> AnswerState.RIGHT
+                        answered -> AnswerState.WRONG
+                        else -> AnswerState.NONE
+                    },
+                    enabled = !answered,
+                    onClick = { onAnswer(index) },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
         if (answered) {
-            Text(
-                text = if (correct) {
-                    stringResource(R.string.lesson_right)
-                } else {
-                    stringResource(R.string.lesson_wrong)
-                },
-                style = MaterialTheme.typography.titleLarge,
-                color = if (correct) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.lesson_continue))
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = if (correct) {
+                        stringResource(R.string.lesson_right)
+                    } else {
+                        stringResource(R.string.lesson_wrong)
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = if (correct) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                )
+                // The meaning is shown once the learner has answered, and
+                // not before: the card is a question, and a question that
+                // carries its own answer is not a question. After the
+                // answer it is the thing the learner was looking for.
+                if (gloss.isNotBlank()) {
+                    Text(
+                        text = gloss,
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.lesson_continue))
+                }
             }
         }
     }
@@ -422,6 +473,7 @@ private fun SayStep(
 private fun WriteStep(
     hanzi: String,
     pinyin: String,
+    gloss: String,
     characters: List<bg.hanzi.learn.data.content.CharacterEntry>,
     answered: Boolean,
     onDone: () -> Unit,
@@ -433,6 +485,7 @@ private fun WriteStep(
     bg.hanzi.learn.ui.screens.practice.WritingStepContent(
         hanzi = hanzi,
         pinyin = pinyin,
+        gloss = gloss,
         characters = characters,
         answered = answered,
         onDone = onDone,
@@ -573,7 +626,7 @@ private fun ReadingLesson(
  * One card of a reading lesson.
  *
  * The card is JSON: its kind says how it is drawn -- a text, a list of
- * examples, or a table of sounds.
+ * examples, a table of sounds, or a passage.
  */
 @Composable
 private fun ReadingCard(
@@ -590,6 +643,11 @@ private fun ReadingCard(
     val card = TeachingCardParser.parse(payload)
     if (card == null) {
         Text(text = payload, style = MaterialTheme.typography.bodyMedium)
+        return
+    }
+
+    if (card.kind == "reading") {
+        ReadingPassage(card = card, onPlay = onPlay)
         return
     }
 
@@ -659,6 +717,140 @@ private fun ReadingCard(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * A passage to read, listen to and understand.
+ *
+ * The passage is the test: the learner reads the Chinese and answers
+ * the question about it. The Bulgarian translation of a line is the
+ * joker -- it opens only when the learner asks for it, and it stays
+ * open afterwards, because a learner who has opened it once is allowed
+ * to look at it again.
+ *
+ * The question is answered here and not by the lesson, because a
+ * passage is a card of a reading lesson and the lesson has no score for
+ * it: the reading lesson is read to the end and it is done.
+ */
+@Composable
+private fun ReadingPassage(
+    card: TeachingCard,
+    onPlay: (String) -> Unit,
+) {
+    var opened by remember(card) { mutableStateOf(setOf<Int>()) }
+    var answered by remember(card) { mutableStateOf(false) }
+    var correct by remember(card) { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (card.title.isNotBlank()) {
+            Text(text = card.title, style = MaterialTheme.typography.titleLarge)
+        }
+        if (card.body.isNotBlank()) {
+            Text(
+                text = card.body,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        card.lines.forEachIndexed { index, line ->
+            Card {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                ) {
+                    // The text takes the whole width and the buttons sit
+                    // under it: a line of Chinese next to two buttons
+                    // leaves the text a column so narrow that a
+                    // sentence wraps one character per line.
+                    Text(
+                        text = line.hanzi,
+                        style = LangType.scaled(
+                            MaterialTheme.typography.headlineSmall,
+                            LangType.Kind.TARGET,
+                        ),
+                    )
+                    if (line.pinyin.isNotBlank()) {
+                        Text(
+                            text = line.pinyin,
+                            style = LangType.scaled(
+                                MaterialTheme.typography.bodyMedium,
+                                LangType.Kind.TRANSLITERATION,
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        if (line.audio.isNotBlank()) {
+                            androidx.compose.material3.TextButton(
+                                onClick = { onPlay(line.audio) },
+                            ) {
+                                Text("🔊")
+                            }
+                        }
+                        // The joker: the meaning of the line, on demand.
+                        androidx.compose.material3.TextButton(
+                            onClick = { opened = opened + index },
+                        ) {
+                            Text("?")
+                        }
+                    }
+                    if (index in opened && line.bg.isNotBlank()) {
+                        Text(
+                            text = line.bg,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
+        }
+
+        val question = card.question
+        if (question != null) {
+            Text(
+                text = question.text,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            question.options.forEachIndexed { index, option ->
+                val isRight = index == question.answer
+                AnswerOption(
+                    text = option,
+                    state = when {
+                        !answered -> AnswerState.NONE
+                        correct && isRight -> AnswerState.RIGHT
+                        answered -> AnswerState.WRONG
+                        else -> AnswerState.NONE
+                    },
+                    enabled = !answered,
+                    onClick = {
+                        correct = isRight
+                        answered = true
+                    },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            if (answered) {
+                Text(
+                    text = if (correct) {
+                        stringResource(R.string.lesson_right)
+                    } else {
+                        stringResource(R.string.lesson_wrong)
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = if (correct) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                )
             }
         }
     }
