@@ -163,11 +163,23 @@ class PracticeModesTest {
             composeRule.onAllNodesWithText("Следващият урок")
                 .fetchSemanticsNodes().isNotEmpty()
         }
+        // The lessons of the unit are at the bottom of the path, and on
+        // a small screen they are BELOW THE FOLD: an item that is not
+        // composed is not in the tree, so the assertion has to scroll to
+        // the lesson first. The same trap took the mode chips before.
+        composeRule.onNodeWithTag("path_list")
+            .performScrollToNode(hasText("Първи урок"))
+        composeRule.waitForIdle()
         assertTrue(
             "the first lesson of the fixture must be offered",
             composeRule.onAllNodesWithText("Първи урок")
                 .fetchSemanticsNodes().isNotEmpty(),
         )
+
+        composeRule.onNodeWithTag("path_list")
+            .performScrollToNode(hasText("Втори урок"))
+        composeRule.waitForIdle()
+
         assertTrue(
             "the second lesson must be locked",
             composeRule.onAllNodesWithText("Заключен, докато не минеш предходния урок")
