@@ -16,7 +16,10 @@
     <!-- Level picker -->
     <string name="levels_title">Избери ниво</string>
     <string name="levels_hint">Думите за упражнения и повторение идват от избраното ниво.</string>
-    <string name="levels_level">HSK %1$s</string>
+    <!-- The level label comes whole from LevelSelection.labelOf(), which
+         already says "HSK 1". The template must not add the prefix a
+         second time; it showed "HSK HSK 1" on every card. -->
+    <string name="levels_level">%1$s</string>
     <string name="levels_practice">Упражнения</string>
     <string name="levels_review">Повторение</string>
     <string name="levels_no_audio">Няма записани аудио клипове за това ниво.</string>

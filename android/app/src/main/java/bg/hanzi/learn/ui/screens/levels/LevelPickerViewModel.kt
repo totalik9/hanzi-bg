@@ -62,7 +62,12 @@ class LevelPickerViewModel @Inject constructor(
                 content.levels().map { id ->
                     LevelInfo(
                         id = id,
-                        label = "HSK ${LevelSelection.labelOf(id).removePrefix("HSK ")}",
+                        // labelOf() already says "HSK 1", "HSK 7-9" --
+                        // the whole label, not a bare number. Stripping
+                        // the prefix here and letting the string
+                        // template add it back is what put "HSK" twice
+                        // on the card.
+                        label = LevelSelection.labelOf(id),
                         wordCount = content.wordCount(id),
                         hasAudio = content.levelHasAudio(id),
                     )
