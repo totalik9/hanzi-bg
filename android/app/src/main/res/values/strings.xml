@@ -6,9 +6,24 @@
     <string name="nav_learn">Път</string>
     <string name="nav_dict">Речник</string>
     <string name="more_menu">Още</string>
+
+    <!-- More menu -->
     <string name="more_review">Повторение</string>
     <string name="more_practice">Упражнения</string>
     <string name="more_grammar">Граматика</string>
+    <string name="more_levels">Нива</string>
+
+    <!-- Level picker -->
+    <string name="levels_title">Избери ниво</string>
+    <string name="levels_hint">Думите за упражнения и повторение идват от избраното ниво.</string>
+    <string name="levels_level">HSK %1$s</string>
+    <string name="levels_practice">Упражнения</string>
+    <string name="levels_review">Повторение</string>
+    <string name="levels_no_audio">Няма записани аудио клипове за това ниво.</string>
+    <plurals name="levels_word_count">
+        <item quantity="one">%1$d дума</item>
+        <item quantity="other">%1$d думи</item>
+    </plurals>
 
     <!-- Path -->
     <string name="path_subtitle">Китайски от български, дума по дума</string>
@@ -144,6 +159,10 @@
     <string name="dict_empty">Няма резултати.</string>
     <!-- Shows only the words whose Bulgarian gloss was written by a person. -->
     <string name="dict_human_only">Само човешки сверени глоси</string>
+    <!-- The title of the list shown before the learner types anything. -->
+    <string name="dict_browse_title">Честите думи</string>
+    <!-- Loads the next page of the dictionary. -->
+    <string name="dict_load_more">Покажи още</string>
 
     <!-- Grammar -->
     <string name="grammar_empty">Все още няма граматични теми.</string>

@@ -95,6 +95,13 @@ class LessonViewModel @Inject constructor(
     private var index = 0
     private var correct = 0
     private var answered = 0
+    /**
+     * The characters whose strokes were traced correctly.
+     *
+     * The writing is worth half a point each, so it is counted apart
+     * from the questions.
+     */
+    private var written = 0
     private var newWords: List<WordEntry> = emptyList()
     private var writingEnabled = false
 
@@ -172,6 +179,7 @@ class LessonViewModel @Inject constructor(
             index = 0
             correct = 0
             answered = 0
+            written = 0
 
             _uiState.value = LessonUiState(
                 loading = false,
@@ -270,15 +278,23 @@ class LessonViewModel @Inject constructor(
         )
     }
 
-    /** Records that the writing step was traced correctly. */
-    fun onWritingDone() {
+    /**
+     * Records the writing step.
+     *
+     * The writing is worth half a point per character, and only the
+     * characters whose strokes were traced correctly earn it. It used
+     * to be a full point that the learner could not lose: pressing
+     * "Готово" awarded it whether anything had been drawn or not.
+     *
+     * @param writtenCorrectly how many characters were traced correctly
+     */
+    fun onWritingDone(writtenCorrectly: Int) {
         val state = _uiState.value
         if (state.answered) return
-        answered++
-        correct++
+        written += writtenCorrectly
         _uiState.value = state.copy(
             answered = true,
-            correct = true,
+            correct = writtenCorrectly > 0,
             correctCount = correct,
             answeredCount = answered,
         )
@@ -306,7 +322,14 @@ class LessonViewModel @Inject constructor(
 
     private fun finish() {
         viewModelScope.launch {
-            val score = LessonPlan.score(correct, answered)
+            // The writing is worth half a point per character, and the
+            // characters the lesson offered are part of what the lesson
+            // is worth: the score cannot be above 100, and a lesson
+            // without writing is not punished for it.
+            val writable = cards
+                .filter { it.step == LessonStep.WRITE }
+                .sumOf { it.characters.size }
+            val score = LessonPlan.scoreWithWriting(correct, answered, written, writable)
             val passed = LessonPlan.passed(score)
             val key = _uiState.value.lessonKey
 

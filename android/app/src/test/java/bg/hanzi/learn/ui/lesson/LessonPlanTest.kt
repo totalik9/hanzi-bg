@@ -165,15 +165,109 @@ class LessonPlanTest {
 
     @Test
     fun theScoreIsThePercentageOfRightAnswers() {
-        assertEquals(100, LessonPlan.score(8, 8))
-        assertEquals(50, LessonPlan.score(4, 8))
-        assertEquals(0, LessonPlan.score(0, 8))
-        assertEquals(0, LessonPlan.score(3, 0))
+        // A lesson without writing: the score is the recognition alone.
+        assertEquals(100, LessonPlan.scoreWithWriting(8, 8, 0, 0))
+        assertEquals(50, LessonPlan.scoreWithWriting(4, 8, 0, 0))
+        assertEquals(0, LessonPlan.scoreWithWriting(0, 8, 0, 0))
+        assertEquals(0, LessonPlan.scoreWithWriting(3, 0, 0, 0))
+    }
+
+    // -- the writing is scored separately ------------------------------
+    //
+    // The writing used to be a full point that the learner could not
+    // lose: pressing "Готово" awarded it whether a single stroke had
+    // been traced or not. A learner who skipped every write step still
+    // scored 100 % on those cards.
+
+    @Test
+    fun writingIsWorthHalfAPointEach() {
+        // Eight questions and eight characters to write: the lesson is
+        // worth sixteen half-points of recognition and eight of writing.
+        //
+        // Every question right and nothing traced: 16 of 24 = 66 %.
+        assertEquals(66, LessonPlan.scoreWithWriting(8, 8, 0, 8))
+        // Every question right and every character traced: 24 of 24.
+        assertEquals(100, LessonPlan.scoreWithWriting(8, 8, 8, 8))
+    }
+
+    @Test
+    fun writingCanOnlyLowerTheScore() {
+        // The writing is part of what the lesson is worth, so tracing
+        // nothing is worth less than tracing everything -- and the
+        // score never goes above 100.
+        assertEquals(33, LessonPlan.scoreWithWriting(4, 8, 0, 8))
+        assertEquals(66, LessonPlan.scoreWithWriting(4, 8, 8, 8))
+    }
+
+    @Test
+    fun theScoreIsNeverAboveOneHundred() {
+        // The bug: the writing points were added to the numerator but
+        // not to the denominator, so a learner who answered everything
+        // right AND traced everything scored 150 %.
+        assertEquals(100, LessonPlan.scoreWithWriting(10, 10, 10, 10))
+        assertEquals(100, LessonPlan.scoreWithWriting(10, 10, 20, 10))
+    }
+
+    @Test
+    fun aLessonWithoutQuestionsHasNoScore() {
+        assertEquals(0, LessonPlan.scoreWithWriting(0, 0, 0, 0))
+        assertEquals(0, LessonPlan.scoreWithWriting(0, 0, 5, 0))
     }
 
     @Test
     fun aLessonIsPassedAtEightyPercent() {
         assertTrue(LessonPlan.passed(80))
         assertFalse(LessonPlan.passed(79))
+    }
+
+    // -- the clone of the answer ----------------------------------------
+    //
+    // The hand-written gloss patch writes "малко" and the machine
+    // translation of another word writes "Малко". They are different
+    // strings, so an exact comparison keeps both -- and the learner is
+    // shown two options that read the same, one of which is marked
+    // wrong. Fifteen cards of the learning path were in this state.
+
+    @Test
+    fun theAnswerIsNotAlsoOfferedAsADistractor() {
+        val pool = listOf("малко", "Малко", "много", " голем", "малко")
+
+        val options = LessonPlan.chooseOptions("малко", pool, Random(7))
+
+        // "Малко" reads the same as the answer, so it is not a
+        // distractor.
+        assertFalse(options.contains("Малко"))
+        // And the answer itself is there exactly once.
+        assertEquals(1, options.count { it == "малко" })
+    }
+
+    @Test
+    fun noOptionReadsTheSameAsTheAnswer() {
+        val pool = listOf("малко", "Малко", "МАЛКО", "  малко  ", "много")
+
+        val options = LessonPlan.chooseOptions("малко", pool, Random(7))
+
+        // The answer is in the list -- that is the point of it. What
+        // must not be there is a SECOND option that reads the same, or
+        // the learner is shown two identical buttons and one of them
+        // is marked wrong.
+        val clones = options.filter { it.trim().lowercase() == "малко" }
+        assertEquals(
+            "the answer must appear exactly once, with no clone beside it",
+            1,
+            clones.size,
+        )
+    }
+
+    @Test
+    fun aPoolWithTooFewMeaningsGivesFewerOptions() {
+        // The answer and one distractor: the card asks a question with
+        // two options rather than padding the list with a meaning that
+        // is not in the pool.
+        val options = LessonPlan.chooseOptions("малко", listOf("малко", "много"), Random(7))
+
+        assertEquals(2, options.size)
+        assertTrue(options.contains("малко"))
+        assertTrue(options.contains("много"))
     }
 }

@@ -41,6 +41,7 @@ import bg.hanzi.learn.ui.lesson.LessonScreen
 import bg.hanzi.learn.ui.path.PathScreen
 import bg.hanzi.learn.ui.screens.dictionary.DictionaryScreen
 import bg.hanzi.learn.ui.screens.grammar.GrammarScreen
+import bg.hanzi.learn.ui.screens.levels.LevelPickerScreen
 import bg.hanzi.learn.ui.screens.practice.PracticeScreen
 import bg.hanzi.learn.ui.screens.review.ReviewScreen
 
@@ -128,6 +129,17 @@ fun HanziNavHost() {
             "more_grammar",
         ) {
             navController.navigate("grammar")
+        },
+        // The level picker. It used to be on the Home screen, and when
+        // the Path screen replaced it the picker went with it -- so the
+        // review and the practice screens were locked to the default
+        // level and 95 % of the vocabulary was unreachable.
+        MoreItem(
+            R.string.more_levels,
+            Icons.Filled.List,
+            "more_levels",
+        ) {
+            navController.navigate("levels")
         },
     )
 
@@ -221,6 +233,19 @@ fun HanziNavHost() {
             }
 
             composable(Tab.Dictionary.route) { DictionaryScreen() }
+
+            // The level picker: it sends the learner on to the review
+            // or the practice exercises with the level they chose.
+            composable("levels") {
+                LevelPickerScreen(
+                    onOpenReview = { level ->
+                        navController.navigate("review?level=$level")
+                    },
+                    onOpenPractice = { level ->
+                        navController.navigate("practice?level=$level")
+                    },
+                )
+            }
 
             composable(
                 route = "review?$LEVEL_ARG={$LEVEL_ARG}",

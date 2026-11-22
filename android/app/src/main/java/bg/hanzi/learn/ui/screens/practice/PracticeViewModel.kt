@@ -126,11 +126,10 @@ data class WritingExercise(
  * The two cases look identical from the outside -- the panel is empty
  * either way -- but they are not the same thing to the learner:
  *
- *   NO_AUDIO   the level has no pronunciation clips at all. HSK 7-9 is
- *              in this state: 5 562 words and no audio, because the
- *              clips for that level were never generated. The mode
- *              cannot work here and never will, until the audio is
- *              built.
+ *   NO_AUDIO   the level has no pronunciation clips at all. Every level
+ *              has clips now -- the audio for HSK 7 to 9 was built in
+ *              November 2026 -- but a level can lose them, and then the
+ *              mode cannot work there.
  *
  *   EXHAUSTED  every word that has a clip has already been used in
  *              this session. The mode works; the session is over.
@@ -184,6 +183,18 @@ class PracticeViewModel @Inject constructor(
 
     private var imeIndex: ImeIndex = ImeIndex(emptyMap(), emptyMap(), emptyMap())
     private var wordPool: List<WordEntry> = emptyList()
+
+    /**
+     * The words the PRODUCTION exercise draws from: the ones with a
+     * Bulgarian gloss.
+     *
+     * A word without a gloss cannot be produced -- there is nothing to
+     * produce -- but it can be heard, so it stays in [wordPool] for
+     * the listening exercise. It used to be dropped from the pool
+     * altogether, and 69 words with a pronunciation clip were never
+     * heard.
+     */
+    private var produciblePool: List<WordEntry> = emptyList()
     private var sentencePool: List<SentenceEntry> = emptyList()
     // (point title, level, chinese, pinyin, english) for every example
     // that came with a grammar point.
@@ -257,7 +268,19 @@ class PracticeViewModel @Inject constructor(
             Triple(index, words, sentences) to examples
         }
         imeIndex = loaded.first.first
-        wordPool = loaded.first.second.filter { it.glossBg.isNotBlank() }
+        // The words the exercises can use.
+        //
+        // A word with no Bulgarian gloss cannot be PRODUCED -- there is
+        // nothing to produce -- but it can still be LISTENED to, and
+        // 69 words have a pronunciation clip and no gloss. They were
+        // dropped from the pool entirely, so the listening exercise
+        // never heard them.
+        //
+        // So the pool keeps every word, and the production exercise
+        // picks from the ones that have a gloss. The listening
+        // exercise picks from the ones that have a clip.
+        wordPool = loaded.first.second
+        produciblePool = loaded.first.second.filter { it.glossBg.isNotBlank() }
         sentencePool = loaded.first.third
         grammarExamples = loaded.second
         usedWords = mutableSetOf()
@@ -493,7 +516,10 @@ class PracticeViewModel @Inject constructor(
     }
 
     fun nextProduction() {
-        val pool = wordPool.filter { it.hanzi !in usedWords }
+        // The words that have a Bulgarian gloss: the production
+        // exercise asks the learner to write the meaning, and a word
+        // without a meaning to write is not a question.
+        val pool = produciblePool.filter { it.hanzi !in usedWords }
         if (pool.isEmpty()) {
             _uiState.value = _uiState.value.copy(finished = true, production = null)
             return

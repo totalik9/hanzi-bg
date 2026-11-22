@@ -82,6 +82,17 @@ CONTENT_DB = os.path.join(DATA, "content.db")
 # a word; more turns the card into a dictionary entry.
 MAX_SENSES = 3
 
+# How much the Bulgarian translation of an English sense has to agree with
+# the human gloss before the sense is taken to be the one the human gloss
+# describes. Below this the two are not talking about the same thing, and
+# the word is left alone.
+AGREEMENT_THRESHOLD = 0.5
+
+# How much better the best sense has to be than the runner-up. Two
+# senses that agree equally well are both candidates, and claiming one
+# of them would be a guess.
+AGREEMENT_MARGIN = 0.2
+
 
 def load_json(path: str):
     if not os.path.exists(path):
@@ -120,6 +131,128 @@ def split_senses(gloss_en: str) -> list[str]:
     return out[:MAX_SENSES]
 
 
+def sense_key(text: str) -> set[str]:
+    """The words a gloss is made of, for comparing two glosses.
+
+    The comparison is done on WORDS rather than on the text, because
+    the two glosses are written in different ways: the human one says
+    "магазин" and the machine one says "магазин; дюкян". The words
+    that carry the meaning are the ones both have.
+
+    The ё is folded to е, because Bulgarian writes it either way and
+    the two spellings are the same word. The STRESS MARK is dropped
+    for the same reason: the human glosses from Wiktionary carry it
+    ("магази́н") and the machine translations do not ("магазин"), so
+    without the folding the two would never be seen to agree.
+
+    >>> sorted(sense_key("магазин"))
+    ['магазин']
+    >>> sense_key("магазин") == sense_key("Магазин")
+    True
+    >>> sense_key("магази́н") == sense_key("магазин")
+    True
+    >>> sense_key("магазин") == sense_key("дюкян")
+    False
+    """
+    s = _strip_stress((text or "").lower().replace("ё", "е"))
+    s = re.sub(r"[^\w\s]", " ", s)
+    return {w for w in s.split() if len(w) > 2}
+
+
+def align_sense(
+    gloss_en: str,
+    human_gloss: str,
+    cache: dict[str, str],
+) -> tuple[int, str] | None:
+    """Find the English sense the human Bulgarian gloss is describing.
+
+    THE MISMATCH
+    ------------
+    The two glosses of a word come from different dictionaries and
+    they do not always describe the same thing.
+
+    The ENGLISH gloss is the CC-CEDICT row for the reading the learner
+    is taught, and it lists the senses of that reading. The HUMAN
+    BULGARIAN gloss is the first Bulgarian translation Chinese
+    Wiktionary has for the WORD -- and Wiktionary lists the word's
+    senses in its own order, which is not the order of CC-CEDICT and
+    often belongs to a different reading altogether.
+
+    So 店 was shown with the English "inn; old-style hotel" and the
+    Bulgarian "магазин" -- "shop". The learner is told that a shop is
+    an inn.
+
+    HOW THE SENSE IS FOUND
+    ----------------------
+    The cache holds the Bulgarian translation of every English sense,
+    and that is the bridge: the sense whose Bulgarian translation
+    AGREES with the human gloss is the sense the human gloss is
+    describing.
+
+    The agreement is measured on the words the two glosses have in
+    common, as a share of the words of the shorter one. The score has
+    to clear a threshold, because a machine translation is a rough
+    thing and a one-word overlap out of three is not proof.
+
+    The best-scoring sense wins, but only if it is better than the
+    runner-up by a margin: when two senses score the same, neither can
+    be called the one, and the word is left as it is.
+
+    >>> # the cache holds the Bulgarian of each English sense
+    >>> cache = {"inn; old-style hotel": "гостиница",
+    ...          "(bound form) shop; store": "магазин"}
+    >>> align_sense("inn; old-style hotel/(bound form) shop; store",
+    ...             "магазин", cache)
+    (1, '(bound form) shop; store')
+    >>> align_sense("inn; old-style hotel/(bound form) shop; store",
+    ...             "гостиница", cache)
+    (0, 'inn; old-style hotel')
+    >>> # a human gloss that agrees with nothing: no sense is claimed
+    >>> align_sense("inn; old-style hotel/(bound form) shop; store",
+    ...             "нещо друго", cache) is None
+    True
+
+    @param gloss_en the English gloss, with its senses separated by "/"
+    @param human_gloss the Bulgarian gloss a person wrote
+    @param cache the Bulgarian translation of every English sense
+    @return the index of the sense and the sense itself, or None
+    """
+    senses = split_senses(gloss_en)
+    if not senses or not human_gloss:
+        return None
+
+    human_words = sense_key(human_gloss)
+    if not human_words:
+        return None
+
+    scored: list[tuple[float, int, str]] = []
+    for index, sense in enumerate(senses):
+        translated = cache.get(sense, "")
+        if not translated:
+            continue
+        machine_words = sense_key(translated)
+        if not machine_words:
+            continue
+        # The share of the human gloss's words the translation repeats.
+        # The shorter list is the denominator, because the longer one
+        # carries words the other does not need.
+        shared = len(human_words & machine_words)
+        denominator = min(len(human_words), len(machine_words))
+        score = shared / denominator if denominator else 0.0
+        scored.append((score, index, sense))
+
+    if not scored:
+        return None
+    scored.sort(reverse=True)
+    best_score, best_index, best_sense = scored[0]
+    if best_score < AGREEMENT_THRESHOLD:
+        return None
+    # Two senses that agree equally well: neither is clearly the one.
+    if len(scored) > 1 and scored[1][0] >= best_score - AGREEMENT_MARGIN:
+        return None
+    return best_index, best_sense
+
+
 def clean_translation(text: str) -> str:
     """Trim the model's output down to a usable gloss.
 
@@ -140,6 +273,37 @@ def clean_translation(text: str) -> str:
     ''
     >>> clean_translation("5")
     '5'
+
+    THE CLASSIFIER MARKER AND THE LEFTOVER ENGLISH
+
+    Two kinds of junk survive the translation and reach the learner.
+
+    The first is the classifier marker. The English cleaner strips
+    "(CL: | )" from a sense, but the CACHE holds translations that were
+    written from the sense BEFORE the cleaner was tightened, so the
+    marker came through the model and stayed in the Bulgarian:
+
+        "Котка (CL: Дърво)"
+
+    The learner sees a Chinese classifier -- which measure word goes
+    with the noun -- in the middle of a Bulgarian definition, and
+    "Дърво" (tree) is what the model made of the marker. It teaches
+    nothing and it is wrong. The whole marker goes.
+
+    The second is the leftover English. The model sometimes leaves a
+    word of the source in the answer -- "Chrysanthemum Flower" inside
+    "Цвет на хризантема (Chrysanthemum Flower)", or "Lyrics" at the
+    end of a list of Bulgarian meanings. A word that is still Latin in
+    a Bulgarian gloss is either the model handing back the English or a
+    proper noun it did not recognise. The part goes; the Bulgarian
+    around it stays.
+
+    >>> clean_translation("Котка (CL: Дърво)")
+    'Котка'
+    >>> clean_translation("Цвет на хризантема (Chrysanthemum Flower)")
+    'Цвет на хризантема'
+    >>> clean_translation("реч; Lyrics")
+    'реч'
     """
     text = text.strip()
     text = text.rstrip(" .")
@@ -156,15 +320,44 @@ def clean_translation(text: str) -> str:
     #
     # A gloss that is only a number ("5" for 五) is left alone: it has
     # no Latin letters either, and it is a correct answer.
-    if re.search(r"[A-Za-z]", text) and not re.search(r"[\u0400-\u04ff]", text):
+    if re.search(r"[A-Za-z]", text) and not re.search(r"[Ѐ-ӿ]", text):
         return ""
 
     # The model sometimes starts the answer with a dash: "- Не", "- Татко".
     # It is not a definition.
     text = re.sub(r"^[-–—]+\s*", "", text)
 
-    # Collapse a part that is one word said over and over.
+    # The classifier marker, wherever it is. The English cleaner has
+    # the same rule (09_clean_glosses.CLASSIFIER); it is repeated here
+    # because this file cleans the TRANSLATION, and the cached
+    # translations were written from senses the cleaner has since
+    # tidied.
+    #
+    # The marker can be unterminated: the model closed the bracket with
+    # something else, or the text was cut off. The rule therefore also
+    # matches a marker with no closing bracket, and takes the rest of
+    # the text with it -- "Око (CL: иааааааа" has nothing after the
+    # marker that is worth keeping.
+    text = re.sub(r"\s*\(\s*CL:[^)]*\)?.*$", "", text, flags=re.IGNORECASE)
+
+    # A part that is still English. A part is one of the alternatives
+    # separated by ";" or "," -- the model puts the senses in one
+    # string -- and a part that has Latin letters but no Cyrillic ones
+    # is the source, not the translation.
+    #
+    # "(PRC)" and "(TCM)" are markers, not words, and they go with the
+    # part they are in: "(PRC) Chinese (as a school subject)" came back
+    # as "(PRC) китайски (като училищна тема)", and the "PRC" tells the
+    # learner nothing about the meaning.
     parts = [p.strip() for p in re.split(r"\s*[;,]\s*", text) if p.strip()]
+    kept_parts: list[str] = []
+    for part in parts:
+        part = _strip_english(part)
+        if part:
+            kept_parts.append(part)
+    parts = kept_parts
+
+    # Collapse a part that is one word said over and over.
     parts = [_collapse_repeated_words(p) for p in parts]
 
     # Drop an alternative that repeats an earlier one.
@@ -180,6 +373,80 @@ def clean_translation(text: str) -> str:
         parts = kept
     text = "; ".join(parts)
     return text
+
+
+# The markers that say where a sense comes from. They tell the learner
+# nothing about the meaning, and they are Latin, so the rule that drops
+# the English parts has to take them with it.
+SOURCE_MARKER = re.compile(
+    r"\((?:PRC|ROC|TW|TCM|CN|UK|US)\)\s*",
+    re.IGNORECASE,
+)
+
+
+def _strip_english(part: str) -> str:
+    """Remove the English left inside one alternative.
+
+    A part that is ENTIRELY English is the model handing back the
+    source, and it goes as a whole. A part that is Bulgarian with an
+    English word in it keeps the Bulgarian and loses the word: the
+    "Chrysanthemum Flower" in "Цвет на хризантема (Chrysanthemum
+    Flower)" is the model repeating the source, not a second meaning.
+
+    A parenthetical that holds no Bulgarian at all is English too, and
+    it goes as a whole: "(Commercial)" says nothing about what
+    "търговски" means, and "(D- или C-клас)" is a railway class.
+
+    A Latin letter that follows a NUMBER is a unit and stays: "500 g" is
+    a weight, and the "g" is what makes it one.
+
+    >>> _strip_english("Chrysanthemum Flower")
+    ''
+    >>> _strip_english("Цвет на хризантема (Chrysanthemum Flower)")
+    'Цвет на хризантема'
+    >>> _strip_english("(PRC) китайски (като училищна тема)")
+    'китайски (като училищна тема)'
+    >>> _strip_english("Lyrics")
+    ''
+    >>> _strip_english("тегло е равна на 500 g")
+    'тегло е равна на 500 g'
+    """
+    part = SOURCE_MARKER.sub("", part).strip()
+    if not part:
+        return ""
+    # Nothing Latin in it: a number, or a word that is already
+    # Bulgarian. Nothing to take out.
+    if not re.search(r"[A-Za-z]", part):
+        return part
+    # Entirely English: the model handed back the source. A measurement
+    # is the exception -- "500 g" is not English prose.
+    if not re.search(r"[Ѐ-ӿ]", part):
+        return part if re.search(r"\d", part) else ""
+    # A parenthetical with no Bulgarian in it is English: it goes whole.
+    part = re.sub(
+        r"\([^)]*\)",
+        lambda m: m.group(0) if re.search(r"[Ѐ-ӿ]", m.group(0)) else " ",
+        part,
+    )
+    # A unit after a number stays: "500 g" is a weight. The unit is
+    # marked with a placeholder first, because the rule that removes
+    # the Latin words would take it with them.
+    units: list[str] = []
+
+    def _keep_unit(m: re.Match[str]) -> str:
+        units.append(m.group(0))
+        return f"\x00{len(units) - 1}\x00"
+
+    part = re.sub(r"(?<=\d)\s*[A-Za-z]+", _keep_unit, part)
+    # Every other Latin word goes, and the space around it goes too.
+    part = re.sub(r"\s*[A-Za-z][A-Za-z\-']*\s*", " ", part)
+    # The leftovers of the removals: empty brackets and doubled spaces.
+    part = re.sub(r"\(\s*\)", " ", part)
+    part = re.sub(r"\(\s+", "(", part)
+    part = re.sub(r"\s+\)", ")", part)
+    part = " ".join(part.split())
+    part = re.sub(r"\x00(\d+)\x00", lambda m: units[int(m.group(1))], part)
+    return part.strip(" ,;")
 
 
 def _collapse_repeated_words(part: str) -> str:
@@ -393,6 +660,15 @@ def main() -> int:
         if isinstance(glosses, list) and glosses:
             human[word] = glosses[0]
 
+    # The English gloss of every word, for the alignment below. It is
+    # the gloss the vocabulary file carries -- the CC-CEDICT row for the
+    # reading the learner is taught.
+    english_by_hanzi: dict[str, str] = {}
+    for w in words:
+        hanzi = w.get("hanzi")
+        if hanzi and w.get("gloss_en"):
+            english_by_hanzi.setdefault(hanzi, w["gloss_en"])
+
     todo = []
     for w in words:
         hanzi = w.get("hanzi")
@@ -558,6 +834,46 @@ def main() -> int:
             }
         else:
             merged[hanzi] = {"gloss": human_gloss, "source": "human"}
+
+    # The two glosses of a word have to describe the SAME thing.
+    #
+    # The human gloss is the first Bulgarian translation Wiktionary has
+    # for the word, and the English gloss is the CC-CEDICT row for the
+    # reading the learner is taught. Wiktionary and CC-CEDICT order
+    # their senses differently, so the two describe different things
+    # often enough to matter: 店 was shown with the English "inn;
+    # old-style hotel" and the Bulgarian "магазин" -- "shop".
+    #
+    # The cache holds the Bulgarian of every English sense, so the sense
+    # the human gloss is describing can be found: it is the one whose
+    # Bulgarian translation agrees with the human gloss. The senses are
+    # then put in that order, so the English gloss LEADS with the sense
+    # the Bulgarian gloss is about.
+    #
+    # The file carries the English gloss as well, because the database
+    # build needs it and cannot recompute it.
+    aligned = 0
+    for hanzi, entry in merged.items():
+        gloss_en = english_by_hanzi.get(hanzi, "")
+        if not gloss_en:
+            continue
+        human_gloss = human.get(hanzi)
+        if not human_gloss:
+            continue
+        found = align_sense(gloss_en, human_gloss, cache)
+        if not found:
+            continue
+        index, sense = found
+        senses = split_senses(gloss_en)
+        if index <= 0 or index >= len(senses):
+            continue
+        # Put the matching sense first, and keep the rest of the senses
+        # after it.
+        reordered = [sense] + [s for i, s in enumerate(senses) if i != index]
+        entry["gloss_en"] = "/".join(reordered)
+        entry["aligned_sense"] = sense
+        aligned += 1
+    print(f"  words whose English gloss was reordered to match the human one: {aligned}")
 
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(merged, fh, ensure_ascii=False, indent=1, sort_keys=True)

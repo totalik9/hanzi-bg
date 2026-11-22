@@ -97,11 +97,7 @@ object LessonPlan {
             // lesson and of the words the learner already knows. They
             // have to be real meanings of real words: a made-up
             // distractor is a coin the learner can lose on by guessing.
-            val distractors = pool
-                .filter { it != gloss }
-                .shuffled(random)
-                .take(OPTION_COUNT - 1)
-            val options = (distractors + gloss).shuffled(random)
+            val options = chooseOptions(gloss, pool, random)
             cards += LessonCard(
                 word = word,
                 step = LessonStep.RECOGNISE,
@@ -132,11 +128,7 @@ object LessonPlan {
         val review = oldWords.shuffled(random).take(REVIEW_SIZE)
         for (word in review) {
             val gloss = word.glossBg.ifBlank { word.glossEn }
-            val distractors = pool
-                .filter { it != gloss }
-                .shuffled(random)
-                .take(OPTION_COUNT - 1)
-            val options = (distractors + gloss).shuffled(random)
+            val options = chooseOptions(gloss, pool, random)
             cards += LessonCard(
                 word = word,
                 step = LessonStep.RECOGNISE,
@@ -149,20 +141,92 @@ object LessonPlan {
     }
 
     /**
-     * The score of a lesson, as a percentage.
+     * The meanings of a RECOGNISE card: the right one and the wrong ones.
      *
-     * Only the RECOGNISE cards are counted: the LISTEN, SAY and WRITE
-     * steps are not questions with a right answer. The WRITE step is
-     * scored separately and counts as half a point when the strokes
-     * were traced correctly, because writing a character is a different
-     * skill from recognising it.
+     * THE CLONE OF THE ANSWER
      *
-     * @param correct the number of right answers
-     * @param total the number of questions
+     * Two words can carry the same meaning written differently. The
+     * hand-written gloss patch writes "малко" and the machine
+     * translation of another word writes "Малко" -- the same Bulgarian
+     * word with a capital letter. The pool of meanings holds both,
+     * because they are different strings.
+     *
+     * The old code removed the answer from the pool with an exact
+     * comparison (`it != gloss`), so the capitalised twin SURVIVED
+     * and was handed to the learner as a distractor. The card then
+     * showed two options that look identical on the screen:
+     *
+     *     малко        <- the answer
+     *     Малко        <- the "wrong" one
+     *
+     * The learner cannot tell them apart by looking, and the app
+     * marks the one with the capital letter wrong. Fifteen cards of
+     * the learning path were in this state.
+     *
+     * So the comparison is made the way a reader makes it: the case
+     * and the surrounding spaces are ignored. A distractor that
+     * reads the same as the answer is not a distractor.
+     *
+     * The answer itself is added LAST and exactly once, so it cannot
+     * be in the list twice either.
+     *
+     * When the pool holds fewer meanings than the card needs -- which
+     * happens when a lesson teaches four characters that all mean
+     * "child" -- the card offers fewer options rather than padding
+     * the list with a meaning that is not in the pool. A card with
+     * three options is still a question; a card with the answer
+     * twice, or with a clone of it, is not.
+     *
+     * @param gloss the right answer
+     * @param pool every meaning the lesson can draw on
+     * @param random the source of the distractors' order
      */
-    fun score(correct: Int, total: Int): Int {
-        if (total <= 0) return 0
-        return (correct * 100) / total
+    fun chooseOptions(
+        gloss: String,
+        pool: List<String>,
+        random: Random = Random.Default,
+    ): List<String> {
+        if (gloss.isBlank()) return emptyList()
+        val answerKey = gloss.trim().lowercase()
+        val distractors = pool
+            .filter { it.trim().lowercase() != answerKey }
+            .shuffled(random)
+            .take((OPTION_COUNT - 1).coerceAtLeast(0))
+        return (distractors + gloss).shuffled(random)
+    }
+
+    /**
+     * The score of a lesson that has writing in it.
+     *
+     * The writing is worth half a point per character, and only the
+     * characters whose strokes were traced correctly earn it. The
+     * writing is part of what the lesson is WORTH, so it is in the
+     * denominator as well as in the numerator: a learner who answers
+     * every question right and traces nothing scores less than one who
+     * traces everything, which is the whole point of scoring the
+     * writing at all.
+     *
+     * A lesson WITHOUT writing is not punished for it: when there are
+     * no characters to write, [writable] is zero and the score is the
+     * recognition score, unchanged.
+     *
+     * The arithmetic is in half points, so it is done in integers: the
+     * recognition is worth two per question and the writing one per
+     * character.
+     *
+     * @param correct the right answers among the questions
+     * @param total the questions
+     * @param written the characters whose strokes were traced correctly
+     * @param writable the characters the lesson offered to write
+     */
+    fun scoreWithWriting(correct: Int, total: Int, written: Int, writable: Int): Int {
+        if (total <= 0 && writable <= 0) return 0
+        val earned = correct * 2 + written
+        val possible = total * 2 + writable
+        if (possible <= 0) return 0
+        // The score cannot be above 100: the writing is worth points,
+        // not a bonus on top of a full score.
+        return ((earned * 100) / possible).coerceIn(0, 100)
     }
 
     /**

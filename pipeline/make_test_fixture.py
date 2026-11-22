@@ -21,6 +21,7 @@ import json
 import os
 import sqlite3
 import sys
+from importlib import import_module  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import DATA, ROOT  # noqa: E402
@@ -30,107 +31,20 @@ OUT = os.path.join(
     "content.db",
 )
 
-SCHEMA = """
-CREATE TABLE words (
-    hanzi       TEXT PRIMARY KEY,
-    pinyin      TEXT NOT NULL DEFAULT '',
-    pinyin_tones TEXT NOT NULL DEFAULT '',
-    pinyin_plain TEXT NOT NULL DEFAULT '',
-    pos         TEXT NOT NULL DEFAULT '',
-    gloss_en    TEXT NOT NULL DEFAULT '',
-    gloss_bg    TEXT NOT NULL DEFAULT '',
-    hsk_level   TEXT NOT NULL DEFAULT '',
-    is_verb     INTEGER NOT NULL DEFAULT 0,
-    freq        INTEGER,
-    audio       TEXT,
-    gloss_source TEXT NOT NULL DEFAULT ''
-);
+# The schema is the one the real database is built with, imported rather
+# than copied.
+#
+# The fixture used to carry its own copy of the schema, and the two drifted
+# apart: the app gained the column `gloss_bg_lc` (the lowercased Bulgarian
+# gloss, which the dictionary search matches against) and the fixture did
+# not. Every instrumented test then died with a SQLiteException instead of
+# a failure, because the app code caught only IllegalStateException.
+#
+# A copy of a schema is a promise to keep it in step. Importing the real
+# one makes the fixture follow the database by construction: a new column
+# in 08_build_content_db.py is in the fixture on the next run.
+SCHEMA = import_module("08_build_content_db").SCHEMA
 
-CREATE TABLE grammar (
-    id       INTEGER PRIMARY KEY,
-    title    TEXT NOT NULL,
-    title_bg TEXT NOT NULL DEFAULT '',
-    level    TEXT NOT NULL DEFAULT '',
-    category TEXT NOT NULL DEFAULT '',
-    summary  TEXT NOT NULL DEFAULT '',
-    summary_bg TEXT NOT NULL DEFAULT '',
-    body     TEXT NOT NULL DEFAULT '',
-    examples TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE lessons (
-    id       INTEGER PRIMARY KEY,
-    title    TEXT NOT NULL,
-    title_bg TEXT NOT NULL DEFAULT '',
-    level    TEXT NOT NULL DEFAULT '',
-    ord      INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE sentences (
-    id             INTEGER PRIMARY KEY,
-    hanzi          TEXT NOT NULL,
-    pinyin         TEXT NOT NULL DEFAULT '',
-    translation_en TEXT NOT NULL DEFAULT '',
-    translation_bg TEXT NOT NULL DEFAULT '',
-    audio_path     TEXT
-);
-
-CREATE TABLE manifest (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE characters (
-    char       TEXT PRIMARY KEY,
-    strokes    INTEGER NOT NULL DEFAULT 0,
-    radical    TEXT NOT NULL DEFAULT '',
-    definition TEXT NOT NULL DEFAULT '',
-    medians    TEXT NOT NULL DEFAULT ''
-);
-
-CREATE TABLE ime (
-    syllable TEXT NOT NULL,
-    hanzi    TEXT NOT NULL,
-    freq     INTEGER,
-    PRIMARY KEY (syllable, hanzi)
-);
-
--- The learning path. The fixture carries two lessons so the Path screen
--- has something to show and the lesson flow has something to open.
-CREATE TABLE curriculum_units (
-    key   TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    ord   INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE curriculum_lessons (
-    key      TEXT PRIMARY KEY,
-    unit_key TEXT NOT NULL,
-    title    TEXT NOT NULL,
-    kind     TEXT NOT NULL DEFAULT 'words',
-    ord      INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE curriculum_words (
-    lesson_key TEXT NOT NULL,
-    ord        INTEGER NOT NULL,
-    hanzi      TEXT NOT NULL,
-    PRIMARY KEY (lesson_key, ord)
-);
-
-CREATE TABLE curriculum_cards (
-    lesson_key TEXT NOT NULL,
-    ord        INTEGER NOT NULL,
-    payload    TEXT NOT NULL,
-    PRIMARY KEY (lesson_key, ord)
-);
-
-CREATE INDEX idx_words_level ON words(hsk_level);
-CREATE INDEX idx_grammar_level ON grammar(level);
-CREATE INDEX idx_lessons_level ON lessons(level);
-CREATE INDEX idx_ime_syllable ON ime(syllable);
-CREATE INDEX idx_curriculum_words_hanzi ON curriculum_words(hanzi);
-"""
 
 # The words the tests use. They cover the five practice modes:
 # a single-character word (writing), a two-character word (production),
@@ -224,10 +138,16 @@ def main() -> int:
 
     conn.executemany(
         "INSERT INTO words (hanzi, pinyin, pinyin_tones, pinyin_plain, pos, "
-        "gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-        [(w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7], w[8], w[9], w[10],
-          "human" if w[10] == "" else "human") for w in WORDS],
+        "gloss_en, gloss_bg, gloss_bg_lc, hsk_level, is_verb, freq, audio, "
+        "gloss_source) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        # Every fixture gloss was written by a person, so every row is
+        # "human" -- and the search filter for human glosses only has to
+        # find them. `gloss_bg_lc` is the lowercased copy the dictionary
+        # search matches against; SQLite's own lower() folds ASCII only,
+        # so it is folded here, in Python, like in the real database.
+        [(w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[6].lower(), w[7], w[8],
+          w[9], w[10], "human") for w in WORDS],
     )
 
     conn.executemany(

@@ -138,6 +138,7 @@ fun LessonScreen(
                 pinyin = card.word.pinyin,
                 gloss = gloss,
                 hasAudio = !card.word.audio.isNullOrBlank(),
+                hasMachineGloss = card.word.hasMachineGloss,
                 onPlay = { viewModel.playAudio(card.word) },
                 onNext = viewModel::next,
             )
@@ -410,6 +411,7 @@ private fun SayStep(
     pinyin: String,
     gloss: String,
     hasAudio: Boolean,
+    hasMachineGloss: Boolean = false,
     onPlay: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -450,6 +452,16 @@ private fun SayStep(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            // The machine translation can be wrong, and a learner who
+            // does not know that will trust it. The note was shown in
+            // the dictionary and in the review, but not in the lesson.
+            if (hasMachineGloss) {
+                Text(
+                    text = stringResource(R.string.gloss_machine_note),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Spacer(modifier = Modifier.height(32.dp))
         FilledTonalButton(onClick = onPlay, enabled = hasAudio) {
@@ -476,7 +488,7 @@ private fun WriteStep(
     gloss: String,
     characters: List<bg.hanzi.learn.data.content.CharacterEntry>,
     answered: Boolean,
-    onDone: () -> Unit,
+    onDone: (writtenCorrectly: Int) -> Unit,
     onNext: () -> Unit,
 ) {
     // The writing step is a full-screen exercise with its own canvas;

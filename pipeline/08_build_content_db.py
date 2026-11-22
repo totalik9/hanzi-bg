@@ -61,6 +61,11 @@ GRAMMAR_JSON = os.path.join(DATA, "grammar.json")
 SENTENCES_JSON = os.path.join(DATA, "sentences.json")
 AUDIO_MANIFEST = os.path.join(DATA, "audio", "manifest.json")
 BG_GLOSS = os.path.join(RAW, "bg_zh_wiktionary.json")
+# The CC-CEDICT dictionary (02_build_dictionary.py). It carries the
+# traditional -> simplified table, which the human glosses need: the
+# Wiktionary dump is in the traditional script and the vocabulary is
+# in the simplified one.
+HANZI_DB = os.path.join(DATA, "hanzi.db")
 # The NLLB-200 output (07_translate_bulgarian.py): human glosses first,
 # machine glosses for the rest.
 BG_TRANSLATIONS = os.path.join(DATA, "bg_translations.json")
@@ -89,6 +94,16 @@ CREATE TABLE words (
     pos         TEXT NOT NULL DEFAULT '',
     gloss_en    TEXT NOT NULL DEFAULT '',
     gloss_bg    TEXT NOT NULL DEFAULT '',
+    -- the Bulgarian gloss lowercased, for the dictionary search.
+    --
+    -- SQLite's LIKE folds the case of ASCII letters ONLY, so a search
+    -- for a Cyrillic word found the lowercased entries and missed the
+    -- capitalised ones: "човек" found 96 words and "Човек" found 12,
+    -- and neither was the whole set. SQLite's own lower() is ASCII-only
+    -- too, so it cannot fold the query either. The column is folded
+    -- here, where Python's str.lower() handles Unicode properly, and
+    -- the query is folded on the app side the same way.
+    gloss_bg_lc TEXT NOT NULL DEFAULT '',
     hsk_level   TEXT NOT NULL DEFAULT '',
     is_verb     INTEGER NOT NULL DEFAULT 0,
     freq        INTEGER,
@@ -275,6 +290,39 @@ def audio_index() -> dict[str, str]:
     return {text: name for name, text in data.items() if text}
 
 
+def traditional_to_simplified() -> dict[str, str]:
+    """The CC-CEDICT table of the words that differ in the two scripts.
+
+    The human Bulgarian glosses are keyed by the word as it is written
+    in the Wiktionary dump, and that dump uses the TRADITIONAL
+    characters. The graded vocabulary uses the SIMPLIFIED ones. So
+    4 320 of the 4 777 human glosses were thrown away silently: the
+    key was never found in the vocabulary and the word kept its machine
+    translation instead. That is why 95 % of the dictionary carried the
+    "machine translation" note.
+
+    The table comes from data/hanzi.db (built by 02_build_dictionary.py
+    from CC-CEDICT): 78 013 rows where the two scripts differ.
+
+    Only the words that DIFFER are in the table -- a word that is
+    written the same in both scripts needs no translation and is not
+    looked up.
+    """
+    if not os.path.exists(HANZI_DB):
+        print("  WARNING: no hanzi.db, so the traditional glosses stay "
+              "unreachable")
+        return {}
+    conn = sqlite3.connect(HANZI_DB)
+    try:
+        rows = conn.execute(
+            "SELECT traditional, simplified FROM dict "
+            "WHERE traditional <> simplified"
+        ).fetchall()
+    finally:
+        conn.close()
+    return {traditional: simplified for traditional, simplified in rows}
+
+
 def build_words(
     conn: sqlite3.Connection,
     audio: dict[str, str],
@@ -286,6 +334,17 @@ def build_words(
         return 0, 0, 0
 
     words = data["words"] if isinstance(data, dict) else data
+
+    # The traditional -> simplified table.
+    #
+    # The human Bulgarian glosses are keyed by the word as the
+    # Wiktionary dump writes it, and that dump uses the TRADITIONAL
+    # characters. The graded vocabulary uses the SIMPLIFIED ones. So
+    # 4 320 of the 4 777 human glosses were thrown away silently: the
+    # key was never found in the vocabulary and the word kept its
+    # machine translation instead. That is why 95 % of the dictionary
+    # carried the "machine translation" note.
+    t2s = traditional_to_simplified()
 
     # Human Bulgarian glosses, used when the vocabulary file has none.
     human_bg: dict[str, list[str]] = {}
@@ -303,6 +362,9 @@ def build_words(
     # senses that it does not already cover followed it.
     machine_bg: dict[str, str] = {}
     human_bg_combined: dict[str, str] = {}
+    # The English gloss of the words whose senses were realigned, so the
+    # English and the Bulgarian describe the same thing.
+    aligned_en: dict[str, str] = {}
     translations = load_json(BG_TRANSLATIONS)
     if translations:
         for word, entry in translations.items():
@@ -313,8 +375,34 @@ def build_words(
                     human_bg_combined[word] = entry["gloss"]
                 else:
                     machine_bg[word] = entry["gloss"]
+                # The realigned English gloss leads with the sense the
+                # Bulgarian gloss is about.
+                if entry.get("gloss_en"):
+                    aligned_en[word] = entry["gloss_en"]
+
+    # Fold the traditional keys onto the simplified ones the vocabulary
+    # uses.
+    #
+    # The folding happens AFTER the translations are merged, so the
+    # cleaned gloss of the translation file wins over the raw one of the
+    # Wiktionary dump: the translation file has the human gloss already
+    # cleaned of the "(CL:" markers and of the stray Latin words.
+    converted = 0
+    if t2s:
+        for source in (human_bg, human_bg_combined, machine_bg):
+            for word in list(source):
+                simplified = t2s.get(word)
+                if simplified and simplified not in source:
+                    source[simplified] = source.pop(word)
+                    converted += 1
+        for word in list(aligned_en):
+            simplified = t2s.get(word)
+            if simplified and simplified not in aligned_en:
+                aligned_en[simplified] = aligned_en.pop(word)
+
     print(f"  human glosses: {len(human_bg):,}  machine glosses: {len(machine_bg):,}  "
-          f"combined: {len(human_bg_combined):,}")
+          f"combined: {len(human_bg_combined):,}  realigned English: {len(aligned_en):,}  "
+          f"folded from traditional: {converted:,}")
 
     rows = []
     with_bg = 0
@@ -366,8 +454,11 @@ def build_words(
             w.get("pinyin_number") or "",
             strip_tones(w.get("pinyin") or ""),
             w.get("pos") or "",
-            w.get("gloss_en") or "",
+            # The realigned English gloss, when there is one: it leads
+            # with the sense the Bulgarian gloss is about.
+            aligned_en.get(hanzi) or w.get("gloss_en") or "",
             gloss_bg,
+            gloss_bg.lower(),
             str(w.get("hsk_level") or ""),
             1 if w.get("is_verb") else 0,
             w.get("freq"),
@@ -377,9 +468,10 @@ def build_words(
 
     conn.executemany(
         "INSERT OR REPLACE INTO words "
-        "(hanzi, pinyin, pinyin_tones, pinyin_plain, pos, gloss_en, gloss_bg, "
-        " hsk_level, is_verb, freq, audio, gloss_source) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        "(hanzi, pinyin, pinyin_tones, pinyin_plain, pos, "
+        " gloss_en, gloss_bg, gloss_bg_lc, hsk_level, is_verb, freq, audio, "
+        " gloss_source) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         rows,
     )
     return len(rows), with_bg, with_machine

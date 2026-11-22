@@ -12,10 +12,11 @@ import bg.hanzi.learn.data.content.WordEntry
  * There are two ways the pool can be empty, and they are not the same
  * thing:
  *
- *   NO_AUDIO   the level has no clips at all. HSK 7-9 is in this
- *              state -- 5 562 words and no audio, because the clips
- *              for that level were never generated. The mode cannot
- *              work there, and no amount of tapping will change that.
+ *   NO_AUDIO   the level has no clips at all. Every level has clips
+ *              now -- the audio for HSK 7 to 9 was built in November
+ *              2026 -- but a level can lose them, and then the mode
+ *              cannot work there, and no amount of tapping will change
+ *              that.
  *
  *   EXHAUSTED  every word that has a clip has already been used in
  *              this session. The mode works; the session is over.

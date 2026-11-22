@@ -153,6 +153,24 @@ class ContentRepository @Inject constructor(
         }
     } ?: 0
 
+    /**
+     * Whether a level has pronunciation clips.
+     *
+     * Every level has clips now: the audio for HSK 7 to 9 was built in
+     * November 2026. The flag is still read from the database rather
+     * than assumed, because a level can lose its clips -- the level
+     * picker then says so, so the learner is not left with an empty
+     * listening exercise and no explanation.
+     */
+    fun levelHasAudio(level: String): Boolean = read { db ->
+        db.rawQuery(
+            "SELECT COUNT(*) FROM words WHERE hsk_level = ? AND audio != ''",
+            arrayOf(level),
+        ).use { c ->
+            if (c.moveToFirst()) c.getInt(0) > 0 else false
+        }
+    } ?: false
+
     fun wordsForLevel(level: String, limit: Int = 200, offset: Int = 0): List<WordEntry> =
         read { db ->
             // LIMIT/OFFSET are inlined as integers: rawQuery binds every
@@ -294,43 +312,88 @@ class ContentRepository @Inject constructor(
      * query is matched against `pinyin_plain`, which is the toneless
      * form, and the results are ordered by the corpus frequency so the
      * commonest word comes first.
+     *
+     * THE CASE
+     *
+     * The query is lowercased and the Bulgarian gloss is matched
+     * against `gloss_bg_lc`, a shadow column that holds the same gloss
+     * lowercased. The reason is that SQLite's LIKE folds the case of
+     * ASCII letters ONLY: a Bulgarian learner who types "Човек" would
+     * find twelve words while "човек" finds ninety-six, and the two
+     * sets are not the same. SQLite's own lower() is ASCII-only too, so
+     * it cannot fold the query either -- and the column has to be
+     * folded by the pipeline, which folds Unicode properly.
+     *
+     * The other columns need no shadow: the hanzi has no case, the
+     * pinyin is ASCII, and LIKE folds ASCII on its own.
+     *
+     * @param query what the learner typed
+     * @param limit how many rows to return
+     * @param offset how many rows to skip -- the paging of a long list
+     * @param humanGlossesOnly keep only the glosses a person wrote
      */
-    fun search(query: String, limit: Int = 50): List<WordEntry> {
+    fun search(
+        query: String,
+        limit: Int = 50,
+        offset: Int = 0,
+        humanGlossesOnly: Boolean = false,
+    ): List<WordEntry> {
         if (query.isBlank()) return emptyList()
-        val like = "%$query%"
+        val like = likePattern(query)
         return read { db ->
             db.rawQuery(
                 """
                 SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
                 FROM words
-                WHERE hanzi LIKE ? OR pinyin LIKE ? OR pinyin_plain LIKE ? OR gloss_en LIKE ? OR gloss_bg LIKE ?
+                WHERE (hanzi LIKE ? ESCAPE '\'
+                    OR pinyin LIKE ? ESCAPE '\'
+                    OR pinyin_plain LIKE ? ESCAPE '\'
+                    OR gloss_en LIKE ? ESCAPE '\'
+                    OR gloss_bg_lc LIKE ? ESCAPE '\')
+                  AND (? = 0 OR gloss_source = 'human')
                 ORDER BY (freq IS NULL), freq, hanzi
-                LIMIT $limit
+                LIMIT $limit OFFSET $offset
                 """.trimIndent(),
-                arrayOf(like, like, like, like, like),
+                arrayOf(
+                    like, like, like, like, like,
+                    if (humanGlossesOnly) "1" else "0",
+                ),
             ).use { c ->
                 buildList {
                     while (c.moveToNext()) {
-                        add(
-                            WordEntry(
-                                hanzi = c.str("hanzi"),
-                                pinyin = c.str("pinyin"),
-                                pinyinTones = c.str("pinyin_tones"),
-                                pos = c.str("pos"),
-                                glossEn = c.str("gloss_en"),
-                                glossBg = c.str("gloss_bg"),
-                                hskLevel = c.str("hsk_level"),
-                                isVerb = c.int("is_verb") == 1,
-                                freq = if (c.isNull("freq")) null else c.getInt("freq"),
-                                audio = c.strOrNull("audio"),
-                                glossSource = c.str("gloss_source"),
-                            ),
-                        )
+                        add(c.toWordEntry())
                     }
                 }
             }
         } ?: emptyList()
     }
+
+    /**
+     * The words to browse when the learner has not typed anything.
+     *
+     * A dictionary that can only be searched is a dictionary that can
+     * only be used if the learner already knows the word. This is the
+     * commonest first: the app does not know what the learner wants,
+     * but it knows what most people meet first.
+     */
+    fun browseWords(limit: Int = 50, offset: Int = 0): List<WordEntry> = read { db ->
+        db.rawQuery(
+            """
+            SELECT hanzi, pinyin, pinyin_tones, pos, gloss_en, gloss_bg, hsk_level, is_verb, freq, audio, gloss_source
+            FROM words
+            WHERE gloss_bg != ''
+            ORDER BY (freq IS NULL), freq, hanzi
+            LIMIT $limit OFFSET $offset
+            """.trimIndent(),
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(c.toWordEntry())
+                }
+            }
+        }
+    } ?: emptyList()
 
     /**
      * The grammar points, with their examples.
@@ -530,6 +593,27 @@ private fun Cursor.toSentenceEntry() = SentenceEntry(
 )
 
 private fun Cursor.str(name: String): String = getString(getColumnIndexOrThrow(name)) ?: ""
+
+/**
+ * The LIKE pattern for a query, with the wildcards escaped and the case
+ * folded.
+ *
+ * ESCAPING: `%` and `_` are LIKE wildcards. A learner who types "%"
+ * asks for every word there is, and a learner who types "a_b" asks for
+ * "axb" too. The backslash escapes them, and the ESCAPE clause in the
+ * query tells SQLite what the escape character is.
+ *
+ * FOLDING: `lowercase()` folds Unicode properly, so the Cyrillic query
+ * is folded the way the shadow column is. The ASCII part of the query
+ * is folded too, which is harmless: LIKE folds ASCII on its own.
+ */
+private fun likePattern(query: String): String {
+    val escaped = query
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    return "%${escaped.lowercase()}%"
+}
 
 private fun Cursor.strOrNull(name: String): String? {
     val idx = getColumnIndex(name)

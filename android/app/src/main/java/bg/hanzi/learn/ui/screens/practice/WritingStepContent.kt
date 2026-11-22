@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,7 +43,11 @@ import bg.hanzi.learn.ui.theme.LangType
  * @param hanzi the word to write
  * @param gloss the meaning of the word, in the learner's language
  * @param characters the characters of the word, with their stroke data
- * @param onDone called when every character has been traced
+ * @param onDone called when every character has been traced. It is
+ *   called with the number of characters whose strokes were traced
+ *   CORRECTLY, so the lesson can score the writing: a learner who
+ *   presses "Готово" without drawing anything earns nothing.
+ * @param onNext called when the learner moves on to the next card
  */
 @Composable
 fun WritingStepContent(
@@ -51,13 +56,25 @@ fun WritingStepContent(
     characters: List<CharacterEntry>,
     gloss: String = "",
     answered: Boolean = false,
-    onDone: () -> Unit,
-    onNext: () -> Unit = onDone,
+    onDone: (writtenCorrectly: Int) -> Unit,
+    onNext: () -> Unit = { onDone(0) },
 ) {
     var charIndex by remember(hanzi) { mutableStateOf(0) }
-    var traced by remember(hanzi) { mutableStateOf(0) }
-    var tracedTotal by remember(hanzi) { mutableStateOf(0) }
-    var finishedChars by remember(hanzi) { mutableStateOf(0) }
+    // How many strokes the CURRENT character has, and how many it has
+    // in total. They are keyed by the character, so moving to the next
+    // character of the same word does not throw away the work on the
+    // one before it -- the learner who goes back sees the strokes they
+    // had already drawn.
+    val tracedByChar = remember(hanzi) { mutableStateMapOf<Int, Pair<Int, Int>>() }
+    val traced = tracedByChar[charIndex]?.first ?: 0
+    val tracedTotal = tracedByChar[charIndex]?.second ?: 0
+    // How many characters were traced correctly. A character counts
+    // when every one of its strokes was drawn in the right order.
+    var writtenCorrectly by remember(hanzi) { mutableStateOf(0) }
+    // The characters that have already been counted. Without this, a
+    // learner who goes back to a character and presses the button
+    // again would have it counted twice.
+    val counted = remember(hanzi) { mutableStateMapOf<Int, Boolean>() }
 
     val current = characters.getOrNull(charIndex)
 
@@ -106,8 +123,9 @@ fun WritingStepContent(
         if (current == null) {
             // No stroke data for this character: the learner cannot
             // trace what the app cannot draw, so the step is skipped
-            // rather than shown as an empty canvas.
-            Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+            // rather than shown as an empty canvas. Nothing was
+            // written, so nothing is scored.
+            Button(onClick = { onDone(0) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.lesson_continue))
             }
             return@Column
@@ -135,8 +153,7 @@ fun WritingStepContent(
                     character = current,
                     modifier = Modifier.fillMaxWidth(),
                     onProgress = { drawn, total ->
-                        traced = drawn
-                        tracedTotal = total
+                        tracedByChar[charIndex] = drawn to total
                     },
                 )
                 Text(
@@ -159,9 +176,10 @@ fun WritingStepContent(
             if (charIndex > 0 && !answered) {
                 TextButton(
                     onClick = {
+                        // The strokes of the character the learner goes
+                        // back to are still there: they are kept per
+                        // character.
                         charIndex--
-                        traced = 0
-                        tracedTotal = 0
                     },
                 ) {
                     Text(stringResource(R.string.lesson_previous_character))
@@ -174,12 +192,27 @@ fun WritingStepContent(
                         // the lesson moves on.
                         onNext()
                     } else if (charIndex < characters.lastIndex) {
+                        // The character counts only when every one of
+                        // its strokes was drawn correctly -- and only
+                        // the first time it is confirmed.
+                        val correct = tracedTotal > 0 && traced == tracedTotal
+                        if (correct && counted[charIndex] != true) {
+                            counted[charIndex] = true
+                            writtenCorrectly++
+                        }
                         charIndex++
-                        traced = 0
-                        tracedTotal = 0
-                        finishedChars++
                     } else {
-                        onDone()
+                        // The last character: the count has to include
+                        // it, because the learner has not pressed the
+                        // button for it yet.
+                        val lastCorrect = tracedTotal > 0 && traced == tracedTotal
+                        val already = counted[charIndex] == true
+                        if (lastCorrect && !already) {
+                            counted[charIndex] = true
+                            onDone(writtenCorrectly + 1)
+                        } else {
+                            onDone(writtenCorrectly)
+                        }
                     }
                 },
                 modifier = Modifier.weight(1f),

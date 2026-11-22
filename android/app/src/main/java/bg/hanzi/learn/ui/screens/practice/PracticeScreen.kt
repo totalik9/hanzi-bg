@@ -130,6 +130,18 @@ private fun ProductionPanel(state: PracticeUiState, viewModel: PracticeViewModel
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(top = 4.dp),
                 )
+                // The machine translation can be wrong, and a learner
+                // who does not know that will trust it. The note was
+                // shown in the dictionary and in the review, but not
+                // here -- and this is the screen where the learner
+                // writes the meaning down.
+                if (exercise.word.hasMachineGloss) {
+                    Text(
+                        text = stringResource(R.string.gloss_machine_note),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     text = "${exercise.word.hskLevel} · ${exercise.word.pos}",
                     style = MaterialTheme.typography.labelSmall,
@@ -620,7 +632,7 @@ private fun WritingPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Отговорът е знакът, чиито щрихи се виждат отгоре.",
+                    text = "Проследи знака с пръст. Ще се броят само правите щрихи.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.weight(1f),
                 )
