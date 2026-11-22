@@ -15,8 +15,16 @@ android {
         applicationId = "bg.hanzi.learn"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        // v0.3.0: the vocabulary is reachable (the level picker is
+        // back), the dictionary search is case-insensitive for
+        // Bulgarian, and the writing step is scored from the trace.
+        //
+        // versionCode goes UP, never down: a release that does not
+        // install over the previous one is a release nobody can
+        // upgrade to. The release workflow checks this against the
+        // previous tag.
+        versionCode = 3
+        versionName = "0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
