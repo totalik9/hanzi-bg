@@ -39,6 +39,15 @@ data class LessonUiState(
     val answered: Boolean = false,
     /** Whether the last answer was right. */
     val correct: Boolean = false,
+    /**
+     * The option the learner picked, and -1 when the card is not
+     * answered yet.
+     *
+     * The screen needs it to mark the answer the learner gave as
+     * wrong: without it, every option was marked wrong together with
+     * the right one.
+     */
+    val chosenIndex: Int = -1,
     /** The right answers so far. */
     val correctCount: Int = 0,
     /** The questions so far. */
@@ -246,6 +255,7 @@ class LessonViewModel @Inject constructor(
         _uiState.value = state.copy(
             answered = true,
             correct = right,
+            chosenIndex = index,
             correctCount = correct,
             answeredCount = answered,
         )
@@ -275,6 +285,7 @@ class LessonViewModel @Inject constructor(
             position = index + 1,
             answered = false,
             correct = false,
+            chosenIndex = -1,
         )
     }
 

@@ -129,6 +129,7 @@ fun LessonScreen(
                 correctIndex = card.correctIndex,
                 answered = state.answered,
                 correct = state.correct,
+                chosenIndex = state.chosenIndex,
                 onAnswer = viewModel::answer,
                 onNext = viewModel::next,
             )
@@ -251,7 +252,10 @@ private fun ListenStep(
         }
         Spacer(modifier = Modifier.height(32.dp))
         Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.lesson_next_word))
+            // The button goes to the next STEP of the same word -- the
+            // question about it -- so it does not move to the next
+            // word. The label used to say "Следваща дума".
+            Text(stringResource(R.string.lesson_continue))
         }
     }
 }
@@ -265,6 +269,7 @@ private fun RecogniseStep(
     correctIndex: Int,
     answered: Boolean,
     correct: Boolean,
+    chosenIndex: Int,
     onAnswer: (Int) -> Unit,
     onNext: () -> Unit,
 ) {
@@ -316,12 +321,16 @@ private fun RecogniseStep(
                 val isRight = index == correctIndex
                 AnswerOption(
                     text = option,
-                    state = when {
-                        !answered -> AnswerState.NONE
-                        correct && isRight -> AnswerState.RIGHT
-                        answered -> AnswerState.WRONG
-                        else -> AnswerState.NONE
-                    },
+                    // The state of the option is decided by the plain
+                    // function in OptionState.kt, because the version
+                    // that lived here painted EVERY option red when
+                    // the learner was wrong -- the right answer
+                    // included. Four red buttons teach nothing.
+                    state = optionState(
+                        answered = answered,
+                        isRight = isRight,
+                        isChosen = index == chosenIndex,
+                    ),
                     enabled = !answered,
                     onClick = { onAnswer(index) },
                 )
@@ -370,24 +379,27 @@ private fun RecogniseStep(
     }
 }
 
-/** How an answer option is drawn after the learner has answered. */
-private enum class AnswerState { NONE, RIGHT, WRONG }
-
+/**
+ * How an answer option is drawn after the learner has answered.
+ *
+ * The states live in OptionState.kt, with the plain function that
+ * decides them, so they can be unit tested without a device.
+ */
 @Composable
 private fun AnswerOption(
     text: String,
-    state: AnswerState,
+    state: OptionState,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = when (state) {
-        AnswerState.RIGHT -> CardDefaults.cardColors(
+        OptionState.RIGHT -> CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         )
-        AnswerState.WRONG -> CardDefaults.cardColors(
+        OptionState.WRONG -> CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer,
         )
-        AnswerState.NONE -> CardDefaults.cardColors(
+        OptionState.NONE -> CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     }
@@ -476,7 +488,9 @@ private fun SayStep(
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.lesson_next_word))
+            // The same as on the LISTEN card: the next step of the
+            // same word, not the next word.
+            Text(stringResource(R.string.lesson_continue))
         }
     }
 }
@@ -541,19 +555,31 @@ private fun LessonResult(
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "${state.score}%",
-            style = MaterialTheme.typography.displayMedium,
-            color = if (state.passed) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.error
-            },
-        )
-        Text(
-            text = "${state.correctCount} от ${state.answeredCount} верни",
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        if (state.answeredCount == 0) {
+            // A reading lesson has no questions: it was read to the end
+            // and it is done. It used to show "100%" and "0 от 0
+            // верни", which reads like a broken score.
+            Text(
+                text = stringResource(R.string.lesson_result_read),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
+        } else {
+            Text(
+                text = "${state.score}%",
+                style = MaterialTheme.typography.displayMedium,
+                color = if (state.passed) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            Text(
+                text = "${state.correctCount} от ${state.answeredCount} верни",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
         if (state.productionUnlocked) {
             Spacer(modifier = Modifier.height(24.dp))
             Card(
@@ -604,13 +630,9 @@ private fun ReadingLesson(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            Text(
-                text = "Урок ${index + 1} от ${cards.size}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        // The counter of the lesson is in the header of the screen
+        // ("3 от 7"). The card used to carry a second one ("Урок 3 от
+        // 7"), and a learner saw two counters for the same thing.
         item {
             ReadingCard(payload = payload, onPlay = onPlay)
         }
@@ -755,6 +777,7 @@ private fun ReadingPassage(
     var opened by remember(card) { mutableStateOf(setOf<Int>()) }
     var answered by remember(card) { mutableStateOf(false) }
     var correct by remember(card) { mutableStateOf(false) }
+    var chosen by remember(card) { mutableStateOf(-1) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (card.title.isNotBlank()) {
@@ -835,14 +858,14 @@ private fun ReadingPassage(
                 val isRight = index == question.answer
                 AnswerOption(
                     text = option,
-                    state = when {
-                        !answered -> AnswerState.NONE
-                        correct && isRight -> AnswerState.RIGHT
-                        answered -> AnswerState.WRONG
-                        else -> AnswerState.NONE
-                    },
+                    state = optionState(
+                        answered = answered,
+                        isRight = isRight,
+                        isChosen = index == chosen,
+                    ),
                     enabled = !answered,
                     onClick = {
+                        chosen = index
                         correct = isRight
                         answered = true
                     },

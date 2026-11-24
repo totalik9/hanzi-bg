@@ -176,18 +176,23 @@ object PathRules {
  * A badge the learner can earn.
  *
  * The titles are in Bulgarian because they are shown to the learner.
+ *
+ * The description says what the learner HAS DONE, not what they still
+ * have to do. It used to be the other way round -- "Научи 20 думи"
+ * ("Learn 20 words") sat under a badge the learner had already won,
+ * and it read like a task they had failed.
  */
 enum class Badge(val id: String, val title: String, val description: String) {
     FIRST_WORD("first_word", "Първата дума", "Първата дума, която научи"),
-    TWENTY_WORDS("twenty_words", "20 думи", "Научи 20 думи"),
-    FIFTY_WORDS("fifty_words", "50 думи", "Научи 50 думи"),
-    HUNDRED_WORDS("hundred_words", "100 думи", "Научи 100 думи"),
-    FIRST_LESSON("first_lesson", "Първи урок", "Завърши първия урок"),
-    TEN_LESSONS("ten_lessons", "10 урока", "Завърши 10 урока"),
-    STREAK_THREE("streak_three", "3 дни", "Учи се 3 дни поред"),
-    STREAK_SEVEN("streak_seven", "7 дни", "Учи се 7 дни поред"),
-    STREAK_THIRTY("streak_thirty", "30 дни", "Учи се 30 дни поред"),
-    PRODUCTION("production", "Производство", "Отключи произвеждането на думи"),
+    TWENTY_WORDS("twenty_words", "20 думи", "Научени 20 думи"),
+    FIFTY_WORDS("fifty_words", "50 думи", "Научени 50 думи"),
+    HUNDRED_WORDS("hundred_words", "100 думи", "Научени 100 думи"),
+    FIRST_LESSON("first_lesson", "Първи урок", "Първият завършен урок"),
+    TEN_LESSONS("ten_lessons", "10 урока", "10 завършени урока"),
+    STREAK_THREE("streak_three", "3 дни", "3 дни поред"),
+    STREAK_SEVEN("streak_seven", "7 дни", "7 дни поред"),
+    STREAK_THIRTY("streak_thirty", "30 дни", "30 дни поред"),
+    PRODUCTION("production", "Производство", "Произвеждането на думи е отворено"),
 }
 
 /**

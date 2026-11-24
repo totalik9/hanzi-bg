@@ -60,6 +60,13 @@ fun WritingStepContent(
     onNext: () -> Unit = { onDone(0) },
 ) {
     var charIndex by remember(hanzi) { mutableStateOf(0) }
+    /**
+     * Bumped when the learner erases the strokes of the character.
+     *
+     * The canvas takes it as a key, so a new value means a new and
+     * empty canvas.
+     */
+    var clearToken by remember(hanzi) { mutableStateOf(0) }
     // How many strokes the CURRENT character has, and how many it has
     // in total. They are keyed by the character, so moving to the next
     // character of the same word does not throw away the work on the
@@ -152,19 +159,34 @@ fun WritingStepContent(
                 StrokeTraceView(
                     character = current,
                     modifier = Modifier.fillMaxWidth(),
+                    clearToken = clearToken,
                     onProgress = { drawn, total ->
                         tracedByChar[charIndex] = drawn to total
                     },
                 )
-                Text(
-                    text = if (tracedTotal > 0) {
-                        stringResource(R.string.lesson_strokes_ok, traced, tracedTotal)
-                    } else {
-                        stringResource(R.string.lesson_trace_start)
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = if (tracedTotal > 0) {
+                            stringResource(R.string.lesson_strokes_ok, traced, tracedTotal)
+                        } else {
+                            stringResource(R.string.lesson_trace_start)
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    // The strokes can be erased. Without this a learner
+                    // who drew one stroke in the wrong place could not
+                    // finish the character: the scoring matches the
+                    // strokes by position, so one stray stroke shifted
+                    // all the others.
+                    TextButton(onClick = { clearToken++ }) {
+                        Text(stringResource(R.string.lesson_trace_clear))
+                    }
+                }
             }
         }
 

@@ -167,6 +167,31 @@ object LessonPlan {
      * and the surrounding spaces are ignored. A distractor that
      * reads the same as the answer is not a distractor.
      *
+     * THE TWIN OF THE ANSWER
+     *
+     * A clone is not the only way to be unfair. Two DIFFERENT words
+     * can have the same everyday Bulgarian meaning, and then the card
+     * asks a question that has two right answers:
+     *
+     *     две          <- the answer (二, the numeral two)
+     *     два          <- "wrong" (两, two OF something)
+     *
+     * The learner knows Bulgarian, answers with the everyday word
+     * "два", and is told they are wrong. It happened for real in the
+     * recording of the 2026-11-23 session: the review card of 二
+     * offered "два", "десет", "осем" and "две", and "два" was marked
+     * wrong.
+     *
+     * A twin is a meaning that starts with the same three letters as
+     * the answer ("два"/"две", "малък"/"малко", "училище"/"учител")
+     * or that contains it ("много" inside "много; изключително").
+     * The measure is over the whole path: 99 of the 300 words of the
+     * learning path had such a twin in the pool of their lesson.
+     *
+     * A twin of the ANSWER is never offered. A twin of another
+     * DISTRACTOR is not offered either: two options that read the
+     * same are two buttons the learner cannot choose between.
+     *
      * The answer itself is added LAST and exactly once, so it cannot
      * be in the list twice either.
      *
@@ -188,11 +213,36 @@ object LessonPlan {
     ): List<String> {
         if (gloss.isBlank()) return emptyList()
         val answerKey = gloss.trim().lowercase()
-        val distractors = pool
+        val candidates = pool
             .filter { it.trim().lowercase() != answerKey }
             .shuffled(random)
-            .take((OPTION_COUNT - 1).coerceAtLeast(0))
+        val distractors = mutableListOf<String>()
+        for (candidate in candidates) {
+            if (distractors.size >= OPTION_COUNT - 1) break
+            // A twin of the answer is not a distractor.
+            if (isTwin(candidate, gloss)) continue
+            // And neither is a twin of a distractor that is already in.
+            if (distractors.any { isTwin(it, candidate) }) continue
+            distractors += candidate
+        }
         return (distractors + gloss).shuffled(random)
+    }
+
+    /**
+     * Whether two meanings are the same word in different clothes.
+     *
+     * The test is the first three letters of the meaning, or one of them
+     * containing the other. It is a proxy, not a dictionary: it catches
+     * the pairs that punish a learner ("два"/"две", "малък"/"малко",
+     * "училище"/"учител", "хотел"/"хостел") and it is deliberately
+     * generous -- a card with three options is still a question.
+     */
+    private fun isTwin(a: String, b: String): Boolean {
+        val x = a.trim().lowercase()
+        val y = b.trim().lowercase()
+        if (x == y) return true
+        if (x.contains(y) || y.contains(x)) return true
+        return x.length >= 3 && y.length >= 3 && x.take(3) == y.take(3)
     }
 
     /**

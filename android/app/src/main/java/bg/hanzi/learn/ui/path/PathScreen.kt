@@ -266,10 +266,23 @@ private fun ProgressCard(state: PathUiState) {
                 )
                 Stat(
                     value = state.streakDays.toString(),
-                    label = stringResource(R.string.path_streak),
+                    // "1 ден поред" and "2 дни поред": one string for
+                    // both read "1 дни поред".
+                    label = pluralStringResource(
+                        R.plurals.path_streak_days,
+                        state.streakDays,
+                    ),
                 )
                 Stat(
-                    value = "${state.todayReviewed}/${state.dailyGoal}",
+                    // The counter never goes past the goal: a learner
+                    // who did 37 cards against a goal of 20 read
+                    // "37/20", which looks broken. The goal is shown
+                    // as met and the surplus is not shown at all.
+                    value = if (state.todayReviewed >= state.dailyGoal) {
+                        "${state.dailyGoal}/${state.dailyGoal} ✓"
+                    } else {
+                        "${state.todayReviewed}/${state.dailyGoal}"
+                    },
                     label = stringResource(R.string.path_today),
                 )
             }

@@ -54,7 +54,13 @@
     <string name="path_all_done_hint">Всички уроци са завършени. Продължи с упражненията или преглеждай речника.</string>
     <string name="path_progress">Напредък</string>
     <string name="path_words">думи</string>
-    <string name="path_streak">дни поред</string>
+    <!-- The streak: "1 ден поред" and "2 дни поред". It was one
+         string for both, so a learner with a one-day streak read
+         "1 дни поред". -->
+    <plurals name="path_streak_days">
+        <item quantity="one">ден поред</item>
+        <item quantity="other">дни поред</item>
+    </plurals>
     <string name="path_today">днес</string>
     <string name="path_badges">Значки</string>
     <string name="path_the_path">Пътят</string>
@@ -105,11 +111,13 @@
     <string name="lesson_trace_hint">Проследи знака с пръст</string>
     <string name="lesson_strokes_ok">Правилни щрихи: %1$d / %2$d</string>
     <string name="lesson_trace_start">Пусни пръст по контура на знака.</string>
+    <string name="lesson_trace_clear">Изчисти</string>
     <string name="lesson_next_character">Следващ знак</string>
     <string name="lesson_previous_character">Предишен знак</string>
     <string name="lesson_review_progress">Преглед: %1$d от %2$d</string>
     <string name="lesson_result_passed">Урокът е минат</string>
     <string name="lesson_result_failed">Още не е минат</string>
+    <string name="lesson_result_read">Прочетено до края</string>
     <string name="lesson_back_to_path">Обратно към пътя</string>
     <string name="lesson_production_unlocked">Отключено е произвеждането</string>
     <string name="lesson_production_hint">Вече можеш да пишеш китайски по пиньин. Опитай в раздел „Упражнения“.</string>

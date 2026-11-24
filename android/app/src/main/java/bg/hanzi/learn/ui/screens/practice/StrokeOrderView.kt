@@ -87,7 +87,23 @@ fun StrokeOrderView(
 }
 
 /**
- * Parse the JSON median data into lists of [x, y] pairs.
+ * Parse the JSON median data into lists of [x, y] pairs, IN SCREEN
+ * SPACE: x grows to the right and y grows DOWNWARD.
+ *
+ * The medians of Make Me a Hanzi have the origin at the BOTTOM LEFT,
+ * so their y grows UPWARD. The canvas they are drawn on has y growing
+ * downward, so the y is flipped here -- ONCE, in the one function that
+ * both views read their strokes from.
+ *
+ * Without the flip every character is drawn upside down: 人 is drawn
+ * with its legs in the air, and 三 is drawn with its longest line at
+ * the top. The stroke order is reversed with it, because the first
+ * stroke of 三 is its shortest line and it belongs at the top.
+ *
+ * And the damage does not stop at the picture. The scoring compares
+ * the learner's strokes against the same medians, so a learner who
+ * traces the character the way the font shows it scores NOTHING, and
+ * one who traces the upside-down ghost scores full marks.
  *
  * The data come from the pipeline as a JSON string, so they are parsed
  * once per character and remembered. Shared with the tracing view.
@@ -102,7 +118,7 @@ internal fun parseMedians(json: String): List<List<List<Float>>> {
                 if (pair.size >= 2) {
                     listOf(
                         pair[0].jsonPrimitive.float,
-                        pair[1].jsonPrimitive.float,
+                        MEDIAN_CANVAS_SIZE - pair[1].jsonPrimitive.float,
                     )
                 } else {
                     null

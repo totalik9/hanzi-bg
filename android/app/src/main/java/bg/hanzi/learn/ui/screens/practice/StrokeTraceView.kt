@@ -37,12 +37,26 @@ import bg.hanzi.learn.data.content.CharacterEntry
 fun StrokeTraceView(
     character: CharacterEntry,
     modifier: Modifier = Modifier,
+    /**
+     * Bumped by the caller to throw the drawn strokes away.
+     *
+     * There was no way to erase a stroke before, and the scoring
+     * matches the strokes BY POSITION: one stroke drawn in the wrong
+     * place shifts every later stroke by one, and the character can
+     * never be scored right again. The learner had no way out.
+     */
+    clearToken: Int = 0,
     onProgress: (drawn: Int, total: Int) -> Unit = { _, _ -> },
 ) {
     val medians = remember(character.medians) { parseMedians(character.medians) }
     // The points the learner has drawn so far, as a list of strokes.
-    val drawnPaths = remember(character.medians) { mutableStateListOf<List<Offset>>() }
-    var currentStroke by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    // The list is remembered by the clear token as well: when the
+    // token changes, the list is new and empty, and the strokes are
+    // gone.
+    val drawnPaths = remember(character.medians, clearToken) {
+        mutableStateListOf<List<Offset>>()
+    }
+    var currentStroke by remember(clearToken) { mutableStateOf<List<Offset>>(emptyList()) }
 
     // The strokes the learner has completed correctly. The medians live
     // in the 1024x1024 space and the learner's points are in canvas

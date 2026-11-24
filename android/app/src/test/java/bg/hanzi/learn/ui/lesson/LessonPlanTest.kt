@@ -270,4 +270,58 @@ class LessonPlanTest {
         assertTrue(options.contains("малко"))
         assertTrue(options.contains("много"))
     }
+
+    // -- the twin of the answer ----------------------------------------
+    //
+    // Two DIFFERENT words can have the same everyday Bulgarian meaning,
+    // and then the card asks a question with two right answers. It
+    // happened for real on 2026-11-23: the review card of 二 offered
+    // "два" and "две", and the everyday word "два" was marked wrong.
+
+    @Test
+    fun aTwinOfTheAnswerIsNotOffered() {
+        // 二 is "два", 两 is "два, когато броим предмети". The second
+        // one must not sit next to the first one as a "wrong" answer.
+        val options = LessonPlan.chooseOptions(
+            "два",
+            listOf("два", "два, когато броим предмети", "десет", "осем"),
+            Random(7),
+        )
+
+        assertTrue(options.contains("два"))
+        assertFalse(
+            "a twin of the answer must not be offered",
+            options.contains("два, когато броим предмети"),
+        )
+    }
+
+    @Test
+    fun twoOptionsThatReadTheSameAreNotOffered() {
+        // "малко" and "малък" are the same word in two sizes, and
+        // "много; изключително" contains the answer. A card with them
+        // asks the learner to choose between buttons that read the
+        // same.
+        val options = LessonPlan.chooseOptions(
+            "много",
+            listOf("много", "много; изключително", "малко", "малък", "няколко"),
+            Random(7),
+        )
+
+        assertTrue(options.contains("много"))
+        assertFalse(options.contains("много; изключително"))
+        assertEquals(
+            "only one of the two ways of writing 'small' may be offered",
+            1,
+            options.count { it == "малко" || it == "малък" },
+        )
+    }
+
+    @Test
+    fun theAnswerIsAlwaysInTheOptions() {
+        val pool = listOf("два", "два, когато броим предмети", "десет", "осем", "пет")
+        val options = LessonPlan.chooseOptions("два", pool, Random(11))
+
+        assertEquals(1, options.count { it == "два" })
+        assertTrue(options.size >= 2)
+    }
 }

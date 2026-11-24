@@ -21,10 +21,23 @@ data class TracePoint(val x: Float, val y: Float)
  * and 8 % on a large tablet -- the same sloppy drawing passed on a
  * phone and failed on a tablet. The scale converts it to the canvas.
  *
- * The tolerance is generous on purpose: the goal is the ORDER and the
+ * It is now 120, which is 11.7 % of the character. The measurement
+ * that changed it: on 2026-11-23 a stroke drawn about 113 units away
+ * from the expected one was still counted as correct -- the learner
+ * had drawn a stroke in the wrong place and the app had accepted it.
+ * The tolerance was generous enough to hide a mistake, which is the
+ * one thing it must not do.
+ *
+ * 120 is the number the measurement asks for. The most curved stroke
+ * of the character 你 deviates 107 units from its path when it is
+ * drawn as a straight line, so a tolerance below that would refuse a
+ * careful trace of a curve, and one above 113 would accept the
+ * misplaced stroke again.
+ *
+ * It is still generous on purpose: the goal is the ORDER and the
  * general direction, not pixel-perfect calligraphy.
  */
-const val STROKE_TOLERANCE = 180f
+const val STROKE_TOLERANCE = 120f
 
 /**
  * The size of the square the medians are drawn in.
