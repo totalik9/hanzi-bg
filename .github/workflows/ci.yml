@@ -422,6 +422,17 @@ jobs:
           done
           echo "all pipeline entry points present"
 
+      # The learning path is what a learner meets, and it can hold a
+      # question with two right answers: two words of the same lesson
+      # carrying the same meaning. It happened for real on 2026-11-23
+      # -- the review card of 二 offered "два" and "две", and the
+      # everyday word was marked wrong.
+      #
+      # The check reads the hand-written glosses in the repository, so
+      # it needs no database and no model, and it runs in a second.
+      - name: Check the learning path has no duplicated meanings
+        run: python pipeline/audit_path.py --gate
+
       # The guards that stop a degraded content database from shipping.
       # A missing input has to be an error, not a warning: a run that
       # "succeeds" with 11 grammar points and 0 Bulgarian glosses

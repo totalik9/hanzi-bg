@@ -50,6 +50,13 @@ keystore.properties
 # is an output, not code.
 /instrumented-diagnostics/
 
+# ---- Session recordings ----
+# The student session of 2026-11-23: a 60-minute screen recording of
+# the app, 139 screenshots and the frames of the video. It is evidence
+# for the findings in LEARNING-PROCESS-PLAN.md, not code, and it is
+# 115 MB. The plan says what the recording shows.
+/recordings/
+
 # ---- Simulation output ----
 # results.json and analysis_output.txt are run outputs and are not tracked.
 /simulation/results.json
