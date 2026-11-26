@@ -1,7 +1,9 @@
 package bg.hanzi.learn.ui.screens.review
 
+import bg.hanzi.learn.data.content.ExampleEntry
 import bg.hanzi.learn.data.content.WordEntry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -136,5 +138,80 @@ class ReviewDeckTest {
     @Test
     fun `the default session size is twenty`() {
         assertEquals(20, ReviewDeck.SESSION_SIZE)
+    }
+
+    // -- the example sentence of a new word ---------------------------
+    //
+    // A word the learner has never met cannot be guessed from its
+    // meaning alone. The example sentence is the context they can work
+    // it out of: it is built of the words they already know.
+
+    private fun example(
+        sentence: String,
+        translation: String = "превод",
+        hanzi: String = "新",
+    ) = ExampleEntry(
+        hanzi = hanzi,
+        sentence = sentence,
+        pinyin = "pinyin",
+        translationBg = translation,
+    )
+
+    @Test
+    fun `the example with the most known characters wins`() {
+        // The learner knows 我 and 好. The first sentence is built of
+        // them, the second one is not.
+        val candidates = listOf(
+            example("我不喜欢"),
+            example("我很好"),
+        )
+
+        val picked = ReviewDeck.pickExample(candidates, setOf("我", "好"))
+
+        assertEquals("我很好", picked?.sentence)
+    }
+
+    @Test
+    fun `a tie is broken by the shorter sentence`() {
+        // Both sentences are built of the same known characters. The
+        // shorter one has less left to guess at.
+        val candidates = listOf(
+            example("我很好呀"),
+            example("我好"),
+        )
+
+        val picked = ReviewDeck.pickExample(candidates, setOf("我", "好"))
+
+        assertEquals("我好", picked?.sentence)
+    }
+
+    @Test
+    fun `no example means no example`() {
+        assertNull(ReviewDeck.pickExample(emptyList(), setOf("我")))
+    }
+
+    @Test
+    fun `a candidate with no known characters is still shown`() {
+        // The learner knows nothing of the sentence. It is still the
+        // only context there is, and an empty screen is worse.
+        val candidates = listOf(example("我不喜欢"))
+
+        val picked = ReviewDeck.pickExample(candidates, emptySet())
+
+        assertEquals("我不喜欢", picked?.sentence)
+    }
+
+    @Test
+    fun `a repeated known character counts once`() {
+        // The sentence with 我 repeated five times is not five times
+        // easier to read than the one with 我 once.
+        val candidates = listOf(
+            example("我我我我我"),
+            example("我"),
+        )
+
+        val picked = ReviewDeck.pickExample(candidates, setOf("我"))
+
+        assertEquals("我", picked?.sentence)
     }
 }

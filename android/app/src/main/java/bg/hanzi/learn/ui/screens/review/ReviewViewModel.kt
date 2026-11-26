@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bg.hanzi.learn.audio.AudioPlayer
 import bg.hanzi.learn.data.content.ContentRepository
+import bg.hanzi.learn.data.content.ExampleEntry
 import bg.hanzi.learn.data.content.LevelSelection
 import bg.hanzi.learn.data.content.WordEntry
 import bg.hanzi.learn.data.db.DailyStats
@@ -26,6 +27,14 @@ data class ReviewUiState(
     val current: WordEntry? = null,
     /** The levels this session is drawn from, for the screen's title. */
     val levelLabel: String = "",
+    /**
+     * The example sentence of the word being reviewed.
+     *
+     * It is set only when the word is one the learner has NOT met
+     * yet -- a word the session injects to move them through the
+     * level. A word they know does not need a context.
+     */
+    val example: ExampleEntry? = null,
 )
 
 @HiltViewModel
@@ -41,6 +50,25 @@ class ReviewViewModel @Inject constructor(
 
     private var queue: List<WordEntry> = emptyList()
     private var index = 0
+
+    /**
+     * The words the learner has already met, in every level.
+     *
+     * The words that are NOT in this set are the ones the session
+     * injects: the new words the learner has to meet. A word that has
+     * an SRS card has been met, whatever level it is on -- and a card
+     * that is due for review is always a word the learner knows.
+     */
+    private var metWords: Set<String> = emptySet()
+
+    /**
+     * The characters the learner already knows.
+     *
+     * They are what says whether an example sentence can be read by
+     * this learner: a sentence built of these characters is one they
+     * can work the new word out of.
+     */
+    private var knownCharacters: Set<String> = emptySet()
 
     /**
      * The levels this session draws from.
@@ -140,6 +168,39 @@ class ReviewViewModel @Inject constructor(
                 current = queue[index],
                 levelLabel = LevelSelection.labelOf(levelSelection),
             )
+            loadExample(queue[index])
+        }
+    }
+
+    /**
+     * The example sentence of a word the learner has not met yet.
+     *
+     * A new word cannot be guessed from its meaning alone: the learner
+     * has never seen it, so the meaning tells them nothing they can
+     * use. The sentence is what helps -- it is built of words they know,
+     * and the new word sits in the middle of it.
+     *
+     * A word the learner HAS met gets no example: they know it, and a
+     * sentence around it would only be noise.
+     *
+     * The example is picked by how much of the sentence the learner can
+     * already read, so the sentence is as close as possible to the
+     * words they know.
+     */
+    private fun loadExample(word: WordEntry) {
+        if (word.hanzi in metWords) {
+            _uiState.value = _uiState.value.copy(example = null)
+            return
+        }
+        viewModelScope.launch {
+            val candidates = content.examplesFor(word.hanzi)
+            val example = ReviewDeck.pickExample(candidates, knownCharacters)
+            // The learner may have moved on while the sentence was
+            // read: the example belongs to the word that is on the
+            // screen now, not to the one that was.
+            if (_uiState.value.current?.hanzi == word.hanzi) {
+                _uiState.value = _uiState.value.copy(example = example)
+            }
         }
     }
 
@@ -161,6 +222,15 @@ class ReviewViewModel @Inject constructor(
             // the rest of the level was unreachable from here.
             val learned = srsDao.learnedItemIds(levels).toSet()
 
+            // The words the learner has met at all, whatever level.
+            // A card that is due for review is a word they know, so it
+            // gets no example sentence.
+            metWords = srsDao.allLearnedItemIds().toSet()
+
+            // The characters they know: what an example sentence is
+            // measured against.
+            knownCharacters = content.knownCharacters()
+
             // How many candidates to read: at most `learned.size` of
             // them can be learned ones, so this many always holds twenty
             // that are not. The limit is a maximum, so a level smaller
@@ -181,6 +251,7 @@ class ReviewViewModel @Inject constructor(
                 current = words.firstOrNull(),
                 levelLabel = LevelSelection.labelOf(levelSelection),
             )
+            words.firstOrNull()?.let { loadExample(it) }
         }
     }
 }

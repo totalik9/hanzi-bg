@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -28,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bg.hanzi.learn.R
+import bg.hanzi.learn.data.content.ExampleEntry
 import bg.hanzi.learn.data.content.WordEntry
 import bg.hanzi.learn.data.srs.Rating
 import bg.hanzi.learn.ui.theme.LangType
@@ -67,6 +69,15 @@ fun ReviewScreen(
             )
 
             else -> {
+                // The example sentence of a word the learner has not met
+                // yet. It sits ABOVE the word: the learner reads the
+                // context first and works the word out of it.
+                val example = state.example
+                if (example != null) {
+                    ExampleBlock(example = example)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -206,5 +217,47 @@ private fun RatingButton(
             onClick = { viewModel.grade(rating) },
             modifier = modifier,
         ) { Text(label, style = MaterialTheme.typography.labelSmall) }
+    }
+}
+
+/**
+ * The example sentence of a word the learner has not met yet.
+ *
+ * The sentence is the context the learner works the word out of: it is
+ * built of words they already know. It sits above the word and it is
+ * quieter than the word -- the word is what the card is about.
+ */
+@Composable
+private fun ExampleBlock(example: ExampleEntry) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.batch_example_label),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = example.sentence,
+            style = LangType.scaled(
+                MaterialTheme.typography.headlineSmall,
+                LangType.Kind.TARGET,
+            ),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (example.translationBg.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = example.translationBg,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
