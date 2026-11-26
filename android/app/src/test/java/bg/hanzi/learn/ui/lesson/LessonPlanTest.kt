@@ -38,6 +38,14 @@ class LessonPlanTest {
         medians = "[[[0,0],[100,100]]]",
     )
 
+    private fun example(hanzi: String, sentence: String) =
+        bg.hanzi.learn.data.content.ExampleEntry(
+            hanzi = hanzi,
+            sentence = sentence,
+            pinyin = "p",
+            translationBg = "превод",
+        )
+
     private val words = listOf(
         word("一", "едно"),
         word("二", "две"),
@@ -46,39 +54,114 @@ class LessonPlanTest {
         word("五", "пет"),
     )
 
-    @Test
-    fun everyNewWordGetsTheThreeSteps() {
-        val cards = LessonPlan.cards(words, emptyList(), writingEnabled = false)
+    // -- the teaching and the test are apart --------------------------
+    //
+    // The owner of the app asked for it:
+    //
+    //   "teach a batch, test the batch next day or next time the app
+    //   is started"
+    //
+    // So a lesson TEACHES the words of its own batch and TESTS the
+    // words of the batch before it. A word is never taught and asked
+    // about in the same breath: a learner who hears a word for the
+    // first time cannot recognise it five seconds later.
 
-        // Five words, three steps each, and no review: there are no old
-        // words yet.
-        assertEquals(15, cards.size)
+    @Test
+    fun aVocabularyLessonTeachesItsWordsAndDoesNotTestThem() {
+        val cards = LessonPlan.cards(
+            words = words,
+            testWords = emptyList(),
+            writingEnabled = false,
+        )
+
+        // Five words, two steps each -- LISTEN and SAY -- and no
+        // question about any of them.
+        assertEquals(10, cards.size)
         assertEquals(5, cards.count { it.step == LessonStep.LISTEN })
-        assertEquals(5, cards.count { it.step == LessonStep.RECOGNISE })
         assertEquals(5, cards.count { it.step == LessonStep.SAY })
-        assertEquals(0, cards.count { it.step == LessonStep.WRITE })
+        assertEquals(0, cards.count { it.step == LessonStep.RECOGNISE })
     }
 
     @Test
     fun theStepsComeInTheTaughtOrder() {
-        val cards = LessonPlan.cards(words.take(1), emptyList(), writingEnabled = false)
+        val cards = LessonPlan.cards(
+            words = words.take(1),
+            testWords = emptyList(),
+            writingEnabled = false,
+        )
 
         assertEquals(LessonStep.LISTEN, cards[0].step)
-        assertEquals(LessonStep.RECOGNISE, cards[1].step)
-        assertEquals(LessonStep.SAY, cards[2].step)
+        assertEquals(LessonStep.SAY, cards[1].step)
+    }
+
+    @Test
+    fun thePreviousBatchIsTestedWithOneQuestionPerWord() {
+        val batch = listOf(word("书", "книга"), word("人", "човек"), word("吃", "ям"))
+
+        val cards = LessonPlan.cards(
+            words = words.take(2),
+            testWords = batch,
+            writingEnabled = false,
+        )
+
+        // Two new words taught (two steps each) and three old words
+        // tested.
+        assertEquals(4 + 3, cards.size)
+        val questions = cards.filter { it.step == LessonStep.RECOGNISE }
+        assertEquals(3, questions.size)
+        assertEquals(batch.map { it.hanzi }, questions.map { it.word.hanzi })
+    }
+
+    @Test
+    fun aLessonWithNoPreviousBatchHasNoQuestion() {
+        // The first vocabulary lesson of the path: there is no batch
+        // before it, so it only teaches.
+        val cards = LessonPlan.cards(
+            words = words.take(2),
+            testWords = emptyList(),
+            writingEnabled = false,
+        )
+
+        assertEquals(0, cards.count { it.step == LessonStep.RECOGNISE })
+        assertFalse(LessonPlan.hasTestCards(cards))
+    }
+
+    @Test
+    fun aLessonWithAQuestionIsTested() {
+        val cards = LessonPlan.cards(
+            words = words.take(2),
+            testWords = listOf(word("书", "книга")),
+            writingEnabled = false,
+        )
+
+        assertTrue(LessonPlan.hasTestCards(cards))
+    }
+
+    @Test
+    fun aLessonWithNoWordsHasNoCardsAtAll() {
+        // A reading lesson teaches the sound system with cards, not
+        // with words, and it is not tested either.
+        val cards = LessonPlan.cards(
+            words = emptyList(),
+            testWords = listOf(word("书", "книга")),
+            writingEnabled = false,
+        )
+
+        assertTrue(cards.isEmpty())
+        assertFalse(LessonPlan.hasTestCards(cards))
     }
 
     @Test
     fun theWritingStepComesOnlyWhenItIsEnabled() {
         val cards = LessonPlan.cards(
             words = words.take(1),
-            oldWords = emptyList(),
+            testWords = emptyList(),
             writingEnabled = true,
             characters = mapOf("一" to listOf(character("一"))),
         )
 
-        assertEquals(4, cards.size)
-        assertEquals(LessonStep.WRITE, cards[3].step)
+        assertEquals(3, cards.size)
+        assertEquals(LessonStep.WRITE, cards[2].step)
     }
 
     @Test
@@ -87,18 +170,23 @@ class LessonPlanTest {
         // step is skipped rather than shown as an empty canvas.
         val cards = LessonPlan.cards(
             words = words.take(1),
-            oldWords = emptyList(),
+            testWords = emptyList(),
             writingEnabled = true,
             characters = emptyMap(),
         )
 
-        assertEquals(3, cards.size)
+        assertEquals(2, cards.size)
         assertEquals(0, cards.count { it.step == LessonStep.WRITE })
     }
 
     @Test
     fun everyQuestionHasFourOptionsAndOneOfThemIsTheRightAnswer() {
-        val cards = LessonPlan.cards(words, emptyList(), writingEnabled = false)
+        val batch = (1..5).map { word("旧$it", "старо $it") }
+        val cards = LessonPlan.cards(
+            words = words,
+            testWords = batch,
+            writingEnabled = false,
+        )
 
         val questions = cards.filter { it.step == LessonStep.RECOGNISE }
         assertTrue(questions.isNotEmpty())
@@ -114,14 +202,19 @@ class LessonPlanTest {
 
     @Test
     fun theDistractorsAreOtherRealMeanings() {
-        val cards = LessonPlan.cards(words, emptyList(), writingEnabled = false)
+        val batch = (1..5).map { word("旧$it", "старо $it") }
+        val cards = LessonPlan.cards(
+            words = words,
+            testWords = batch,
+            writingEnabled = false,
+        )
 
+        val meanings = (words + batch).map { it.glossBg }
         for (question in cards.filter { it.step == LessonStep.RECOGNISE }) {
-            val glosses = words.map { it.glossBg }
             for (option in question.options) {
                 assertTrue(
                     "the option '$option' is not a meaning of any word of the lesson",
-                    glosses.contains(option),
+                    meanings.contains(option),
                 )
             }
         }
@@ -131,8 +224,19 @@ class LessonPlanTest {
     fun theOptionsAreNotAlwaysInTheSameOrder() {
         // A fixed order would let a learner answer from the position of
         // the button instead of from the meaning.
-        val first = LessonPlan.cards(words, emptyList(), writingEnabled = false, random = Random(1))
-        val second = LessonPlan.cards(words, emptyList(), writingEnabled = false, random = Random(2))
+        val batch = listOf(word("书", "книга"), word("人", "човек"), word("吃", "ям"))
+        val first = LessonPlan.cards(
+            words = words,
+            testWords = batch,
+            writingEnabled = false,
+            random = Random(1),
+        )
+        val second = LessonPlan.cards(
+            words = words,
+            testWords = batch,
+            writingEnabled = false,
+            random = Random(2),
+        )
 
         val firstOptions = first.first { it.step == LessonStep.RECOGNISE }.options
         val secondOptions = second.first { it.step == LessonStep.RECOGNISE }.options
@@ -140,28 +244,35 @@ class LessonPlanTest {
     }
 
     @Test
-    fun theReviewHoldsTheOldWords() {
-        val old = listOf(word("书", "книга"), word("人", "човек"), word("吃", "ям"))
-        val cards = LessonPlan.cards(words.take(2), old, writingEnabled = false)
+    fun theKnownWordsAreThePoolOfTheDistractorsAndNotCards() {
+        // The words the learner already knows are the pool the wrong
+        // meanings come from. They are not questions: the test of the
+        // lesson is the previous batch and nothing else.
+        val known = listOf(word("书", "книга"), word("人", "човек"), word("吃", "ям"))
 
-        // Two new words with three steps each, and the three old words
-        // as questions at the end.
-        assertEquals(6 + 3, cards.size)
-        assertEquals(3, cards.takeLast(3).count { it.step == LessonStep.RECOGNISE })
-    }
+        val cards = LessonPlan.cards(
+            words = words.take(2),
+            testWords = emptyList(),
+            writingEnabled = false,
+            knownWords = known,
+        )
 
-    @Test
-    fun theReviewHoldsAtMostFiveWords() {
-        val old = (1..12).map { word("旧$it", "старо $it") }
-        val cards = LessonPlan.cards(words.take(1), old, writingEnabled = false)
-
-        assertEquals(3 + LessonPlan.REVIEW_SIZE, cards.size)
+        assertEquals(4, cards.size)
+        assertEquals(0, cards.count { it.step == LessonStep.RECOGNISE })
     }
 
     @Test
     fun anEmptyLessonHasNoCards() {
-        assertTrue(LessonPlan.cards(emptyList(), emptyList(), writingEnabled = false).isEmpty())
+        assertTrue(
+            LessonPlan.cards(
+                words = emptyList(),
+                testWords = emptyList(),
+                writingEnabled = false,
+            ).isEmpty(),
+        )
     }
+
+    // -- the score ----------------------------------------------------
 
     @Test
     fun theScoreIsThePercentageOfRightAnswers() {
@@ -170,6 +281,16 @@ class LessonPlanTest {
         assertEquals(50, LessonPlan.scoreWithWriting(4, 8, 0, 0))
         assertEquals(0, LessonPlan.scoreWithWriting(0, 8, 0, 0))
         assertEquals(0, LessonPlan.scoreWithWriting(3, 0, 0, 0))
+    }
+
+    @Test
+    fun theScoreOfALessonWithQuestionsIsUnchangedByTheReshuffle() {
+        // The score is computed from the same numbers as before: the
+        // questions that were answered and the characters that were
+        // written. Moving the questions from the middle of the lesson
+        // to the end of it does not move the score.
+        assertEquals(100, LessonPlan.scoreWithWriting(8, 8, 0, 0))
+        assertEquals(50, LessonPlan.scoreWithWriting(4, 8, 0, 0))
     }
 
     // -- the writing is scored separately ------------------------------
@@ -274,7 +395,7 @@ class LessonPlanTest {
     // -- the twin of the answer ----------------------------------------
     //
     // Two DIFFERENT words can have the same everyday Bulgarian meaning,
-    // and then the card asks a question with two right answers. It
+    // and then the card asks a question that has two right answers. It
     // happened for real on 2026-11-23: the review card of 二 offered
     // "два" and "две", and the everyday word "два" was marked wrong.
 
@@ -297,10 +418,9 @@ class LessonPlanTest {
 
     @Test
     fun twoOptionsThatReadTheSameAreNotOffered() {
-        // "малко" and "малък" are the same word in two sizes, and
-        // "много; изключително" contains the answer. A card with them
-        // asks the learner to choose between buttons that read the
-        // same.
+        // "малко" and "малък" are the same word in two sizes, and a
+        // card with them asks the learner to choose between buttons
+        // that read the same.
         val options = LessonPlan.chooseOptions(
             "много",
             listOf("много", "много; изключително", "малко", "малък", "няколко"),
@@ -323,5 +443,59 @@ class LessonPlanTest {
 
         assertEquals(1, options.count { it == "два" })
         assertTrue(options.size >= 2)
+    }
+
+    // -- the example sentence -----------------------------------------
+    //
+    // The owner of the app asked for it:
+    //
+    //   "add example sentence with translation below it"
+    //
+    // The sentence belongs to the card that ASKS about the word, and it
+    // is the sentence of that word -- not of another word of the
+    // lesson.
+
+    @Test
+    fun theTestCardCarriesTheExampleSentenceOfItsWord() {
+        val cards = LessonPlan.cards(
+            words = words.take(1),
+            testWords = listOf(word("二", "две")),
+            writingEnabled = false,
+            examples = mapOf("二" to example("二", "我有两个。 ")),
+        )
+
+        val question = cards.first { it.step == LessonStep.RECOGNISE }
+        assertEquals("我有两个。 ", question.example?.sentence)
+        assertEquals("二", question.example?.hanzi)
+    }
+
+    @Test
+    fun aWordWithoutAnExampleHasNoSentence() {
+        // The corpus has no translated sentence for every word. The
+        // card must work without one -- an empty box is not a crash.
+        val cards = LessonPlan.cards(
+            words = words.take(1),
+            testWords = listOf(word("二", "две")),
+            writingEnabled = false,
+            examples = emptyMap(),
+        )
+
+        val question = cards.first { it.step == LessonStep.RECOGNISE }
+        assertEquals(null, question.example)
+    }
+
+    @Test
+    fun theTaughtCardsDoNotCarryAnExample() {
+        // The teaching card shows the word, its meaning and its sound.
+        // The sentence is the context of a QUESTION, and a card that
+        // shows the answer before it is asked is not a question.
+        val cards = LessonPlan.cards(
+            words = words.take(1),
+            testWords = emptyList(),
+            writingEnabled = false,
+            examples = mapOf("一" to example("一", "一个。 ")),
+        )
+
+        assertTrue(cards.all { it.example == null })
     }
 }

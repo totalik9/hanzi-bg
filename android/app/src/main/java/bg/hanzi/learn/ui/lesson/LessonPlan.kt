@@ -1,6 +1,7 @@
 package bg.hanzi.learn.ui.lesson
 
 import bg.hanzi.learn.data.content.CharacterEntry
+import bg.hanzi.learn.data.content.ExampleEntry
 import bg.hanzi.learn.data.content.WordEntry
 import kotlin.random.Random
 
@@ -18,15 +19,39 @@ import kotlin.random.Random
  *   WRITE     can I write it?    (the learner traces the strokes; this
  *                                  step joins only after 20 words)
  *
- * Then the lesson ends with a short review of what was learned before,
- * because a lesson that only adds words and never consolidates them
- * loses them.
+ * THE TEST IS NOT PART OF THE TEACHING
+ *
+ * A word used to be taught and tested in the same breath: LISTEN, then
+ * RECOGNISE, then SAY, then WRITE. The owner of the app asked for
+ * another order:
+ *
+ *   "teach a batch, test the batch next day or next time the app is
+ *   started"
+ *
+ * So a word that is taught now is tested in the NEXT lesson, and a
+ * lesson is:
+ *
+ *   LESSON N = the words of batch N, taught (LISTEN, SAY, WRITE)
+ *             + the words of batch N-1, tested (RECOGNISE, one card
+ *               per word)
+ *
+ * A learner who hears a word for the first time cannot recognise it
+ * five seconds later -- they recognise it because they have met it
+ * before. The test is only a question when the word is old.
  */
 enum class LessonStep {
     LISTEN,
     RECOGNISE,
     SAY,
     WRITE,
+
+    /**
+     * The progress of a reading lesson.
+     *
+     * The lesson no longer produces a REVIEW card -- the test of the
+     * previous batch took its place -- but the step is kept because the
+     * reading screen still draws it.
+     */
     REVIEW,
 }
 
@@ -46,6 +71,17 @@ data class LessonCard(
      * and the writing step is skipped then.
      */
     val characters: List<CharacterEntry> = emptyList(),
+    /**
+     * The example sentence of the word, with its Bulgarian translation.
+     *
+     * A word on its own is a shape and a meaning. The sentence is what
+     * puts it in a world: the learner sees the word used, and the
+     * translation below tells them what the whole sentence said.
+     *
+     * It is empty when the corpus has no translated sentence for the
+     * word -- the card works without it.
+     */
+    val example: ExampleEntry? = null,
 )
 
 /**
@@ -60,51 +96,57 @@ object LessonPlan {
     /** How many meanings a RECOGNISE card offers. */
     const val OPTION_COUNT = 4
 
-    /** How many old words the review at the end of the lesson holds. */
-    const val REVIEW_SIZE = 5
-
     /**
      * The cards of a lesson.
      *
+     * The cards come in two halves:
+     *
+     *   1. the words of this lesson are TAUGHT: LISTEN, SAY and WRITE
+     *      for each of them, and NO question about them;
+     *   2. the words of the PREVIOUS batch are TESTED: one RECOGNISE
+     *      card for each of them.
+     *
+     * The first half is the teaching, the second half is the test of
+     * the batch before this one. A lesson with no previous batch -- the
+     * first vocabulary lesson of the path -- only teaches, and it is
+     * recorded as taught rather than tested.
+     *
      * @param words the new words of the lesson, in the order they are met
-     * @param oldWords the words the learner already knows, for the review
+     * @param testWords the words of the previous batch, in the order they
+     *   were taught
      * @param writingEnabled whether the WRITE step is in the lesson yet
      * @param characters the stroke data of the characters, by word
+     * @param examples the example sentence of the words, by word
+     * @param knownWords the words the learner already knows; they are the
+     *   pool the distractors are drawn from, they are not cards
      * @param random the source of the distractors' order
      */
     fun cards(
         words: List<WordEntry>,
-        oldWords: List<WordEntry>,
+        testWords: List<WordEntry>,
         writingEnabled: Boolean,
         characters: Map<String, List<CharacterEntry>> = emptyMap(),
+        examples: Map<String, ExampleEntry> = emptyMap(),
+        knownWords: List<WordEntry> = emptyList(),
         random: Random = Random.Default,
     ): List<LessonCard> {
+        // A lesson with no words of its own is not a vocabulary lesson:
+        // a reading lesson teaches the sound system with cards, not with
+        // words, and it is not tested either. It has no cards at all.
         if (words.isEmpty()) return emptyList()
 
-        val pool = (words + oldWords)
+        val pool = (words + testWords + knownWords)
             .map { it.glossBg.ifBlank { it.glossEn } }
             .filter { it.isNotBlank() }
             .distinct()
 
         val cards = mutableListOf<LessonCard>()
 
+        // The teaching: the words of this batch, heard, said and written.
+        // There is no question about them -- the question about a word
+        // comes in the next lesson, when the word is old.
         for (word in words) {
-            val gloss = word.glossBg.ifBlank { word.glossEn }
-
             cards += LessonCard(word, LessonStep.LISTEN)
-
-            // The distractors are the meanings of the OTHER words of the
-            // lesson and of the words the learner already knows. They
-            // have to be real meanings of real words: a made-up
-            // distractor is a coin the learner can lose on by guessing.
-            val options = chooseOptions(gloss, pool, random)
-            cards += LessonCard(
-                word = word,
-                step = LessonStep.RECOGNISE,
-                options = options,
-                correctIndex = options.indexOf(gloss),
-            )
-
             cards += LessonCard(word, LessonStep.SAY)
 
             if (writingEnabled) {
@@ -122,11 +164,10 @@ object LessonPlan {
             }
         }
 
-        // The review: the words the learner already knows, so that the
-        // lesson ends by using what it has taught and what it taught
-        // before.
-        val review = oldWords.shuffled(random).take(REVIEW_SIZE)
-        for (word in review) {
+        // The test: one question per word of the previous batch. The
+        // order is the order the learner met the words, because the
+        // batch is a story and not a shuffle.
+        for (word in testWords) {
             val gloss = word.glossBg.ifBlank { word.glossEn }
             val options = chooseOptions(gloss, pool, random)
             cards += LessonCard(
@@ -134,11 +175,30 @@ object LessonPlan {
                 step = LessonStep.RECOGNISE,
                 options = options,
                 correctIndex = options.indexOf(gloss),
+                // The example sentence of the word: the learner meets
+                // the word in a sentence, not only as a meaning to
+                // pick. The sentence is taken from the corpus, and a
+                // word without one simply has no example.
+                example = examples[word.hanzi],
             )
         }
 
         return cards
     }
+
+    /**
+     * Whether a lesson has cards that ask a question.
+     *
+     * A lesson without a question is a lesson that only taught: the
+     * first vocabulary lesson of the path, and every reading lesson.
+     * Such a lesson is not scored -- there is nothing to score -- and it
+     * is recorded as passed, because the learner did what the lesson
+     * asked of them.
+     *
+     * @param cards the cards of the lesson
+     */
+    fun hasTestCards(cards: List<LessonCard>): Boolean =
+        cards.any { it.step == LessonStep.RECOGNISE }
 
     /**
      * The meanings of a RECOGNISE card: the right one and the wrong ones.

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The new Bulgarian strings of the batch teaching flow.
+
+     The flow separates the teaching of a batch from its test: a lesson
+     teaches the words of one batch and tests the words of the batch
+     before it, and a new word in the review session is shown with an
+     example sentence the learner can read.
+
+     The strings live in their own file so that they cannot collide
+     with the ones in strings.xml. -->
+<resources>
+    <!-- The label of the example sentence shown above a new word. -->
+    <string name="batch_example_label">Пример от изречение</string>
+
+    <!-- The result of a lesson that only taught: the words it taught
+         are tested in the next lesson. -->
+    <string name="batch_lesson_taught_only">Само преподаване</string>
+    <string name="batch_lesson_taught_only_hint">Новите думи ще бъдат проверени в следващия урок.</string>
+</resources>
