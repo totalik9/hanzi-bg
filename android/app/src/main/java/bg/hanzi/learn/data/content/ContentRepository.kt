@@ -2,6 +2,7 @@ package bg.hanzi.learn.data.content
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import bg.hanzi.learn.data.db.SrsCardDao
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -75,6 +76,25 @@ data class LessonEntry(
 )
 
 /**
+ * One example sentence for a word.
+ *
+ * The sentence is what lets a learner work out a word they have never
+ * seen: the sentence is made of words they know, and the word they
+ * are looking for sits in the middle of it.
+ *
+ * @param hanzi the word the sentence is an example OF
+ * @param sentence the Chinese sentence
+ * @param pinyin the pinyin of the sentence
+ * @param translationBg the Bulgarian translation of the sentence
+ */
+data class ExampleEntry(
+    val hanzi: String,
+    val sentence: String,
+    val pinyin: String,
+    val translationBg: String,
+)
+
+/**
  * A character with its stroke-order data.
  *
  * [medians] holds the centre-line of each stroke as a JSON array of
@@ -118,6 +138,15 @@ data class ImeIndex(
 @Singleton
 class ContentRepository @Inject constructor(
     private val provider: ContentDatabaseProvider,
+    /**
+     * The SRS cards of the learner.
+     *
+     * The repository reads them for one thing only: the characters of
+     * the words the learner has already met. That set is what says
+     * whether an example sentence can be read by this learner or not,
+     * and it lives in the user's database, not in the content one.
+     */
+    private val srsDao: SrsCardDao,
 ) {
 
     val isAvailable: Boolean get() = provider.database != null
@@ -567,6 +596,111 @@ class ContentRepository @Inject constructor(
         }
     } ?: emptyList()
 
+    /**
+     * The example sentences of a word, best first, at most four.
+     *
+     * The examples are what let a learner meet a word they have never
+     * seen: the sentence is built of words they know, and the new word
+     * sits in the middle of it.
+     *
+     * The rows are read in the order the `ord` column gives them and
+     * the first four are kept -- a learner who is guessing does not
+     * read five sentences. The `ord` column is the rank the pipeline
+     * wrote, so the first rows are the ones it judged the best.
+     *
+     * The table `word_example` is built by the pipeline. When it is
+     * not in the content database yet, the query fails and the learner
+     * is shown no example at all -- the screen works without it.
+     *
+     * @param hanzi the word the sentences are examples OF
+     */
+    fun examplesFor(hanzi: String): List<ExampleEntry> {
+        if (hanzi.isBlank()) return emptyList()
+        return try {
+            read { db ->
+                db.rawQuery(
+                    """
+                    SELECT hanzi, sentence, pinyin, translation_bg
+                    FROM word_example
+                    WHERE hanzi = ?
+                    ORDER BY ord
+                    LIMIT 4
+                    """.trimIndent(),
+                    arrayOf(hanzi),
+                ).use { c ->
+                    buildList {
+                        while (c.moveToNext()) {
+                            add(
+                                ExampleEntry(
+                                    hanzi = c.str("hanzi"),
+                                    sentence = c.str("sentence"),
+                                    pinyin = c.str("pinyin"),
+                                    translationBg = c.str("translation_bg"),
+                                ),
+                            )
+                        }
+                    }
+                }
+            } ?: emptyList()
+        } catch (e: android.database.sqlite.SQLiteException) {
+            // The table is not in the content database yet. There is
+            // nothing to show, and nothing is broken.
+            emptyList()
+        }
+    }
+
+    /**
+     * The characters of the words the learner has already met.
+     *
+     * It is the measure of what the learner can read: a sentence made
+     * of these characters is a sentence they can work out, and a
+     * sentence with other characters in it is not.
+     *
+     * The words are read in batches -- one query for a few hundred
+     * words -- instead of one query per word: a learner with a few
+     * hundred cards in the queue would otherwise spend a second of the
+     * app's time waiting for the phone.
+     *
+     * The characters come from the dictionary, not from the card ids:
+     * the id of a card is the hanzi of the word, and the hanzi of a
+     * word is made of characters. An id the dictionary does not know
+     * contributes its own characters, because the learner met them
+     * either way.
+     */
+    suspend fun knownCharacters(): Set<String> {
+        val learned = srsDao.allLearnedItemIds()
+        if (learned.isEmpty()) return emptySet()
+
+        val characters = mutableSetOf<String>()
+        learned.distinct().chunked(CHARACTER_BATCH).forEach { batch ->
+            val placeholders = batch.joinToString(",") { "?" }
+            // The words of the dictionary that the learner met, in one
+            // query for the whole batch.
+            val words: Set<String> = read { db ->
+                db.rawQuery(
+                    "SELECT hanzi FROM words WHERE hanzi IN ($placeholders)",
+                    batch.toTypedArray(),
+                ).use { c -> c.collectStrings("hanzi").toSet() }
+            } ?: emptySet()
+            // The word of the dictionary, or the id itself when the
+            // word has left the dictionary: the learner met its
+            // characters either way.
+            (words + (batch.toSet() - words)).forEach { word ->
+                word.forEach { ch -> characters.add(ch.toString()) }
+            }
+        }
+        return characters
+    }
+
+    private companion object {
+        /**
+         * How many words are read in one query.
+         *
+         * SQLite takes 999 bound arguments by default, and the query
+         * is faster with a few hundred rows than with a few thousand.
+         */
+        const val CHARACTER_BATCH = 400
+    }
 }
 
 private fun Cursor.toWordEntry() = WordEntry(
