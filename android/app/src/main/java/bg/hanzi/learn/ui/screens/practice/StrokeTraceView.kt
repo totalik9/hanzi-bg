@@ -18,8 +18,19 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import bg.hanzi.learn.data.content.CharacterEntry
+
+/**
+ * The name the trace canvas is known by.
+ *
+ * The canvas draws a character and has no text of its own, so the
+ * only way to point at it -- from a test, or from a tool that plays
+ * the part of a learner -- is by name.
+ */
+const val TRACE_CANVAS_DESCRIPTION = "канавка за писане"
 
 /**
  * The learner traces a character stroke by stroke.
@@ -73,14 +84,16 @@ fun StrokeTraceView(
     val total = medians.size
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f),
+        modifier = modifier.aspectRatio(1f),
     ) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
+                // The canvas is found by this name: it is the one
+                // thing on the card that has no text, and a learner
+                // (or a test) needs a way to point at it.
+                .semantics { contentDescription = TRACE_CANVAS_DESCRIPTION }
                 .pointerInput(character.medians) {
                     detectDragGestures(
                         onDragStart = { start ->

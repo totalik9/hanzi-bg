@@ -1,20 +1,23 @@
 package bg.hanzi.learn.ui.screens.practice
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -28,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -52,6 +57,26 @@ fun PracticeScreen(
     viewModel: PracticeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // The mode whose help is open. The help is the long text of one
+    // mode; only one is open at a time, so the list stays readable.
+    var helpFor by remember { mutableStateOf<PracticeMode?>(null) }
+
+    // The screen is one long column: the list of the modes and the
+    // exercise under it. When the learner picks a mode, the exercise
+    // has to come INTO VIEW -- otherwise the list of five modes stands
+    // between the choice and the thing that was chosen, and the
+    // buttons of the exercise ("Провери", "Следваща дума") are below
+    // the fold.
+    val scroll = rememberScrollState()
+    var exerciseTop by remember { mutableStateOf(0) }
+    var chosen by remember { mutableStateOf<PracticeMode?>(null) }
+    LaunchedEffect(chosen) {
+        val mode = chosen ?: return@LaunchedEffect
+        // The list of the modes is taller than the space left, so the
+        // exercise sits further down. Scroll to it.
+        scroll.animateScrollTo(exerciseTop.coerceAtLeast(0))
+        chosen = null
+    }
 
     // The level arrives with the navigation. It is applied here rather
     // than in the ViewModel's init block so that the pool is loaded for
@@ -60,7 +85,24 @@ fun PracticeScreen(
         viewModel.setLevel(level)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            // ONE scroll for the whole screen.
+            //
+            // The list of the modes and the exercise were two
+            // separate scrolling regions: the list had its own, and
+            // the exercise had another one. On a small phone the
+            // buttons of the exercise ("Провери", "Следваща дума")
+            // were below the fold of the exercise region and could
+            // not be reached, and the list pushed them further down.
+            //
+            // Now the screen is one long column that scrolls as one:
+            // the learner scrolls down past the modes to the
+            // exercise, and every button is reachable.
+            .verticalScroll(scroll)
+            .padding(bottom = 24.dp),
+    ) {
         if (state.levelLabel.isNotBlank()) {
             Text(
                 text = stringResource(R.string.practice_level, state.levelLabel),
@@ -69,37 +111,115 @@ fun PracticeScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
-        ModeSelector(current = state.mode, onSelect = viewModel::setMode)
+        ModeSelector(
+            current = state.mode,
+            helpFor = helpFor,
+            onSelect = { mode ->
+                viewModel.setMode(mode)
+                // Tapping the mode that is already open closes its
+                // help, so the button is a toggle and not a dead end.
+                helpFor = if (helpFor == mode) null else mode
+                // The exercise scrolls into view.
+                chosen = mode
+            },
+            onToggleHelp = { mode ->
+                helpFor = if (helpFor == mode) null else mode
+            },
+        )
 
-        when (state.mode) {
-            PracticeMode.PRODUCTION -> ProductionPanel(state, viewModel)
-            PracticeMode.LISTENING -> ListeningPanel(state, viewModel)
-            PracticeMode.WORD_ORDER -> WordOrderPanel(state, viewModel)
-            PracticeMode.WRITING -> WritingPanel(state, viewModel)
-            PracticeMode.GRAMMAR_QUIZ -> GrammarQuizPanel(state, viewModel)
+        // Where the exercise starts, so the screen can scroll to it.
+        Box(
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                exerciseTop = coordinates.positionInParent().y.toInt()
+            },
+        ) {
+            when (state.mode) {
+                PracticeMode.PRODUCTION -> ProductionPanel(state, viewModel)
+                PracticeMode.LISTENING -> ListeningPanel(state, viewModel)
+                PracticeMode.WORD_ORDER -> WordOrderPanel(state, viewModel)
+                PracticeMode.WRITING -> WritingPanel(state, viewModel)
+                PracticeMode.GRAMMAR_QUIZ -> GrammarQuizPanel(state, viewModel)
+            }
         }
     }
 }
 
+/**
+ * The list of the five modes.
+ *
+ * It was a row of chips, and only two or three of the five fit on the
+ * screen: the learner had to scroll sideways to find a mode, and a
+ * chip said nothing about what the mode did. The list is vertical now,
+ * every row says what the mode is for, and the longer help opens
+ * under the row that was tapped.
+ *
+ * The rows are compact so that ALL FIVE fit on a small phone without
+ * scrolling: the list is the menu, and a menu the learner has to
+ * scroll to find the last item of is a menu with a hidden item.
+ */
 @Composable
-private fun ModeSelector(current: PracticeMode, onSelect: (PracticeMode) -> Unit) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        // The tag lets the instrumented tests scroll the row to a chip
-        // that is off the screen: there are five of them and only two
-        // or three fit.
-        modifier = Modifier.testTag("mode_selector"),
+private fun ModeSelector(
+    current: PracticeMode,
+    helpFor: PracticeMode?,
+    onSelect: (PracticeMode) -> Unit,
+    onToggleHelp: (PracticeMode) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("mode_selector"),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        items(PracticeMode.entries.toList()) { mode ->
-            FilterChip(
-                selected = mode == current,
-                onClick = { onSelect(mode) },
-                label = { Text(mode.label) },
-                // The tag lets the instrumented tests pick this chip out
-                // of the screen.
-                modifier = Modifier.testTag("mode_${mode.name}"),
-            )
+        PracticeMode.entries.forEach { mode ->
+            val open = helpFor == mode
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (mode == current) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelect(mode) }
+                    .testTag("mode_${mode.name}"),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = mode.label,
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = mode.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(
+                        onClick = { onToggleHelp(mode) },
+                        modifier = Modifier.testTag("mode_help_${mode.name}"),
+                    ) {
+                        Text(stringResource(R.string.practice_mode_help_button))
+                    }
+                }
+                if (open) {
+                    Text(
+                        text = mode.help,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(
+                            start = 12.dp,
+                            end = 12.dp,
+                            bottom = 8.dp,
+                        ),
+                    )
+                }
+            }
         }
     }
 }
@@ -114,7 +234,7 @@ private fun ProductionPanel(state: PracticeUiState, viewModel: PracticeViewModel
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -148,6 +268,30 @@ private fun ProductionPanel(state: PracticeUiState, viewModel: PracticeViewModel
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+
+        // The button that ends the word is HERE, under the card with
+        // the word -- not at the bottom of the panel, under the field
+        // and the candidates. There the learner had to scroll past
+        // everything to find it, and on a small phone it was not
+        // reachable at all.
+        if (exercise.answered) {
+            Text(
+                text = if (exercise.correct) "Правилно!" else "Неправилно. Отговорът е ${exercise.word.hanzi}",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (exercise.correct) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            Text(
+                text = "Правилен отговор: ${exercise.word.hanzi} (${exercise.word.pinyin})",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        TextButton(onClick = viewModel::nextProduction) {
+            Text("Следваща дума")
         }
 
         OutlinedTextField(
@@ -185,25 +329,6 @@ private fun ProductionPanel(state: PracticeUiState, viewModel: PracticeViewModel
             }
         }
 
-        if (exercise.answered) {
-            Text(
-                text = if (exercise.correct) "Правилно!" else "Неправилно. Отговорът е ${exercise.word.hanzi}",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (exercise.correct) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-            )
-            Text(
-                text = "Правилен отговор: ${exercise.word.hanzi} (${exercise.word.pinyin})",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-
-        TextButton(onClick = viewModel::nextProduction) {
-            Text("Следваща дума")
-        }
         Text(
             text = "Правилни: ${state.correctCount} / ${state.totalCount}",
             style = MaterialTheme.typography.labelSmall,
@@ -235,7 +360,7 @@ private fun ListeningPanel(state: PracticeUiState, viewModel: PracticeViewModel)
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -258,6 +383,33 @@ private fun ListeningPanel(state: PracticeUiState, viewModel: PracticeViewModel)
                     Text("🔊 " + stringResource(R.string.card_play_audio))
                 }
             }
+        }
+
+        // The verdict and the button that ends the word are HERE, under
+        // the card with the speaker -- not at the bottom of the four
+        // options.
+        //
+        // They used to be at the bottom, so after the learner answered,
+        // the button was below the fold on a small phone and the
+        // exercise could not be left. The button is always here now,
+        // so the learner can also skip a word they cannot place.
+        if (exercise.answered) {
+            Text(
+                text = if (exercise.correct) {
+                    "Правилно!"
+                } else {
+                    "Правилният отговор е ${exercise.word.hanzi} (${exercise.word.pinyin})"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = if (exercise.correct) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+        }
+        TextButton(onClick = viewModel::nextListening) {
+            Text("Следваща дума")
         }
 
         exercise.options.forEach { option ->
@@ -306,24 +458,6 @@ private fun ListeningPanel(state: PracticeUiState, viewModel: PracticeViewModel)
             }
         }
 
-        if (exercise.answered) {
-            Text(
-                text = if (exercise.correct) {
-                    "Правилно!"
-                } else {
-                    "Правилният отговор е ${exercise.word.hanzi} (${exercise.word.pinyin})"
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = if (exercise.correct) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-            )
-            TextButton(onClick = viewModel::nextListening) {
-                Text("Следваща дума")
-            }
-        }
     }
 }
 
@@ -337,7 +471,7 @@ private fun GrammarQuizPanel(state: PracticeUiState, viewModel: PracticeViewMode
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -373,6 +507,23 @@ private fun GrammarQuizPanel(state: PracticeUiState, viewModel: PracticeViewMode
             }
         }
 
+        // As in the production panel: the verdict and the button that
+        // ends the question are here, not at the bottom of the options.
+        if (exercise.answered) {
+            Text(
+                text = if (exercise.correct) "Правилно!" else "Правилният отговор е: ${exercise.correctAnswer}",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (exercise.correct) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            TextButton(onClick = viewModel::nextGrammarQuiz) {
+                Text("Следващ въпрос")
+            }
+        }
+
         Text("Какво означава?", style = MaterialTheme.typography.labelMedium)
 
         exercise.options.forEach { option ->
@@ -404,20 +555,6 @@ private fun GrammarQuizPanel(state: PracticeUiState, viewModel: PracticeViewMode
             }
         }
 
-        if (exercise.answered) {
-            Text(
-                text = if (exercise.correct) "Правилно!" else "Правилният отговор е: ${exercise.correctAnswer}",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (exercise.correct) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-            )
-            TextButton(onClick = viewModel::nextGrammarQuiz) {
-                Text("Следващ въпрос")
-            }
-        }
     }
 }
 
@@ -431,7 +568,7 @@ private fun WordOrderPanel(state: PracticeUiState, viewModel: PracticeViewModel)
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -556,89 +693,84 @@ private fun WritingPanel(state: PracticeUiState, viewModel: PracticeViewModel) {
     var traced by remember(exercise.word.hanzi) { mutableStateOf(0) }
     var tracedTotal by remember(exercise.word.hanzi) { mutableStateOf(0) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+    // A plain Column, not a LazyColumn: the screen scrolls as one and
+    // a lazy list inside a scrolling column cannot be measured.
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            Card {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Напиши знака:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = exercise.word.glossBg.ifBlank { exercise.word.glossEn },
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                    Text(
-                        text = "${exercise.word.pinyin} · ${exercise.word.hskLevel} ниво",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+        Card {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    text = "Напиши знака:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = exercise.word.glossBg.ifBlank { exercise.word.glossEn },
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Text(
+                    text = "${exercise.word.pinyin} · ${exercise.word.hskLevel} ниво",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
         if (exercise.character != null) {
-            item {
-                Column {
-                    Text(
-                        text = "Ред на щрихите (${exercise.character.strokes}):",
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                    StrokeOrderView(
-                        character = exercise.character,
-                        strokes = exercise.character.strokes,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+            Column {
+                Text(
+                    text = "Ред на щрихите (${exercise.character.strokes}):",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                StrokeOrderView(
+                    character = exercise.character,
+                    strokes = exercise.character.strokes,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
-            item {
-                Column {
-                    Text(
-                        text = "Проследи знака с пръст:",
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                    StrokeTraceView(
-                        character = exercise.character,
-                        modifier = Modifier.fillMaxWidth(),
-                        onProgress = { drawn, total ->
-                            traced = drawn
-                            tracedTotal = total
-                        },
-                    )
-                    Text(
-                        text = if (tracedTotal > 0) {
-                            "Правилни щрихи: $traced / $tracedTotal"
-                        } else {
-                            "Пусни пръст по контура на знака."
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Column {
+                Text(
+                    text = "Проследи знака с пръст:",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                StrokeTraceView(
+                    character = exercise.character,
+                    modifier = Modifier.fillMaxWidth(),
+                    onProgress = { drawn, total ->
+                        traced = drawn
+                        tracedTotal = total
+                    },
+                )
+                Text(
+                    text = if (tracedTotal > 0) {
+                        "Правилни щрихи: $traced / $tracedTotal"
+                    } else {
+                        "Пусни пръст по контура на знака."
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Проследи знака с пръст. Ще се броят само правите щрихи.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = viewModel::nextWriting) {
-                    Text("Следващ знак")
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Проследи знака с пръст. Ще се броят само правите щрихи.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = viewModel::nextWriting) {
+                Text("Следващ знак")
             }
         }
     }

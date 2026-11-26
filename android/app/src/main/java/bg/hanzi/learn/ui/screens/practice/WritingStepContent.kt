@@ -8,8 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -88,29 +87,38 @@ fun WritingStepContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.lesson_step_write),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = hanzi,
-            style = LangType.scaled(
-                MaterialTheme.typography.displayMedium,
-                LangType.Kind.TARGET,
-            ),
-            textAlign = TextAlign.Center,
-        )
+        // The header is one line: the step, the character and its
+        // meaning. It used to be four blocks stacked on top of each
+        // other, and with the two squares of the card below it the
+        // whole card did not fit on a phone -- the learner had to
+        // scroll to find the button that ends the character.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.lesson_step_write),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = hanzi,
+                style = LangType.target(
+                    MaterialTheme.typography.headlineMedium,
+                    hanzi.length,
+                ),
+                textAlign = TextAlign.Center,
+            )
+        }
         if (pinyin.isNotBlank()) {
             Text(
                 text = pinyin,
                 style = LangType.scaled(
-                    MaterialTheme.typography.headlineSmall,
+                    MaterialTheme.typography.bodyLarge,
                     LangType.Kind.TRANSLITERATION,
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -121,9 +129,8 @@ fun WritingStepContent(
         if (gloss.isNotBlank()) {
             Text(
                 text = gloss,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp),
             )
         }
 
@@ -132,38 +139,61 @@ fun WritingStepContent(
             // trace what the app cannot draw, so the step is skipped
             // rather than shown as an empty canvas. Nothing was
             // written, so nothing is scored.
+            Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { onDone(0) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.lesson_continue))
             }
             return@Column
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = stringResource(R.string.lesson_stroke_order, current.strokes),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                StrokeOrderView(
-                    character = current,
-                    strokes = current.strokes,
+            Column(modifier = Modifier.padding(12.dp)) {
+                // The stroke order and the trace canvas side by side.
+                //
+                // They were one on top of the other, each a square
+                // that filled the width, so the card was two screens
+                // tall. Beside each other they are one screen, and
+                // the learner sees the order and the outline at the
+                // same time -- which is the point of the card.
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.lesson_trace_hint),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                StrokeTraceView(
-                    character = current,
-                    modifier = Modifier.fillMaxWidth(),
-                    clearToken = clearToken,
-                    onProgress = { drawn, total ->
-                        tracedByChar[charIndex] = drawn to total
-                    },
-                )
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lesson_stroke_order, current.strokes),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        StrokeOrderView(
+                            character = current,
+                            strokes = current.strokes,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lesson_trace_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        StrokeTraceView(
+                            character = current,
+                            modifier = Modifier.fillMaxWidth(),
+                            clearToken = clearToken,
+                            onProgress = { drawn, total ->
+                                tracedByChar[charIndex] = drawn to total
+                            },
+                        )
+                    }
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -190,7 +220,7 @@ fun WritingStepContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

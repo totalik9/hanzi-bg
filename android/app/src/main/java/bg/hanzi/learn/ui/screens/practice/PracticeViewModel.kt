@@ -23,13 +23,56 @@ import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 import kotlin.random.Random
 
-/** The five exercises the A2 simulation says are missing. */
-enum class PracticeMode(val label: String) {
-    PRODUCTION("Производство"),
-    LISTENING("Слушане"),
-    WORD_ORDER("Подреждане"),
-    WRITING("Писане"),
-    GRAMMAR_QUIZ("Граматика"),
+/**
+ * The five exercises the A2 simulation says are missing.
+ *
+ * Each mode carries a DESCRIPTION and a HELP text, in Bulgarian,
+ * because the learner meets the modes before they meet the words: a
+ * row that says only "Производство" asks the learner to guess what
+ * the mode is for.
+ *
+ * The description is one line and is always visible. The help is
+ * longer and is shown when the learner asks for it, so that the list
+ * of the five modes still fits on a phone screen.
+ */
+enum class PracticeMode(
+    val label: String,
+    val description: String,
+    val help: String,
+) {
+    PRODUCTION(
+        "Производство",
+        "Напиши думата на китайски и намери я сред предложените.",
+        "Приложението ти дава смисъла на една дума. Ти пишеш как се\n" +
+            "произнася с латински букви (пиньин) и натискаш бутона. Ако\n" +
+            "не си сигурен, можеш да натиснеш предложения знак от долу.",
+    ),
+    LISTENING(
+        "Слушане",
+        "Чуй думата и избери правилния знак.",
+        "Натисни бутона с говорителя и изслушай думата. После\n" +
+            "избери знака, който чу, и натисни „Това е думата“ под него.",
+    ),
+    WORD_ORDER(
+        "Подреждане",
+        "Подреди думите в правилния ред и получи изречение.",
+        "От долу има отделни думи. Натисни ги в реда, в който\n" +
+            "искаш да стоят, и натисни „Провери“. Ако сбъркаш, можеш\n" +
+            "да натиснеш думата отгоре, за да я махнеш.",
+    ),
+    WRITING(
+        "Писане",
+        "Проследи знака с пръст, щрих по щрих.",
+        "Сивият контур е знакът. Пусни пръст по него — щрих по щрих,\n" +
+            "в реда, в който се пише. Бутонът „Изчисти“ изтрива\n" +
+            "всичко, ако сбъркаш.",
+    ),
+    GRAMMAR_QUIZ(
+        "Граматика",
+        "Прочети изречението и разбери какво означава.",
+        "Тук са примери от граматичните правила на китайския.\n" +
+            "Избери правилния превод на изречението.",
+    ),
 }
 
 /**

@@ -144,6 +144,8 @@
 
     <!-- Practice -->
     <string name="practice_level">Ниво: %1$s</string>
+    <!-- The button that opens the longer help of a practice mode. -->
+    <string name="practice_mode_help_button">Помощ</string>
     <!-- The listening mode has nothing to show. The two cases are
          different: one is a content gap (this level has no audio), the
          other is the end of the session. -->

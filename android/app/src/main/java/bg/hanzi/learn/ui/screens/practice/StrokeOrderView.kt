@@ -54,9 +54,7 @@ fun StrokeOrderView(
     val pending = MaterialTheme.colorScheme.outlineVariant
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f),
+        modifier = modifier.aspectRatio(1f),
     ) {
         Canvas(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
             val scale = size.width / 1024f
