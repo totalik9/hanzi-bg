@@ -55,6 +55,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pinyin_utils import DATA, RAW, is_hanzi, sanitize_speech, strip_tones  # noqa: E402
+from word_examples import build_word_examples, print_summary, write_stats  # noqa: E402
 
 VOCAB_JSON = os.path.join(DATA, "vocab_hsk.json")
 GRAMMAR_JSON = os.path.join(DATA, "grammar.json")
@@ -193,6 +194,21 @@ CREATE TABLE curriculum_words (
     ord        INTEGER NOT NULL,
     hanzi      TEXT NOT NULL,
     PRIMARY KEY (lesson_key, ord)
+);
+
+-- The example sentences of the words: one row per (word, candidate).
+-- The ord is the rank the pipeline chose, so ord 0 is the best example
+-- of the word and the one the app shows first. The sentences are
+-- folded to the simplified script, because the app teaches simplified
+-- only and a traditional example next to a simplified word would
+-- contradict the vocabulary.
+CREATE TABLE word_example (
+    hanzi          TEXT NOT NULL,
+    ord            INTEGER NOT NULL,
+    sentence       TEXT NOT NULL,
+    pinyin         TEXT NOT NULL DEFAULT '',
+    translation_bg TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (hanzi, ord)
 );
 
 -- The teaching cards of a "teach" lesson, as JSON.
@@ -808,6 +824,10 @@ def build_manifest(conn: sqlite3.Connection) -> dict[str, str]:
         "sentence_count": str(count("SELECT COUNT(*) FROM sentences")),
         "sentences_with_bg": str(count(
             "SELECT COUNT(*) FROM sentences WHERE translation_bg != ''")),
+        "words_with_example": str(count(
+            "SELECT COUNT(DISTINCT hanzi) FROM word_example")),
+        "word_example_count": str(count(
+            "SELECT COUNT(*) FROM word_example")),
         "lesson_count": str(count("SELECT COUNT(*) FROM lessons")),
         "character_count": str(count("SELECT COUNT(*) FROM characters")),
         "hsk_levels": ",".join(
@@ -958,6 +978,26 @@ def check_content_quality(conn: sqlite3.Connection) -> list[str]:
             + ") - a level that is on the path has to be on it whole"
         )
 
+    # The example sentences. A dictionary without examples still builds,
+    # and the learner finds out on the word screen that the app has
+    # nothing to show but the gloss.
+    examples = count("SELECT COUNT(DISTINCT hanzi) FROM word_example")
+    if examples < 4000:
+        problems.append(
+            f"word examples: {examples:,} words have an example "
+            f"(expected 6,000+) - the corpus or the fold lost a step"
+        )
+
+    # Every example has to name the word it is an example of, or the
+    # screen shows one sentence under two different words.
+    mismatched = conn.execute(
+        "SELECT COUNT(*) FROM word_example WHERE instr(sentence, hanzi) = 0"
+    ).fetchone()[0]
+    if mismatched:
+        problems.append(
+            f"word examples: {mismatched} rows do not contain their word"
+        )
+
     return problems
 
 
@@ -1087,6 +1127,11 @@ def main() -> int:
     n_sentences = build_sentences(conn, audio)
     print(f"  sentences: {n_sentences:,}")
 
+    print("building the word examples ...")
+    example_stats = build_word_examples(conn)
+    print(f"  words with an example: "
+          f"{example_stats['words_with_candidate']:,} of {example_stats['words_total']:,}")
+
     print("building characters (stroke order) ...")
     n_chars = build_characters(conn)
     print(f"  characters with stroke order: {n_chars:,}")
@@ -1134,6 +1179,13 @@ def main() -> int:
     for key in ("word_count", "words_with_bg_gloss", "grammar_count",
                 "sentence_count", "sentences_with_bg"):
         print(f"   {key} = {values[key]}")
+
+    # The measured numbers of the word examples, in the run's summary
+    # and in a file beside the database, so a later run can be compared
+    # with this one.
+    stats_path = write_stats(example_stats)
+    print_summary(example_stats)
+    print(f"  stats written to {stats_path}")
     return 0
 
 

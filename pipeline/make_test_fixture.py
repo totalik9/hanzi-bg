@@ -127,6 +127,26 @@ CURRICULUM_WORDS = [
     ("fixture-2", 0, "书"),
 ]
 
+# The example sentences of the words: one row per (word, candidate),
+# the ord being the rank. The real database holds up to four per word;
+# the fixture holds two, which is enough for a screen that shows the
+# first example and a "more" button.
+WORD_EXAMPLES = [
+    # hanzi, ord, sentence, pinyin, translation_bg
+    ("好", 0, "好吧。", "Hǎo ba.", "Добре."),
+    ("好", 1, "我好胖哦。", "Wǒ hǎo pàng ó.", "Леле, че съм дебел."),
+    ("你好", 0, "你好吗？", "Nǐ hǎo ma?", "Как си?"),
+    ("你好", 1, "你好，我叫 Nancy。", "Nǐ hǎo, wǒ jiào Nancy.", "Здравейте, аз съм Нанси."),
+    ("水", 0, "喝水。", "Hē shuǐ.", "Пий вода."),
+    ("水", 1, "没有水。", "Méi yǒu shuǐ.", "Няма вода."),
+    ("人", 0, "我是人。", "Wǒ shì rén.", "Аз съм човек."),
+    ("人", 1, "人很多。", "Rén hěn duō.", "Хората са много."),
+    ("吃", 0, "她吃。", "Tā chī.", "Тя яде."),
+    ("吃", 1, "吃饭。", "Chī fàn.", "Яде."),
+    ("书", 0, "我看这本书。", "Wǒ kàn zhè běn shū.", "Чета тази книга."),
+    ("书", 1, "这是我的书。", "Zhè shì wǒ de shū.", "Това е моята книга."),
+]
+
 
 def main() -> int:
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -192,6 +212,12 @@ def main() -> int:
     conn.executemany(
         "INSERT INTO curriculum_words (lesson_key, ord, hanzi) VALUES (?,?,?)",
         CURRICULUM_WORDS,
+    )
+
+    conn.executemany(
+        "INSERT INTO word_example (hanzi, ord, sentence, pinyin, "
+        "translation_bg) VALUES (?,?,?,?,?)",
+        WORD_EXAMPLES,
     )
 
     # The IME index: one row per syllable of every word.
