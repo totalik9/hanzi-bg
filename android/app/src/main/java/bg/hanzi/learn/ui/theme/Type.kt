@@ -38,6 +38,36 @@ object LangType {
             lineHeight = (style.lineHeight.value * factor).sp,
         )
     }
+
+    /**
+     * A style for a TARGET word that fits on ONE line.
+     *
+     * A CJK glyph is about one em wide, so a word of n characters
+     * needs n * size to fit the card. The full TARGET_SCALE is right
+     * for one character and for two, but a three-character word at
+     * that size is 308 sp wide -- wider than a 320 dp screen -- so it
+     * wraps, and the wrapped word pushes the button of the card below
+     * the bottom of the screen. The learner then cannot leave the
+     * card at all: the lesson stops on the word.
+     *
+     * The sizes below are measured against the 272 dp of usable width
+     * on a 320 dp screen (320 minus 24 dp of padding on each side).
+     *
+     * @param style the base style
+     * @param characters how many characters the word has
+     */
+    fun target(style: TextStyle, characters: Int): TextStyle {
+        val factor = when {
+            characters <= 2 -> TARGET_SCALE
+            characters == 3 -> 1.5f
+            characters == 4 -> 1.15f
+            else -> 0.9f
+        }
+        return style.copy(
+            fontSize = (style.fontSize.value * factor).sp,
+            lineHeight = (style.lineHeight.value * factor).sp,
+        )
+    }
 }
 
 /**

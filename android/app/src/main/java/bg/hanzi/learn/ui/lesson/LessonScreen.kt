@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bg.hanzi.learn.R
+import bg.hanzi.learn.data.content.ExampleEntry
 import bg.hanzi.learn.ui.theme.LangType
 
 /**
@@ -130,6 +131,7 @@ fun LessonScreen(
                 answered = state.answered,
                 correct = state.correct,
                 chosenIndex = state.chosenIndex,
+                example = card.example,
                 onAnswer = viewModel::answer,
                 onNext = viewModel::next,
             )
@@ -204,54 +206,81 @@ private fun ListenStep(
     onPlay: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = "1. Чуй",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = hanzi,
-            style = LangType.scaled(
-                MaterialTheme.typography.displayLarge,
-                LangType.Kind.TARGET,
-            ),
-            textAlign = TextAlign.Center,
-        )
-        if (pinyin.isNotBlank()) {
-            Text(
-                text = pinyin,
-                style = LangType.scaled(
-                    MaterialTheme.typography.headlineSmall,
-                    LangType.Kind.TRANSLITERATION,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // The content scrolls; the button does not.
+        //
+        // The character was drawn at the full target size, so a word
+        // of three characters was 308 sp wide on a 320 dp screen: it
+        // wrapped to two lines, and the button that ends the card
+        // fell below the bottom of the screen. The learner could not
+        // leave the card -- the lesson stopped on the word -- and
+        // nothing in the code said so.
+        //
+        // The character now gets a size that fits the word on one
+        // line, and the button is outside the scrolling area, so it is
+        // on the screen whatever the word is.
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "1. Чуй",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = hanzi,
+                    style = LangType.target(
+                        MaterialTheme.typography.displayLarge,
+                        hanzi.length,
+                    ),
+                    textAlign = TextAlign.Center,
+                )
+                if (pinyin.isNotBlank()) {
+                    Text(
+                        text = pinyin,
+                        style = LangType.scaled(
+                            MaterialTheme.typography.headlineSmall,
+                            LangType.Kind.TRANSLITERATION,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                // The word behind the character. The first card of a
+                // lesson is where the learner finds out what the symbol
+                // means; without it the card is a symbol and a sound
+                // with nothing to remember.
+                if (gloss.isNotBlank()) {
+                    Text(
+                        text = gloss,
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+                FilledTonalButton(onClick = onPlay, enabled = hasAudio) {
+                    Text("🔊 " + stringResource(R.string.lesson_listen))
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
-        // The word behind the character. The first card of a lesson is
-        // where the learner finds out what the symbol means; without it
-        // the card is a symbol and a sound with nothing to remember.
-        if (gloss.isNotBlank()) {
-            Text(
-                text = gloss,
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-        Spacer(modifier = Modifier.height(32.dp))
-        FilledTonalButton(onClick = onPlay, enabled = hasAudio) {
-            Text("🔊 " + stringResource(R.string.lesson_listen))
-        }
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onNext,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 16.dp),
+        ) {
             // The button goes to the next STEP of the same word -- the
             // question about it -- so it does not move to the next
             // word. The label used to say "Следваща дума".
@@ -270,6 +299,7 @@ private fun RecogniseStep(
     answered: Boolean,
     correct: Boolean,
     chosenIndex: Int,
+    example: ExampleEntry? = null,
     onAnswer: (Int) -> Unit,
     onNext: () -> Unit,
 ) {
@@ -291,9 +321,9 @@ private fun RecogniseStep(
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = hanzi,
-                style = LangType.scaled(
+                style = LangType.target(
                     MaterialTheme.typography.displayMedium,
-                    LangType.Kind.TARGET,
+                    hanzi.length,
                 ),
                 textAlign = TextAlign.Center,
             )
@@ -337,6 +367,22 @@ private fun RecogniseStep(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            // The example sentence, under the question.
+            //
+            // The sentence is made of words the learner knows, and the
+            // word they are being asked about sits in the middle of it.
+            // That is the point of it: the learner works the word out of
+            // the sentence, the way a person does.
+            //
+            // The TRANSLATION is held back until the learner has
+            // answered. The sentence contains the word, so its
+            // translation contains the meaning, and a card that shows
+            // its own answer is not a question.
+            if (example != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                ExampleSentence(example = example, showTranslation = answered)
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -375,6 +421,64 @@ private fun RecogniseStep(
                     Text(stringResource(R.string.lesson_continue))
                 }
             }
+        }
+    }
+}
+
+/**
+ * An example sentence, with its Bulgarian translation below it.
+ *
+ * The sentence is the context: the learner reads it and finds the word
+ * they know the meaning of. The translation is under it, so the eye
+ * goes from the Chinese to the Bulgarian without the two being mixed
+ * up.
+ *
+ * @param example the sentence and its translation
+ * @param showTranslation whether the translation is shown yet. It is
+ *   not, while the card is still a question.
+ */
+@Composable
+private fun ExampleSentence(
+    example: ExampleEntry,
+    showTranslation: Boolean,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.lesson_example_label),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = example.sentence,
+            style = LangType.target(
+                MaterialTheme.typography.headlineMedium,
+                example.sentence.length,
+            ),
+            textAlign = TextAlign.Center,
+        )
+        if (example.pinyin.isNotBlank()) {
+            Text(
+                text = example.pinyin,
+                style = LangType.scaled(
+                    MaterialTheme.typography.bodyMedium,
+                    LangType.Kind.TRANSLITERATION,
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+        if (showTranslation && example.translationBg.isNotBlank()) {
+            Text(
+                text = example.translationBg,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
     }
 }
@@ -427,67 +531,86 @@ private fun SayStep(
     onPlay: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = "3. Произнеси",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = hanzi,
-            style = LangType.scaled(
-                MaterialTheme.typography.displayLarge,
-                LangType.Kind.TARGET,
-            ),
-            textAlign = TextAlign.Center,
-        )
-        if (pinyin.isNotBlank()) {
-            Text(
-                text = pinyin,
-                style = LangType.scaled(
-                    MaterialTheme.typography.headlineSmall,
-                    LangType.Kind.TRANSLITERATION,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (gloss.isNotBlank()) {
-            Text(
-                text = gloss,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            // The machine translation can be wrong, and a learner who
-            // does not know that will trust it. The note was shown in
-            // the dictionary and in the review, but not in the lesson.
-            if (hasMachineGloss) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // As on the LISTEN card: the content scrolls, the button does
+        // not, and the character gets a size that fits the word on
+        // one line. A three-character word at the full target size
+        // pushed this button off the bottom of a 320 dp screen.
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
-                    text = stringResource(R.string.gloss_machine_note),
-                    style = MaterialTheme.typography.labelSmall,
+                    text = "3. Произнеси",
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = hanzi,
+                    style = LangType.target(
+                        MaterialTheme.typography.displayLarge,
+                        hanzi.length,
+                    ),
+                    textAlign = TextAlign.Center,
+                )
+                if (pinyin.isNotBlank()) {
+                    Text(
+                        text = pinyin,
+                        style = LangType.scaled(
+                            MaterialTheme.typography.headlineSmall,
+                            LangType.Kind.TRANSLITERATION,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (gloss.isNotBlank()) {
+                    Text(
+                        text = gloss,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    // The machine translation can be wrong, and a learner
+                    // who does not know that will trust it. The note was
+                    // shown in the dictionary and in the review, but not
+                    // in the lesson.
+                    if (hasMachineGloss) {
+                        Text(
+                            text = stringResource(R.string.gloss_machine_note),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+                FilledTonalButton(onClick = onPlay, enabled = hasAudio) {
+                    Text("🔊 " + stringResource(R.string.lesson_listen))
+                }
+                Text(
+                    text = stringResource(R.string.lesson_say_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
-        FilledTonalButton(onClick = onPlay, enabled = hasAudio) {
-            Text("🔊 " + stringResource(R.string.lesson_listen))
-        }
-        Text(
-            text = stringResource(R.string.lesson_say_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 12.dp),
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onNext,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 16.dp),
+        ) {
             // The same as on the LISTEN card: the next step of the
             // same word, not the next word.
             Text(stringResource(R.string.lesson_continue))
@@ -555,7 +678,29 @@ private fun LessonResult(
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(16.dp))
-        if (state.answeredCount == 0) {
+        if (state.taughtOnly && state.answeredCount == 0 && !state.isReadingLesson) {
+            // A vocabulary lesson that only TAUGHT. It has no question
+            // in it, so there is no score to show -- but it is not a
+            // reading lesson either, and "Прочетено до края" (read to
+            // the end) is wrong for it: the learner was taught ten new
+            // words, not a text.
+            //
+            // The learner is told what happens next, because a lesson
+            // that ends without a question feels like a lesson that
+            // did not happen.
+            Text(
+                text = stringResource(R.string.batch_lesson_taught_only),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.batch_lesson_taught_only_hint),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+        } else if (state.answeredCount == 0) {
             // A reading lesson has no questions: it was read to the end
             // and it is done. It used to show "100%" and "0 от 0
             // верни", which reads like a broken score.
@@ -625,33 +770,44 @@ private fun ReadingLesson(
 
     LaunchedEffect(index) { onProgress(index) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        // The counter of the lesson is in the header of the screen
-        // ("3 от 7"). The card used to carry a second one ("Урок 3 от
-        // 7"), and a learner saw two counters for the same thing.
-        item {
-            ReadingCard(payload = payload, onPlay = onPlay)
-        }
-        item {
-            if (index < cards.size - 1) {
-                Button(
-                    onClick = { index++ },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.lesson_next_card))
-                }
-            } else {
-                Button(
-                    onClick = onFinish,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.lesson_finish_reading))
-                }
+    Column(modifier = Modifier.fillMaxSize()) {
+        // The card scrolls; the button does not.
+        //
+        // They were one list, so the button was the LAST thing in it:
+        // on a card with a table of tones the button was below the
+        // fold, and a learner who had to hunt for "Следваща карта"
+        // looked as if the lesson had stopped. The button is pinned
+        // at the bottom of the screen now -- it is always there.
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // The counter of the lesson is in the header of the screen
+            // ("3 от 7"). The card used to carry a second one ("Урок 3 от
+            // 7"), and a learner saw two counters for the same thing.
+            item {
+                ReadingCard(payload = payload, onPlay = onPlay)
             }
+        }
+        Button(
+            onClick = {
+                if (index < cards.size - 1) index++ else onFinish()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 16.dp),
+        ) {
+            Text(
+                stringResource(
+                    if (index < cards.size - 1) {
+                        R.string.lesson_next_card
+                    } else {
+                        R.string.lesson_finish_reading
+                    },
+                ),
+            )
         }
     }
 }

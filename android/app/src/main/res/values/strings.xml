@@ -101,6 +101,8 @@
     <string name="lesson_next_card">Следваща карта</string>
     <string name="lesson_finish_reading">Завърши урока</string>
     <string name="lesson_what_means">Какво означава?</string>
+    <!-- The label of the example sentence on a card. -->
+    <string name="lesson_example_label">В изречение</string>
     <string name="lesson_right">Правилно!</string>
     <string name="lesson_wrong">Неправилно</string>
     <string name="lesson_continue">Продължи</string>
