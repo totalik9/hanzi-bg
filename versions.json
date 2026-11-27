@@ -1,0 +1,58 @@
+{
+  "rule": "versionCode = major*100 + minor*10 + patch. The code goes UP, never down, because a release whose code is not higher does not install over the previous one. The name carries the same numbers in the usual form, and the release workflow checks that the tag matches it.",
+  "note": "The first three builds used the short code (1, 2, 3). From 0.4.0 the rule above applies, so a patch release can still go up (0.4.1 is 41, and 0.5.0 is 50).",
+  "builds": [
+    {
+      "version": "0.1.0",
+      "versionCode": 1,
+      "date": "2026-11-15",
+      "tag": "v0.1.0",
+      "changes": "Първата публична версия: речник, търсене, карти за думи и ръчно написания път.",
+      "corpus": null
+    },
+    {
+      "version": "0.2.0",
+      "versionCode": 2,
+      "date": "2026-11-16",
+      "tag": "v0.2.0",
+      "changes": "Учебната пътека: 19 теми, 34 урока, 300-те думи от HSK 1, отключване по оценка и значки.",
+      "corpus": {
+        "pathUnits": 19,
+        "pathLessons": 34,
+        "pathWords": 300,
+        "handWrittenGlosses": 300
+      }
+    },
+    {
+      "version": "0.3.0",
+      "versionCode": 3,
+      "date": "2026-11-22",
+      "tag": "v0.3.0",
+      "changes": "Речникът е достижим (изборът на ниво е върнат), търсенето е без чувствителност към буквите, стъпката за писане се оценява от следа.",
+      "corpus": {
+        "pathUnits": 19,
+        "pathLessons": 38,
+        "pathWords": 300,
+        "handWrittenGlosses": 300,
+        "words": 10896,
+        "releaseApkMiB": 55.09
+      }
+    },
+    {
+      "version": "0.4.0",
+      "versionCode": 40,
+      "date": "2026-11-26",
+      "tag": "",
+      "changes": "Пътят до HSK 4: 1678 нови думи по нива и теми, шест пресипки в пътя (是 и 的, редът на думите, броячът, 不 и 没, 了 и 在, въпросът), нов интро, уроци от 8 до 15 думи, и примерите, които назовават свой клип.",
+      "corpus": {
+        "pathUnits": 70,
+        "pathLessons": 175,
+        "pathWords": 1978,
+        "handWrittenGlosses": 1978,
+        "words": 10896,
+        "crossroads": 6,
+        "releaseApkMiB": 56.15
+      }
+    }
+  ]
+}

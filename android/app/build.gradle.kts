@@ -15,16 +15,23 @@ android {
         applicationId = "bg.hanzi.learn"
         minSdk = 26
         targetSdk = 36
-        // v0.3.0: the vocabulary is reachable (the level picker is
-        // back), the dictionary search is case-insensitive for
-        // Bulgarian, and the writing step is scored from the trace.
+        // v0.4.0: the path reaches HSK 4 (1678 new words over 45 new
+        // themed units), six crossroads teach the words and rules that
+        // appear in every second sentence, the intro gives the learner
+        // three usable words before any theory, and a lesson may hold
+        // 8 to 15 words instead of 8 to 10.
         //
         // versionCode goes UP, never down: a release that does not
         // install over the previous one is a release nobody can
         // upgrade to. The release workflow checks this against the
-        // previous tag.
-        versionCode = 3
-        versionName = "0.3.0"
+        // previous tag, and pipeline/check_versions.py checks it
+        // against the whole record in versions.json.
+        //
+        // The code is major*100 + minor*10 + patch, so a patch release
+        // can still go up (0.4.1 is 41, and 0.5.0 is 50). The first
+        // three builds used the short code (1, 2, 3).
+        versionCode = 40
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

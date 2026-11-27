@@ -410,6 +410,17 @@ jobs:
             pipeline/_grammar_mirror.py \
             pipeline/_grammar_wayback.py
 
+      # The versionCode is the only thing that says whether a release
+      # installs over the previous one. The release workflow checks it
+      # against the previous TAG, and a tag is only pushed when
+      # somebody remembers to push it -- so a build that repeats an old
+      # code passes that check and installs over nothing. The record in
+      # versions.json knows EVERY build, so it catches that.
+      - name: The version of the build and the record agree
+        run: |
+          python pipeline/check_versions.py --gate
+          python -m pytest -q pipeline/test_versions.py
+
       - name: Check the pipeline scripts expose the expected entry points
         run: |
           for f in 00_build_all 01_fetch_sources 02_build_dictionary 03_build_vocab \
@@ -432,6 +443,24 @@ jobs:
       # it needs no database and no model, and it runs in a second.
       - name: Check the learning path has no duplicated meanings
         run: python pipeline/audit_path.py --gate
+
+      # Each path file is checked against ITS OWN gloss patch, so a
+      # file can be verified before the others are written. The whole
+      # path is checked above; this one says WHICH file is broken.
+      - name: Check each path file against its gloss patch
+        run: |
+          python pipeline/check_lesson_files.py \
+            curriculum/10_hsk1.json curriculum/20_glosses_hsk1.json
+          python pipeline/check_lesson_files.py \
+            curriculum/12_hsk2to4.json curriculum/21_glosses_hsk2to4.json
+
+      # Every example of the path has to be HEARABLE. A card shows a
+      # 🔊 button next to every example, and a button that plays
+      # nothing is worse than no button -- so the app draws the button
+      # only when there is a clip, and this test says whether there
+      # should have been one.
+      - name: Check the examples of the path have their clips
+        run: python -m pytest -q pipeline/test_curriculum_audio.py
 
       # The guards that stop a degraded content database from shipping.
       # A missing input has to be an error, not a warning: a run that
