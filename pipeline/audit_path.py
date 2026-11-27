@@ -35,31 +35,74 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CURRICULUM = os.path.join(ROOT, "curriculum")
-PATH_FILES = ("00_intro.json", "10_hsk1.json", "30_situations.json")
-GLOSS_PATCH = "20_glosses_hsk1.json"
+#: The generated data directory: the vocabulary file is a build
+#: artefact, so it is not in version control.
+DATA = os.path.join(ROOT, "data")
 
 #: The curriculum rule: a gloss is short, or it is noise.
 MAX_GLOSS_LENGTH = 45
+
+#: The curriculum rule: a lesson carries 8 to 15 words.
+#:
+#: The rule is a range and not a fixed number because a lesson has to
+#: hold the words of its theme. A theme with nine words is one lesson
+#: of nine, and a theme with twenty is two lessons of ten. The cap is
+#: what keeps a lesson from turning into a list the learner cannot
+#: hold in one sitting.
+MIN_LESSON_WORDS = 8
+MAX_LESSON_WORDS = 15
+
+#: The HSK level of every word of the corpus, filled in when the
+#: corpus is read. See corpus_level_of().
+_WORD_LEVEL: dict[str, str] = {}
+
+
+def curriculum_files():
+    """Every JSON file of the curriculum, in name order.
+
+    The files are read in name order, so the numeric prefixes control
+    the sequence. They are told apart by CONTENT and not by name --
+    the same rule the pipeline uses, so the audit and the build can
+    never disagree about what a file is:
+
+      {"units": [...]}      the path itself
+      {hanzi: gloss}       a gloss patch, which overrides the machine
+                           translation for the words it names
+    """
+    if not os.path.isdir(CURRICULUM):
+        return []
+    names = sorted(n for n in os.listdir(CURRICULUM) if n.endswith(".json"))
+    return [(n, os.path.join(CURRICULUM, n)) for n in names]
 
 
 def load_lessons():
     """The path as the learner meets it: units, lessons and their words."""
     lessons = []
-    for name in PATH_FILES:
-        path = os.path.join(CURRICULUM, name)
-        if not os.path.exists(path):
-            continue
+    for name, path in curriculum_files():
         data = json.load(open(path, encoding="utf-8"))
-        for unit in data.get("units", []):
+        if not (isinstance(data, dict) and "units" in data):
+            continue
+        for unit in data["units"]:
             for lesson in unit.get("lessons", []):
                 lessons.append((unit["key"], lesson))
     return lessons
 
 
 def load_glosses():
-    """The hand-written gloss of every path word."""
-    path = os.path.join(CURRICULUM, GLOSS_PATCH)
-    return json.load(open(path, encoding="utf-8"))
+    """The hand-written gloss of every path word.
+
+    Every gloss patch in the curriculum counts, not one named file: the
+    path grew past HSK 1 and the glosses came with it.
+    """
+    glosses = {}
+    for name, path in curriculum_files():
+        data = json.load(open(path, encoding="utf-8"))
+        if not isinstance(data, dict) or "units" in data:
+            continue
+        if data and all(isinstance(k, str) and isinstance(v, str)
+                         for k, v in data.items()):
+            glosses.update(data)
+    return glosses
 
 
 def prefix3(text):
@@ -79,6 +122,56 @@ def is_twin(a, b):
     return len(x) >= 3 and len(y) >= 3 and prefix3(x) == prefix3(y)
 
 
+def load_corpus_levels():
+    """The words of each HSK level, from the built vocabulary.
+
+    The levels the path must cover are read from the corpus itself
+    rather than written down here, so the audit cannot disagree with
+    the dictionary: the corpus says which levels exist and which words
+    are in them.
+
+    Returns None when the vocabulary is not built. The vocabulary file
+    is a build artefact and it is not in version control, so a fresh
+    clone has no corpus to compare against -- and a check that passes
+    because it had nothing to look at is not a check. The gate says
+    so instead.
+    """
+    path = os.path.join(DATA, "vocab_hsk.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    words = data.get("words") if isinstance(data, dict) else data
+    if not words:
+        return None
+    levels: dict[str, set[str]] = {}
+    word_level: dict[str, str] = {}
+    for word in words:
+        level = str(word.get("hsk_level") or "")
+        hanzi = word.get("hanzi") or ""
+        if not level or not hanzi:
+            continue
+        levels.setdefault(level, set()).add(hanzi)
+        word_level[hanzi] = level
+    _WORD_LEVEL.clear()
+    _WORD_LEVEL.update(word_level)
+    return {level: {h for h in words if h} for level, words in levels.items()}
+
+
+def corpus_level_of(hanzi: str) -> str:
+    """The HSK level of a word, from the corpus.
+
+    The lookup table is built once, when the corpus is read, and kept
+    in a module-level dict: the coverage check asks about every word
+    of the path, and a query per word against a table of 10 000 rows
+    is a waste.
+    """
+    return _WORD_LEVEL.get(hanzi, "")
+
+
 def main():
     gate = "--gate" in sys.argv
     lessons = load_lessons()
@@ -87,6 +180,74 @@ def main():
 
     problems = []
 
+    print("=" * 70)
+    print("0. THE COVERAGE OF THE PATH AGAINST THE CORPUS")
+    print("=" * 70)
+    # The corpus is the dictionary the app ships. A word of the target
+    # level that is NOT on the path is a word the learner cannot get
+    # to from anywhere -- the dictionary can show it, but no lesson
+    # teaches it. A word on the path TWICE is one item silently
+    # dropped and one repeated.
+    #
+    # The check is in both directions, and it needs the corpus: the
+    # vocabulary file is a build artefact, so when it is not there the
+    # check says so and is skipped rather than passing silently.
+    corpus = load_corpus_levels()
+    if corpus is None:
+        print("   SKIPPED: the vocabulary file is not built "
+              "(run pipeline/03_build_vocab.py)")
+        print("   The other checks below do not need it.")
+    else:
+        # The levels the path must cover are the ones it reaches, and
+        # every level BELOW the highest one it reaches. The path
+        # teaches a ladder: if it teaches a word of HSK 4, it teaches
+        # every word of HSK 1 to 3 as well, so a word missing from
+        # HSK 2 cannot hide behind a word missing from HSK 4.
+        #
+        # The target is derived from the path and not written down, so
+        # the check keeps meaning the same thing as the path grows.
+        reached = {corpus_level_of(w) for w in path_words}
+        reached.discard("")
+        if not reached:
+            target_levels = []
+        else:
+            highest = max(reached, key=lambda x: (len(x), x))
+            target_levels = [lvl for lvl in corpus
+                             if (len(lvl), lvl) <= (len(highest), highest)]
+
+        covered = {}
+        for word in path_words:
+            covered[word] = covered.get(word, 0) + 1
+        repeated = sorted(w for w, n in covered.items() if n > 1)
+        path_set = set(path_words)
+        unreachable = []
+        for level in sorted(target_levels, key=lambda x: (len(x), x)):
+            for word in sorted(corpus[level]):
+                if word not in path_set:
+                    unreachable.append((level, word))
+        total_corpus = sum(len(corpus[l]) for l in target_levels)
+        print("   levels the path must cover: %s"
+              % ", ".join("HSK %s (%d words)" % (l, len(corpus[l]))
+                          for l in sorted(target_levels, key=lambda x: (len(x), x))))
+        print("   path words: %d | corpus words: %d" % (len(path_words), total_corpus))
+        print("   words of the corpus that are NOT on the path: %d"
+              % len(unreachable))
+        for level, word in unreachable[:20]:
+            print("      HSK %s  %s" % (level, word))
+        if len(unreachable) > 20:
+            print("      ... and %d more" % (len(unreachable) - 20))
+        print("   words on the path MORE THAN ONCE: %d" % len(repeated))
+        for word in repeated[:20]:
+            print("      %s" % word)
+        if unreachable:
+            problems.append(
+                "%d words of the corpus are not on the path - the learner "
+                "cannot reach them from any lesson" % len(unreachable))
+        if repeated:
+            problems.append(
+                "%d words are on the path more than once" % len(repeated))
+
+    print()
     print("=" * 70)
     print("1. TWO WORDS IN THE SAME LESSON WITH THE SAME GLOSS")
     print("=" * 70)
@@ -148,6 +309,31 @@ def main():
         problems.append("%d glosses are longer than %d characters"
                         % (len(long_glosses), MAX_GLOSS_LENGTH))
 
+    # The shape of a teachable gloss: no "/" and no parentheses.
+    #
+    # A "/" is how the machine translation lists every sense a
+    # dictionary has: "бяло / бял / реакционен / антикомунистически".
+    # The learner reads one meaning on a card, not four, and the
+    # parenthesis is how the machine translation carries the etymology
+    # it found in the dictionary. Both were ruled out when the HSK 1
+    # glosses were written, and a gloss that breaks the rule is a
+    # gloss that was not written by hand.
+    dumpy = [
+        (w, gloss.get(w, ""))
+        for w in path_words
+        if ("/" in gloss.get(w, "")
+            or "(" in gloss.get(w, "")
+            or ")" in gloss.get(w, ""))
+    ]
+    print("   glosses that list senses or carry a parenthesis: %d" % len(dumpy))
+    for word, g in dumpy[:20]:
+        print("      %s '%s'" % (word, g))
+    if len(dumpy) > 20:
+        print("      ... and %d more" % (len(dumpy) - 20))
+    if dumpy:
+        problems.append(
+            "%d glosses list several senses or carry a parenthesis" % len(dumpy))
+
     print()
     print("=" * 70)
     print("4. THE OPTIONS AFTER THE TWIN FILTER")
@@ -206,6 +392,35 @@ def main():
             print("   %-14s %-28s (teaching cards)" % (unit_key, lesson["title"]))
             continue
         print("   %-14s %-28s %d words" % (unit_key, lesson["title"], len(words)))
+
+    print()
+    print("=" * 70)
+    print("6. THE SIZE OF THE LESSONS")
+    print("=" * 70)
+    # A lesson of 8 to 15 words: fewer and the lesson is a handful of
+    # words with a lesson's overhead around them, more and the cards
+    # run past what a beginner holds at once. A reading lesson carries
+    # cards and no words, so it is not counted.
+    wrong_size = [
+        (key, lesson["title"], len(lesson.get("words", [])))
+        for key, lesson in lessons
+        if lesson.get("words")
+        and not (MIN_LESSON_WORDS <= len(lesson["words"]) <= MAX_LESSON_WORDS)
+    ]
+    sizes = [len(lesson.get("words", [])) for _, lesson in lessons
+             if lesson.get("words")]
+    print("   lessons with words: %d | sizes: min %d, max %d"
+          % (len(sizes), min(sizes) if sizes else 0, max(sizes) if sizes else 0))
+    print("   lessons outside %d-%d words: %d"
+          % (MIN_LESSON_WORDS, MAX_LESSON_WORDS, len(wrong_size)))
+    for key, title, n in wrong_size[:20]:
+        print("      %-16s %-30s %d words" % (key, title, n))
+    if len(wrong_size) > 20:
+        print("      ... and %d more" % (len(wrong_size) - 20))
+    if wrong_size:
+        problems.append(
+            "%d lessons carry outside %d-%d words"
+            % (len(wrong_size), MIN_LESSON_WORDS, MAX_LESSON_WORDS))
 
     print()
     if gate:
