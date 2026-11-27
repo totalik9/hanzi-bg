@@ -192,7 +192,13 @@ class LessonViewModel @Inject constructor(
                 lesson.cards.forEach { payload ->
                     val card = TeachingCardParser.parse(payload) ?: return@forEach
                     card.items.forEach { item ->
-                        content.wordByHanzi(item.hanzi)?.audio?.takeIf { it.isNotBlank() }?.let {
+                        // A word takes its clip from the dictionary. A
+                        // SENTENCE names its own clip, because the text
+                        // is hand-written and exists nowhere else --
+                        // the same contract a passage line has.
+                        val file = item.audio.takeIf { it.isNotBlank() }
+                            ?: content.wordByHanzi(item.hanzi)?.audio
+                        file?.takeIf { it.isNotBlank() }?.let {
                             audio[item.hanzi] = it
                         }
                     }

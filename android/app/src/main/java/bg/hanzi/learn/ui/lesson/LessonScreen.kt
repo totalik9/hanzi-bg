@@ -95,6 +95,7 @@ fun LessonScreen(
             // A reading lesson: it has cards of its own.
             ReadingLesson(
                 cards = viewModel.teachCards,
+                audio = state.teachAudio,
                 onPlay = viewModel::playTeachAudio,
                 onProgress = { index ->
                     // The header counter follows the card, so the
@@ -761,6 +762,7 @@ private fun LessonResult(
 @Composable
 private fun ReadingLesson(
     cards: List<String>,
+    audio: Map<String, String>,
     onPlay: (String) -> Unit,
     onProgress: (Int) -> Unit,
     onFinish: () -> Unit,
@@ -787,7 +789,7 @@ private fun ReadingLesson(
             // ("3 от 7"). The card used to carry a second one ("Урок 3 от
             // 7"), and a learner saw two counters for the same thing.
             item {
-                ReadingCard(payload = payload, onPlay = onPlay)
+                ReadingCard(payload = payload, audio = audio, onPlay = onPlay)
             }
         }
         Button(
@@ -821,6 +823,7 @@ private fun ReadingLesson(
 @Composable
 private fun ReadingCard(
     payload: String?,
+    audio: Map<String, String>,
     onPlay: (String) -> Unit,
 ) {
     if (payload == null) {
@@ -879,13 +882,15 @@ private fun ReadingCard(
                         )
                         Text(text = item.text, style = MaterialTheme.typography.bodyMedium)
                     }
-                    // Every example can be heard. The lesson teaches
-                    // how the language sounds, so the sound has to be
-                    // there and not only described.
-                    androidx.compose.material3.TextButton(
-                        onClick = { onPlay(item.hanzi) },
-                    ) {
-                        Text("🔊")
+                    // Every example can be heard -- but only when there
+                    // IS a clip. A button that plays nothing is worse
+                    // than no button, so it is not drawn at all.
+                    if (audio.containsKey(item.hanzi)) {
+                        androidx.compose.material3.TextButton(
+                            onClick = { onPlay(item.hanzi) },
+                        ) {
+                            Text("🔊")
+                        }
                     }
                 }
             }

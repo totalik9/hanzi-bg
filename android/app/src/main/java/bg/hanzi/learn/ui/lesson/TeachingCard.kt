@@ -33,6 +33,15 @@ data class TeachingItem(
     val hanzi: String,
     val pinyin: String,
     val text: String,
+    /**
+     * The name of the clip of this example, e.g. "x_order_0.ogg".
+     *
+     * It is empty when the example is a WORD that the dictionary
+     * holds: the clip of a word comes from the corpus. A SENTENCE is
+     * hand-written and exists nowhere else, so it has to name its own
+     * clip -- the same contract a passage line has.
+     */
+    val audio: String = "",
 )
 
 /**
@@ -86,6 +95,7 @@ object TeachingCardParser {
                 hanzi = it.string("hanzi").orEmpty(),
                 pinyin = it.string("pinyin").orEmpty(),
                 text = it.string("text").orEmpty(),
+                audio = it.string("audio").orEmpty(),
             ) },
             rows = obj.arrayOfArrays("rows"),
             lines = obj.array("lines").map { TeachingLine(

@@ -61,10 +61,15 @@ VOICE = _audio.VOICE
 
 
 def collect_lines() -> list[tuple[str, str]]:
-    """Return (file name, text) pairs for every line of every passage.
+    """Return (file name, text) pairs for every clip the curriculum names.
 
-    A reading card names the clip of every line. The name has to end in
-    the extension, because the app plays the file name as it stands.
+    A reading card names the clip of every line, and an ITEM that is a
+    sentence names the clip of the sentence. The name has to end in the
+    extension, because the app plays the file name as it stands.
+
+    A word does NOT name a clip: the corpus has one clip per word, and
+    the app takes it from the dictionary. Only the hand-written text
+    needs a clip of its own.
     """
     out: list[tuple[str, str]] = []
     if not os.path.isdir(CURRICULUM_DIR):
@@ -86,7 +91,7 @@ def collect_lines() -> list[tuple[str, str]]:
         for unit in data["units"]:
             for lesson in unit.get("lessons", []):
                 for card in lesson.get("cards", []):
-                    if not isinstance(card, dict) or card.get("kind") != "reading":
+                    if not isinstance(card, dict):
                         continue
                     for line in card.get("lines", []):
                         hanzi = (line or {}).get("hanzi", "")
@@ -94,6 +99,23 @@ def collect_lines() -> list[tuple[str, str]]:
                         if not hanzi or not clip:
                             print(f"  ERROR: {path}: a reading line has no "
                                   f"hanzi or no audio name: {line!r}")
+                            continue
+                        if not clip.endswith(EXTENSION):
+                            print(f"  ERROR: {path}: the clip name {clip!r} "
+                                  f"does not end in {EXTENSION}")
+                            continue
+                        out.append((clip, hanzi))
+                    # An example that names its own clip is a
+                    # hand-written sentence: the corpus holds no clip
+                    # for it, so this step has to speak it.
+                    for item in card.get("items", []):
+                        hanzi = (item or {}).get("hanzi", "")
+                        clip = (item or {}).get("audio", "")
+                        if not clip:
+                            continue
+                        if not hanzi:
+                            print(f"  ERROR: {path}: an example names a clip "
+                                  f"but has no hanzi: {item!r}")
                             continue
                         if not clip.endswith(EXTENSION):
                             print(f"  ERROR: {path}: the clip name {clip!r} "

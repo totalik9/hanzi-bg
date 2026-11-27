@@ -46,6 +46,26 @@ class TeachingCardTest {
         assertEquals("你好", card.items[0].hanzi)
         assertEquals("nǐ hǎo", card.items[0].pinyin)
         assertEquals("здравей", card.items[0].text)
+        // A WORD takes its clip from the corpus, so it names none.
+        assertEquals("", card.items[0].audio)
+    }
+
+    @Test
+    fun anExampleThatNamesItsOwnClipKeepsIt() {
+        // A SENTENCE is hand-written and exists nowhere else, so it
+        // names its own clip -- the same contract a passage line has.
+        val card = TeachingCardParser.parse(
+            """
+            {"kind":"items","title":"Редът на думите","body":"",
+             "items":[{"hanzi":"我吃苹果","pinyin":"Wǒ chī píngguǒ",
+                       "text":"Аз ям ябълки","audio":"x_order_i0.ogg"}]}
+            """.trimIndent()
+        )
+
+        assertNotNull(card)
+        assertEquals(1, card!!.items.size)
+        assertEquals("我吃苹果", card.items[0].hanzi)
+        assertEquals("x_order_i0.ogg", card.items[0].audio)
     }
 
     @Test
