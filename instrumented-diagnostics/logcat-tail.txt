@@ -1,0 +1,619 @@
+--------- beginning of system
+11-27 20:07:42.775   543   640 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 1002; state: ENABLED
+--------- beginning of main
+11-27 20:07:42.823  5241  5241 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 1002; state: ENABLED
+11-27 20:07:42.836  5241  5241 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 1002; state: ENABLED
+11-27 20:07:43.226  5241  5241 D CompatibilityChangeReporter: Compat change id reported: 3400644; UID 1002; state: ENABLED
+11-27 20:07:43.891  5241  5241 D nativeloader: Configuring clns-shared-6 for other apk /apex/com.android.btservices/app/Bluetooth@UE1A.230829.036.A1/Bluetooth.apk. target_sdk_version=34, uses_libraries=, library_path=/apex/com.android.btservices/app/Bluetooth@UE1A.230829.036.A1/lib/x86_64:/system/lib64:/system_ext/lib64, permitted_path=/data:/mnt/expand:/data/user_de/0/com.android.bluetooth:/apex/com.android.btservices/app/Bluetooth@UE1A.230829.036.A1:/system/lib64:/system_ext/lib64
+11-27 20:07:43.904   407   407 W adbd    : timeout expired while flushing socket, closing
+11-27 20:07:43.931   543   580 I ActivityManager: Force stopping bg.hanzi.learn.debug appid=10141 user=-1: deletePackageX
+11-27 20:07:43.946   543   580 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877437/cgroup.freeze
+11-27 20:07:43.946   543   580 W libprocessgroup: Failed to apply Frozen process profile: No such file or directory
+11-27 20:07:43.974   543   580 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877437/cgroup.freeze
+11-27 20:07:43.983   543   580 W libprocessgroup: Failed to apply Unfrozen process profile: No such file or directory
+11-27 20:07:44.121  5241  5241 D nativeloader: InitApexLibraries:
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_adservices: libhpke_jni.so:libtflite_support_classifiers_native.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_appsearch: libicing.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_art: libartservice.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_btservices: libbluetooth_jni.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_conscrypt: libjavacrypto.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_extservices: libtflite_support_classifiers_native.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_os_statsd: libstats_jni.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_tethering: libandroid_net_connectivity_com_android_net_module_util_jni.so:libcronet.114.0.5735.84.so:libframework-connectivity-jni.so:libframework-connectivity-tiramisu-jni.so:libservice-connectivity.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_uwb: libuwb_uci_jni_rust.so
+11-27 20:07:44.121  5241  5241 D nativeloader:   com_android_virt: libvirtualizationservice_jni.so:libvirtualmachine_jni.so
+--------- beginning of kernel
+11-27 20:07:44.155     0     0 I servicemanager: Since 'artd' could not be found, trying to start it as a lazy AIDL service. (if it's not configured to be a lazy service, it may be stuck starting or still starting).
+11-27 20:07:44.232     0     0 I init    : starting service 'artd'...
+11-27 20:07:44.360  5241  5241 V GraphicsEnvironment: Currently set values for:
+11-27 20:07:44.363  5241  5241 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-27 20:07:44.365  5241  5241 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-27 20:07:44.368  5241  5241 V GraphicsEnvironment: ANGLE GameManagerService for com.android.bluetooth: false
+11-27 20:07:44.374  5241  5241 V GraphicsEnvironment: com.android.bluetooth is not listed in per-application setting
+11-27 20:07:44.377  5241  5241 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-27 20:07:44.404     0     0 I init    : ... started service 'artd' has pid 5267
+11-27 20:07:44.404     0     0 I init    : Control message: Processed ctl.interface_start for 'aidl/artd' from pid: 132 (/system/bin/servicemanager)
+11-27 20:07:44.977     0     0 I init    : Untracked pid 2500 received signal 1
+11-27 20:07:44.977     0     0 I init    : Untracked pid 2500 did not have an associated service entry and will not be reaped
+11-27 20:07:45.183   543   605 W ServiceManagerCppClient: Waited one second for artd (is service started? Number of threads started in the threadpool: 31. Are binder threads started and available?)
+11-27 20:07:45.205     0     0 I servicemanager: Since 'artd' could not be found, trying to start it as a lazy AIDL service. (if it's not configured to be a lazy service, it may be stuck starting or still starting).
+11-27 20:07:45.223     0     0 I init    : service 'artd' requested start, but it is already running (flags: 134)
+11-27 20:07:45.223     0     0 I init    : Control message: Processed ctl.interface_start for 'aidl/artd' from pid: 132 (/system/bin/servicemanager)
+11-27 20:07:45.407  5241  5241 I bt_stack_config: packages/modules/Bluetooth/system/main/stack_config.cc:199 get_pts_broadcast_audio_config_options: Config isn't ready, use default option
+11-27 20:07:45.563  5267  5267 I artd    : Starting artd
+11-27 20:07:45.607   543   936 W Looper  : Slow dispatch took 153ms android.perm h=android.os.Handler c=com.android.internal.infra.ServiceConnector$Impl$$ExternalSyntheticLambda1@b5f26e8 m=0
+11-27 20:07:45.619  5267  5267 I AidlLazyServiceRegistrar: Registering service artd
+11-27 20:07:45.692     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+11-27 20:07:45.742  5267  5270 I AidlLazyServiceRegistrar: Process has 1 (of 1 available) client(s) in use after notification artd has clients: 1
+11-27 20:07:45.758     0     0 I servicemanager: Notifying artd they do (previously: don't) have clients when service is guaranteed to be in use
+11-27 20:07:45.758  5241  5241 I droid.bluetooth: [1127/200745.745574:INFO:btif_config_cache.cc(67)] BtifConfigCache, capacity: 10000
+11-27 20:07:45.835   543   605 I PermissionManager: Removing permission bg.hanzi.learn.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION that used to be declared by bg.hanzi.learn.debug
+11-27 20:07:45.840   543   651 D ActivityManager: freezing 3064 com.android.music
+11-27 20:07:45.855   543   605 I PermissionManager: Permission ownership changed. Updating all permissions.
+11-27 20:07:45.874   543   605 W PermissionManager: Package com.android.adservices.api is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.adservices APEX instead.
+11-27 20:07:46.198   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.199   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.199   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.199   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.202   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.203   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.203   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.203   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.206   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.206   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.207   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.207   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.209   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:46.408   543   652 E RoleControllerManager: Error calling grantDefaultRoles()
+11-27 20:07:46.408   543   652 E RoleControllerManager: java.util.concurrent.TimeoutException
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at android.permission.jarjar.com.android.internal.infra.AndroidFuture.triggerTimeout(AndroidFuture.java:289)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at android.permission.jarjar.com.android.internal.infra.AndroidFuture$$ExternalSyntheticLambda1.run(Unknown Source:2)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at android.os.Handler.handleCallback(Handler.java:958)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at com.android.server.SystemServer.run(SystemServer.java:970)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at com.android.server.SystemServer.main(SystemServer.java:664)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:46.408   543   652 E RoleControllerManager: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:949)
+11-27 20:07:46.481   543   628 W system_server: Long monitor contention with owner PackageManager (605) at void com.android.server.pm.PackageManagerService$PackageManagerInternalImpl.writePermissionSettings(int[], boolean)(PackageManagerService.java:6811) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 662ms
+11-27 20:07:46.482   543  2807 W system_server: Long monitor contention with owner binder:543_3 (628) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 618ms
+11-27 20:07:46.486   543   568 W system_server: Long monitor contention with owner binder:543_3 (628) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=1 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 606ms
+11-27 20:07:46.497   543  1034 W system_server: Long monitor contention with owner binder:543_3 (628) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=2 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 443ms
+11-27 20:07:46.502  5241  5241 E ActivityThread: Failed to find provider info for bluetooth_legacy.provider
+11-27 20:07:46.502  5241  5241 D DataMigration: Legacy migration skiped: no migration app installed
+11-27 20:07:46.515   543   568 W Looper  : Slow dispatch took 635ms android.fg h=android.os.Handler c=<recycled PooledLambda@ddbba15> m=0
+11-27 20:07:46.539   543   568 W Looper  : Slow delivery took 649ms android.fg h=android.os.Handler c=<recycled PooledLambda@ea7c52> m=0
+11-27 20:07:46.549  5241  5241 I BluetoothAvrcpControllerJni: classInitNative: succeeds
+11-27 20:07:46.562   543   605 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+11-27 20:07:46.566   543   605 D PackageManager: Clear ephemeral installer activity
+11-27 20:07:46.578  5241  5241 D CompatibilityChangeReporter: Compat change id reported: 263076149; UID 1002; state: ENABLED
+11-27 20:07:46.611  5241  5241 I BluetoothHidHostServiceJni: classInitNative: succeeds
+11-27 20:07:46.662   543  2161 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-27 20:07:46.673  5241  5241 I BluetoothPanServiceJni: classInitNative(L108): succeeds
+11-27 20:07:46.709  5241  5241 I AdapterServiceConfig: init: profile=A2dpService, enabled=true
+11-27 20:07:46.710  5241  5241 I AdapterServiceConfig: init: profile=A2dpSinkService, enabled=false
+11-27 20:07:46.710  5241  5241 I AdapterServiceConfig: init: profile=AvrcpTargetService, enabled=true
+11-27 20:07:46.710  5241  5241 I AdapterServiceConfig: init: profile=AvrcpControllerService, enabled=false
+11-27 20:07:46.710  5241  5241 I AdapterServiceConfig: init: profile=BassClientService, enabled=false
+11-27 20:07:46.711  5241  5241 I AdapterServiceConfig: init: profile=BatteryService, enabled=false
+11-27 20:07:46.711  5241  5241 I AdapterServiceConfig: init: profile=CsipSetCoordinatorService, enabled=false
+11-27 20:07:46.711  5241  5241 I AdapterServiceConfig: init: profile=HapClientService, enabled=false
+11-27 20:07:46.711  5241  5241 I AdapterServiceConfig: init: profile=HeadsetService, enabled=true
+11-27 20:07:46.716  5241  5241 I AdapterServiceConfig: init: profile=HeadsetClientService, enabled=false
+11-27 20:07:46.716  5241  5241 I AdapterServiceConfig: init: profile=HearingAidService, enabled=true
+11-27 20:07:46.717  5241  5241 I AdapterServiceConfig: init: profile=HidDeviceService, enabled=true
+11-27 20:07:46.717  5241  5241 I AdapterServiceConfig: init: profile=HidHostService, enabled=true
+11-27 20:07:46.717  5241  5241 I AdapterServiceConfig: init: profile=GattService, enabled=true
+11-27 20:07:46.717  5241  5241 I AdapterServiceConfig: init: profile=LeAudioService, enabled=false
+11-27 20:07:46.718  5241  5241 I AdapterServiceConfig: init: profile=TbsService, enabled=false
+11-27 20:07:46.718  5241  5241 I AdapterServiceConfig: init: profile=BluetoothMapService, enabled=true
+11-27 20:07:46.718  5241  5241 I AdapterServiceConfig: init: profile=MapClientService, enabled=false
+11-27 20:07:46.718  5241  5241 I AdapterServiceConfig: init: profile=McpService, enabled=true
+11-27 20:07:46.719  5241  5241 I AdapterServiceConfig: init: profile=BluetoothOppService, enabled=true
+11-27 20:07:46.719  5241  5241 I AdapterServiceConfig: init: profile=PanService, enabled=true
+11-27 20:07:46.719  5241  5241 I AdapterServiceConfig: init: profile=BluetoothPbapService, enabled=true
+11-27 20:07:46.720  5241  5241 I AdapterServiceConfig: init: profile=PbapClientService, enabled=false
+11-27 20:07:46.724  5241  5241 I AdapterServiceConfig: init: profile=SapService, enabled=false
+11-27 20:07:46.724  5241  5241 I AdapterServiceConfig: init: profile=VolumeControlService, enabled=false
+11-27 20:07:46.734   543   628 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 1002. pid: 5241
+11-27 20:07:46.772  5241  5241 I BluetoothMetricsLogger: setCounterMetricsAlarm()
+11-27 20:07:47.026   543   605 I ActivityManager: Force stopping bg.hanzi.learn.debug appid=10141 user=0: pkg removed
+11-27 20:07:47.140   543   568 W system_server: Long monitor contention with owner ActivityManager (580) at void com.android.server.appop.HistoricalRegistry.clearHistory(int, java.lang.String)(HistoricalRegistry.java:659) waiters=1 in com.android.server.appop.AppOpsService$PackageVerificationResult com.android.server.appop.AppOpsService.verifyAndGetBypass(int, java.lang.String, java.lang.String, java.lang.String, boolean) for 284ms
+11-27 20:07:47.143   543  2807 W system_server: Long monitor contention with owner ActivityManager (580) at void com.android.server.appop.HistoricalRegistry.clearHistory(int, java.lang.String)(HistoricalRegistry.java:659) waiters=0 in com.android.server.appop.AppOpsService$PackageVerificationResult com.android.server.appop.AppOpsService.verifyAndGetBypass(int, java.lang.String, java.lang.String, java.lang.String, boolean) for 455ms
+11-27 20:07:47.167   543   568 W Looper  : Slow dispatch took 466ms android.fg h=android.os.Handler c=<recycled PooledLambda@ddbba15> m=0
+11-27 20:07:47.248   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.350   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.430   543   568 W Looper  : Slow dispatch took 162ms android.fg h=android.os.Handler c=<recycled PooledLambda@ea7c52> m=0
+11-27 20:07:47.465   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.471   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.513  5241  5241 D BluetoothAdapterService: onCreate()
+11-27 20:07:47.524   543   571 W system_server: Long monitor contention with owner PackageManager (605) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:18097) waiters=0 in void com.android.server.am.ActivityManagerService.trimApplications(boolean, int) for 446ms
+11-27 20:07:47.553   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.572   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.579   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.595   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.607   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.626   543   570 I DropBoxManagerService: add tag=system_server_strictmode isTagEnabled=true flags=0x2
+11-27 20:07:47.639   543   568 W Looper  : Slow dispatch took 166ms android.fg h=android.os.Handler c=<recycled PooledLambda@e3f141d> m=0
+11-27 20:07:47.807   961  1000 W Looper  : Slow dispatch took 35ms wmshell.main h=android.os.Handler c=com.android.wm.shell.common.ShellExecutor$$ExternalSyntheticLambda0@3462be2 m=0
+11-27 20:07:48.237   543   568 W Looper  : Slow dispatch took 555ms android.fg h=android.os.Handler c=<recycled PooledLambda@4c86fb7> m=0
+11-27 20:07:48.337  4175  4175 D CarrierSvcBindHelper: onPackageRemoved: bg.hanzi.learn.debug
+11-27 20:07:48.373  2241  2241 W MediaProvider: WorkProfileOwnerApps cache is empty
+11-27 20:07:48.379   543   568 W Looper  : Slow dispatch took 141ms android.fg h=android.os.Handler c=<recycled PooledLambda@a7ed12a> m=0
+11-27 20:07:48.427   543   605 W system_server: Long monitor contention with owner ActivityManager (580) at void com.android.server.am.BroadcastQueueModernImpl.checkPendingColdStartValidity()(BroadcastQueueModernImpl.java:551) waiters=0 in int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle) for 784ms
+11-27 20:07:48.465  4175  4175 D CarrierSvcBindHelper: No carrier app for: 0
+11-27 20:07:48.550   961   961 D ControlsListingControllerImpl: ServiceConfig reloaded, count: 0
+11-27 20:07:48.623   543   568 W Looper  : Slow dispatch took 243ms android.fg h=android.os.Handler c=<recycled PooledLambda@ba5ef4c> m=0
+11-27 20:07:48.694   543   580 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10072; state: DISABLED
+11-27 20:07:48.705   543   580 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10072; state: DISABLED
+11-27 20:07:48.706   543   580 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10072; state: DISABLED
+11-27 20:07:48.710   543   580 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10072; state: ENABLED
+11-27 20:07:48.750   543   580 W ActivityManager: Slow operation: 99ms so far, now at startProcess: done starting proc!
+11-27 20:07:48.780   543   581 W ActivityManager: Slow operation: 64ms so far, now at startProcess: asking zygote to start proc
+11-27 20:07:48.826  5048  5048 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10125; state: ENABLED
+11-27 20:07:48.835   543   581 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10072; state: ENABLED
+11-27 20:07:48.958   329   329 D Zygote  : Forked child process 5280
+11-27 20:07:48.969   543   581 W ActivityManager: Slow operation: 277ms so far, now at startProcess: returned from zygote!
+11-27 20:07:49.015   543   581 W ActivityManager: Slow operation: 322ms so far, now at startProcess: done updating battery stats
+11-27 20:07:49.015   543   581 W ActivityManager: Slow operation: 323ms so far, now at startProcess: building log message
+11-27 20:07:49.068   543   581 I ActivityManager: Start proc 5280:com.android.documentsui/u0a72 for broadcast {com.android.documentsui/com.android.documentsui.PackageReceiver}
+11-27 20:07:49.073   543   581 W ActivityManager: Slow operation: 381ms so far, now at startProcess: starting to update pids map
+11-27 20:07:49.081   543   581 W ActivityManager: Slow operation: 388ms so far, now at startProcess: done updating pids map
+11-27 20:07:49.087   543   580 I ActivityManager: Force stopping bg.hanzi.learn.debug.test appid=10142 user=-1: deletePackageX
+11-27 20:07:49.097   543   580 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877438/cgroup.freeze
+11-27 20:07:49.098   543   580 W libprocessgroup: Failed to apply Frozen process profile: No such file or directory
+11-27 20:07:49.188   543   580 I ActivityManager: Killing 3645:bg.hanzi.learn.debug.test/u0a142 (adj 900): stop bg.hanzi.learn.debug.test due to deletePackageX
+11-27 20:07:49.235   543   569 D DisplayManagerService: Drop pending events for gone uid 10142
+11-27 20:07:49.259  5280  5280 I oid.documentsui: Using CollectorTypeCC GC.
+11-27 20:07:49.286  5280  5280 W oid.documentsui: Unexpected CPU variant for x86: x86_64.
+11-27 20:07:49.286  5280  5280 W oid.documentsui: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-27 20:07:49.315  5280  5280 E oid.documentsui: Not starting debugger since process cannot load the jdwp agent.
+11-27 20:07:49.423   543   580 E libprocessgroup: No such cgroup attribute: /sys/fs/cgroup/uid_4294877438/cgroup.freeze
+11-27 20:07:49.550     0     0 I binder  : undelivered transaction 350892, process died.
+11-27 20:07:49.546   329   329 I Zygote  : Process 3645 exited due to signal 9 (Killed)
+11-27 20:07:49.608   543   580 W libprocessgroup: Failed to apply Unfrozen process profile: No such file or directory
+11-27 20:07:49.626   394   394 E BpTransactionCompletedListener: Failed to transact (-32)
+11-27 20:07:49.628   543   568 W Looper  : Slow dispatch took 834ms android.fg h=android.os.Handler c=<recycled PooledLambda@d67b5c6> m=0
+11-27 20:07:49.629   543  1590 W system_server: Long monitor contention with owner binder:543_1 (560) at void com.android.server.pm.permission.PermissionManagerServiceImpl.updatePermissionFlagsInternal(java.lang.String, java.lang.String, int, int, int, int, boolean, com.android.server.pm.permission.PermissionManagerServiceImpl$PermissionCallback)(PermissionManagerServiceImpl.java:879) waiters=2 in java.util.Set com.android.server.pm.permission.PermissionManagerServiceImpl.getGrantedPermissionsInternal(java.lang.String, int) for 182ms
+11-27 20:07:49.631   543   543 W Looper  : Slow dispatch took 178ms main h=android.app.PropertyInvalidatedCache$AutoCorker$1 c=null m=0
+11-27 20:07:49.635   394   394 E BpTransactionCompletedListener: Failed to transact (-32)
+11-27 20:07:49.635   394   394 E BpTransactionCompletedListener: Failed to transact (-32)
+11-27 20:07:49.646   543  2161 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-27 20:07:49.744   543   868 W system_server: Long monitor contention with owner ActivityManager (580) at boolean com.android.server.am.ActivityManagerService.forceStopPackageLocked(java.lang.String, int, boolean, boolean, boolean, boolean, boolean, int, java.lang.String, int)(ActivityManagerService.java:4361) waiters=0 in void com.android.server.am.ActivityManagerService$LocalService.notifyNetworkPolicyRulesUpdated(int, long) for 326ms
+11-27 20:07:49.777   543   605 W PermissionManager: Package com.android.adservices.api is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.adservices APEX instead.
+11-27 20:07:50.331   156  5292 W keystore2: system/security/keystore2/src/watchdog.rs:114 - ### Keystore Watchdog report - BEGIN ###
+11-27 20:07:50.366   156  5292 W keystore2: system/security/keystore2/src/watchdog.rs:123 - When extracting from a bug report, please include this header
+11-27 20:07:50.384   156  5292 W keystore2: system/security/keystore2/src/watchdog.rs:124 - and all 1 records below.
+11-27 20:07:50.387   156  5292 W keystore2: system/security/keystore2/src/watchdog.rs:164 - ThreadId(10) IKeystoreMaintenance::clearNamespace Pending: 560.925835ms Overdue 61.099312ms
+11-27 20:07:50.391   156  5292 W keystore2: system/security/keystore2/src/watchdog.rs:175 - ### Keystore Watchdog report - END ###
+11-27 20:07:50.516   543   652 E RoleControllerManager: Error calling grantDefaultRoles()
+11-27 20:07:50.516   543   652 E RoleControllerManager: java.util.concurrent.TimeoutException
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at android.permission.jarjar.com.android.internal.infra.AndroidFuture.triggerTimeout(AndroidFuture.java:289)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at android.permission.jarjar.com.android.internal.infra.AndroidFuture$$ExternalSyntheticLambda1.run(Unknown Source:2)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at android.os.Handler.handleCallback(Handler.java:958)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at com.android.server.SystemServer.run(SystemServer.java:970)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at com.android.server.SystemServer.main(SystemServer.java:664)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:50.516   543   652 E RoleControllerManager: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:949)
+11-27 20:07:50.571   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.576   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.578   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.579   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.581   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.582   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.583   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.586   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.587   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.589   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.593   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.594   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.595   543   605 W PermissionManager: Package com.android.providers.media.module is an APK in APEX, but has permission allowlist on the system image. Please bundle the allowlist in the com.android.mediaprovider APEX instead.
+11-27 20:07:50.793   543   936 W system_server: Long monitor contention with owner PackageManager (605) at void com.android.server.pm.PackageManagerService$PackageManagerInternalImpl.writePermissionSettings(int[], boolean)(PackageManagerService.java:6811) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.177s
+11-27 20:07:50.803   543   568 W system_server: Long monitor contention with owner android.perm (936) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.174s
+11-27 20:07:50.805   543  1034 W system_server: Long monitor contention with owner android.perm (936) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=1 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.079s
+11-27 20:07:50.808   543  1682 W system_server: Long monitor contention with owner android.perm (936) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=2 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.065s
+11-27 20:07:50.811   543  2295 W system_server: Long monitor contention with owner android.perm (936) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=3 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.054s
+11-27 20:07:50.841   543  1590 W system_server: Long monitor contention with owner android.perm (936) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=4 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.028s
+11-27 20:07:50.843   543   580 W system_server: Long monitor contention with owner android.perm (936) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=5 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.048s
+11-27 20:07:50.866   543   561 W system_server: Long monitor contention with owner ActivityManager (580) at void com.android.server.am.ActivityManagerService$MainHandler.handleMessage(android.os.Message)(ActivityManagerService.java:1874) waiters=0 in android.content.Intent com.android.server.am.ActivityManagerService.registerReceiverWithFeature(android.app.IApplicationThread, java.lang.String, java.lang.String, java.lang.String, android.content.IIntentReceiver, android.content.IntentFilter, java.lang.String, int, int) for 1.759s
+11-27 20:07:50.890   543   561 D CompatibilityChangeReporter: Compat change id reported: 161145287; UID 1002; state: ENABLED
+11-27 20:07:50.891   543  1758 W system_server: Long monitor contention with owner ActivityManager (580) at void com.android.server.am.ActivityManagerService$MainHandler.handleMessage(android.os.Message)(ActivityManagerService.java:1874) waiters=1 in void com.android.server.am.ActivityManagerService.finishReceiver(android.os.IBinder, int, java.lang.String, android.os.Bundle, boolean, int) for 1.757s
+11-27 20:07:50.980   543   568 W Looper  : Slow dispatch took 1352ms android.fg h=android.os.Handler c=<recycled PooledLambda@6173d> m=0
+11-27 20:07:50.984   543   936 W Looper  : Slow dispatch took 2023ms android.perm h=android.os.Handler c=<recycled PooledLambda@4c86fb7> m=0
+11-27 20:07:51.126  5048  5048 W System  : ClassLoader referenced unknown path: 
+11-27 20:07:51.147  5048  5048 D nativeloader: Configuring clns-shared-8 for other apk . target_sdk_version=34, uses_libraries=, library_path=/apex/com.android.permission/priv-app/PermissionController@UE1A.230829.036.A1/lib/x86_64:/system/lib64:/system_ext/lib64, permitted_path=/data:/mnt/expand:/data/user_de/0/com.android.permissioncontroller:/apex/com.android.permission/priv-app/PermissionController@UE1A.230829.036.A1:/system/lib64:/system_ext/lib64
+11-27 20:07:51.280   543   556 W system_server: Suspending all threads took: 7.479ms
+11-27 20:07:51.285   961   968 I ndroid.systemui: Background concurrent copying GC freed 113044(5982KB) AllocSpace objects, 25(500KB) LOS objects, 49% free, 12MB/25MB, paused 189us,241us total 3.998s
+11-27 20:07:51.296   543   568 W system_server: Long monitor contention with owner PackageManagerBg (600) at void com.android.server.pm.permission.PermissionManagerServiceImpl.lambda$writeLegacyPermissionStateTEMP$16(int[], com.android.server.pm.PackageSetting)(PermissionManagerServiceImpl.java:4638) waiters=1 in java.util.Set com.android.server.pm.permission.PermissionManagerServiceImpl.getGrantedPermissionsInternal(java.lang.String, int) for 134ms
+11-27 20:07:51.338   543   936 W Looper  : Slow dispatch took 341ms android.perm h=android.os.Handler c=<recycled PooledLambda@679d43e> m=0
+11-27 20:07:51.423   543   568 W Looper  : Slow dispatch took 379ms android.fg h=android.os.Handler c=<recycled PooledLambda@da3298c> m=0
+11-27 20:07:51.551   543   568 W Looper  : Slow dispatch took 112ms android.fg h=android.os.Handler c=<recycled PooledLambda@f1ce41e> m=0
+11-27 20:07:51.600   543   936 W Looper  : Slow delivery took 354ms android.perm h=android.os.Handler c=<recycled PooledLambda@4c86fb7> m=0
+11-27 20:07:51.600   543   936 W Looper  : Slow dispatch took 224ms android.perm h=android.os.Handler c=<recycled PooledLambda@4c86fb7> m=0
+11-27 20:07:51.730   543   568 W Looper  : Slow dispatch took 178ms android.fg h=android.os.Handler c=<recycled PooledLambda@d99e8d0> m=0
+11-27 20:07:52.075   543   556 I system_server: Background concurrent copying GC freed 325011(15MB) AllocSpace objects, 27(572KB) LOS objects, 49% free, 19MB/38MB, paused 16.489ms,9.431ms total 5.383s
+11-27 20:07:52.671   543  1677 W ActivityManager: Slow operation: 1761ms so far, now at attachApplicationLocked: before bindApplication
+11-27 20:07:52.681   543   600 W system_server: Long monitor contention with owner PackageManager (605) at void com.android.server.pm.permission.LegacyPermissionSettings.writePermissionTrees(com.android.modules.utils.TypedXmlSerializer)(LegacyPermissionSettings.java:150) waiters=2 in void com.android.server.pm.Settings$RuntimePermissionPersistence.lambda$writeStateForUser$0(java.lang.Object, boolean, com.android.server.pm.permission.LegacyPermissionDataProvider, com.android.server.utils.WatchedArrayMap, int, com.android.server.utils.WatchedArrayMap, android.os.Handler) for 630ms
+11-27 20:07:52.770  5267  5270 I AidlLazyServiceRegistrar: Process has 0 (of 1 available) client(s) in use after notification artd has clients: 0
+11-27 20:07:52.786     0     0 I servicemanager: Notifying artd they don't (previously: do) have clients when we now have no record of a client
+11-27 20:07:52.771  5267  5270 I AidlLazyServiceRegistrar: Trying to shut down the service. No clients in use for any service in process.
+11-27 20:07:52.801     0     0 I servicemanager: Unregistering artd
+11-27 20:07:52.802     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+11-27 20:07:52.786  5267  5270 I AidlLazyServiceRegistrar: Unregistered all clients and exiting
+11-27 20:07:52.851   543  1034 W system_server: Long monitor contention with owner PackageManager (605) at void com.android.server.pm.permission.LegacyPermissionSettings.writePermissionTrees(com.android.modules.utils.TypedXmlSerializer)(LegacyPermissionSettings.java:150) waiters=3 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 762ms
+11-27 20:07:52.854   543  2295 W system_server: Long monitor contention with owner binder:543_7 (1034) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 764ms
+11-27 20:07:52.869   543   568 W system_server: Long monitor contention with owner binder:543_7 (1034) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=1 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 776ms
+11-27 20:07:52.875   543  1034 D SafetySourceDataValidator: No cert check requested for package com.android.permissioncontroller
+11-27 20:07:52.888   543   605 W system_server: Long monitor contention with owner binder:543_7 (1034) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=2 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 218ms
+11-27 20:07:52.890   543   605 D PackageManager: Instant App installer not found with android.intent.action.INSTALL_INSTANT_APP_PACKAGE
+11-27 20:07:52.891   543   605 D PackageManager: Clear ephemeral installer activity
+11-27 20:07:52.907   543  2807 W system_server: Long monitor contention with owner binder:543_7 (1034) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=3 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 236ms
+11-27 20:07:52.948     0     0 I init    : Service 'artd' (pid 5267) exited with status 0 oneshot service took 8.665000 seconds in background
+11-27 20:07:52.948     0     0 I init    : Sending signal 9 to service 'artd' (pid 5267) process group...
+11-27 20:07:52.955     0     0 I libprocessgroup: Successfully killed process cgroup uid 1082 pid 5267 in 5ms
+11-27 20:07:52.948   543   568 W Looper  : Slow dispatch took 1179ms android.fg h=android.os.Handler c=<recycled PooledLambda@ea8bd5a> m=0
+11-27 20:07:52.971   543  1677 W system_server: Long monitor contention with owner binder:543_7 (1034) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=4 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 294ms
+11-27 20:07:52.981   543  1677 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10072; state: DISABLED
+11-27 20:07:52.988   543  1677 D CompatibilityChangeReporter: Compat change id reported: 273564678; UID 10072; state: DISABLED
+11-27 20:07:52.994   543  2161 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-27 20:07:53.032   543  1677 W ActivityManager: Slow operation: 2088ms so far, now at attachApplicationLocked: immediately before bindApplication
+11-27 20:07:53.039   543  1677 W ActivityManager: Slow operation: 2129ms so far, now at attachApplicationLocked: immediately after bindApplication
+11-27 20:07:53.051   543  1677 W ActivityManager: Slow operation: 2141ms so far, now at attachApplicationLocked: after updateLruProcessLocked
+11-27 20:07:53.118   543  1677 W ActivityManager: Slow operation: 52ms so far, now at finishAttachApplicationInner: after dispatching broadcasts
+11-27 20:07:53.160   543   569 W Looper  : Slow dispatch took 3755ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=com.android.server.am.UidObserverController$$ExternalSyntheticLambda0@f35ae4a m=0
+11-27 20:07:53.176   543  1011 V ActivityManager: Got obituary of 3645:bg.hanzi.learn.debug.test
+11-27 20:07:53.178   543   571 W ActivityManager: setHasOverlayUi called on unknown pid: 3645
+11-27 20:07:53.193   543   640 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 10072; state: ENABLED
+11-27 20:07:53.212   543   580 W system_server: Long monitor contention with owner binder:543_E (1677) at void com.android.server.am.ActivityManagerService.finishAttachApplicationInner(long, int, int)(ActivityManagerService.java:4940) waiters=4 in boolean com.android.server.am.BroadcastQueueModernImpl.lambda$new$0(android.os.Message) for 2.227s
+11-27 20:07:53.234  5280  5280 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10072; state: ENABLED
+11-27 20:07:53.235  5280  5280 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10072; state: ENABLED
+11-27 20:07:53.271   543  1595 D CompatibilityChangeReporter: Compat change id reported: 170503758; UID 10072; state: ENABLED
+11-27 20:07:53.294  5280  5280 D CompatibilityChangeReporter: Compat change id reported: 3400644; UID 10072; state: ENABLED
+11-27 20:07:53.405   543   568 W Looper  : Slow dispatch took 274ms android.fg h=android.os.Handler c=<recycled PooledLambda@ca5b7bd> m=0
+11-27 20:07:53.470   543   605 I ActivityManager: Force stopping bg.hanzi.learn.debug.test appid=10142 user=0: pkg removed
+11-27 20:07:53.573  5280  5280 D nativeloader: Configuring clns-shared-6 for other apk /system/priv-app/DocumentsUI/DocumentsUI.apk. target_sdk_version=34, uses_libraries=, library_path=/system/priv-app/DocumentsUI/lib/x86_64:/system/lib64:/system_ext/lib64, permitted_path=/data:/mnt/expand:/data/user/0/com.android.documentsui:/system/priv-app/DocumentsUI:/system/lib64:/system_ext/lib64
+11-27 20:07:53.600   543   936 W system_server: Long monitor contention with owner ActivityManager (580) at void com.android.server.appop.DiscreteRegistry.clearHistory(int, java.lang.String)(DiscreteRegistry.java:421) waiters=1 in int com.android.server.appop.AppOpsService.checkOperationUnchecked(int, int, java.lang.String, java.lang.String, boolean) for 131ms
+11-27 20:07:53.773   543   936 W Looper  : Slow dispatch took 549ms android.perm h=android.os.Handler c=<recycled PooledLambda@c13fcbd> m=0
+11-27 20:07:53.814  5241  5241 D AdapterState: make() - Creating AdapterState
+11-27 20:07:53.836  5241  5301 I AdapterState: OFF : entered 
+11-27 20:07:53.837  5241  5301 D AdapterProperties: Setting state to OFF
+11-27 20:07:53.860   543   568 W Looper  : Slow dispatch took 348ms android.fg h=android.os.Handler c=runnable@a7e62b4(com.android.server.am.ActivityManagerService$LocalService@51b0edd,0,ComponentInfo{bg.hanzi.learn.debug.test/androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity},Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10000000 cmp=bg.hanzi.learn.debug.test/androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity }) m=0
+11-27 20:07:53.950   961   961 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-27 20:07:53.975  5241  5241 D BluetoothKeystoreService: new BluetoothKeystoreService isCommonCriteriaMode: false
+11-27 20:07:53.986  5280  5280 V GraphicsEnvironment: Currently set values for:
+11-27 20:07:53.987  5280  5280 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-27 20:07:53.987  5280  5280 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-27 20:07:54.000  5280  5280 V GraphicsEnvironment: ANGLE GameManagerService for com.android.documentsui: false
+11-27 20:07:54.001  5280  5280 V GraphicsEnvironment: com.android.documentsui is not listed in per-application setting
+11-27 20:07:54.002  5280  5280 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-27 20:07:54.046  5241  5241 D BluetoothKeystoreService: start
+11-27 20:07:54.053  5241  5241 I droid.bluetooth: [1127/200754.053512:INFO:com_android_bluetooth_btservice_BluetoothKeystore.cpp(97)] classInitNative: succeeds
+11-27 20:07:54.057  5241  5241 D BluetoothKeystoreService: setBluetoothKeystoreService(): set to: com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreService@2bb7dbc
+11-27 20:07:54.078   543  2161 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-27 20:07:54.085  5241  5241 D BluetoothKeystoreService: loadConfigData
+11-27 20:07:54.106   543   568 W Looper  : Slow dispatch took 212ms android.fg h=android.os.Handler c=<recycled PooledLambda@2b66820> m=0
+11-27 20:07:54.166   543   651 W system_server: Long monitor contention with owner PackageManager (605) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:18097) waiters=0 in void com.android.server.am.CachedAppOptimizer$FreezeHandler.handleMessage(android.os.Message) for 575ms
+11-27 20:07:54.174  5241  5241 D BluetoothKeystoreService: getCompareResult: 0
+11-27 20:07:54.190   543   651 D ActivityManager: freezing 1295 com.android.settings
+11-27 20:07:54.209   543   571 W system_server: Long monitor contention with owner PackageManager (605) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:18097) waiters=1 in void com.android.server.am.ActivityManagerService.trimApplications(boolean, int) for 587ms
+11-27 20:07:54.228   543  1595 W system_server: Long monitor contention with owner PackageManager (605) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:18097) waiters=2 in void com.android.server.am.ActivityManagerService.finishReceiver(android.os.IBinder, int, java.lang.String, android.os.Bundle, boolean, int) for 569ms
+11-27 20:07:54.243   543   568 W Looper  : Slow dispatch took 118ms android.fg h=android.os.Handler c=<recycled PooledLambda@c473f7b> m=0
+11-27 20:07:54.277  5280  5280 D CompatibilityChangeReporter: Compat change id reported: 205919743; UID 10072; state: ENABLED
+11-27 20:07:54.308   543   628 W system_server: Long monitor contention with owner PackageManager (605) at int com.android.server.am.ActivityManagerService$LocalService.broadcastIntent(android.content.Intent, android.content.IIntentReceiver, java.lang.String[], boolean, int, int[], java.util.function.BiFunction, android.os.Bundle)(ActivityManagerService.java:18097) waiters=3 in int com.android.server.am.ActivityManagerService.broadcastIntentWithFeature(android.app.IApplicationThread, java.lang.String, android.content.Intent, java.lang.String, android.content.IIntentReceiver, int, java.lang.String, android.os.Bundle, java.lang.String[], java.lang.String[], java.lang.String[], int, android.os.Bundle, boolean, boolean, int) for 579ms
+11-27 20:07:54.311   543   651 D ActivityManager: freezing 2172 com.android.keychain
+11-27 20:07:54.313  4175  4175 D CarrierSvcBindHelper: onPackageRemoved: bg.hanzi.learn.debug.test
+11-27 20:07:54.321  4175  4175 D CarrierSvcBindHelper: No carrier app for: 0
+11-27 20:07:54.487   543   561 D CompatibilityChangeReporter: Compat change id reported: 161145287; UID 10072; state: ENABLED
+11-27 20:07:54.512     0     0 W healthd : battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=3000000 cc=10 chg=a
+11-27 20:07:54.572  5280  5280 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10072; state: ENABLED
+11-27 20:07:54.750  5241  5241 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 1002; state: ENABLED
+11-27 20:07:54.821  5241  5241 I bt_btif : packages/modules/Bluetooth/system/btif/src/bluetooth.cc:386 init: init: start restricted = 0 ; common criteria mode = 0, config compare result = 0
+11-27 20:07:54.823  5241  5241 I bt      : bt_common::init_flags: Flags loaded: asha_packet_drop_frequency_threshold=60asha_phy_update_retry_limit=5always_send_services_if_gatt_disc_done=truealways_use_private_gatt_for_debugging=falseasynchronously_start_l2cap_coc=truebtaa_hci=truebta_dm_clear_conn_id_on_client_close=truebtm_dm_flush_discovery_queue_on_search_cancel=falseclassic_discovery_only=falseclear_hidd_interrupt_cid_on_disconnect=truedelay_hidh_cleanup_until_hidh_ready_start=truedevice_iot_config_logging=falsedynamic_avrcp_version_enhancement=truefinite_att_timeout=truegatt_robust_caching_client=truegatt_robust_caching_server=falsegd_core=falsegd_hal_snoop_logger_socket=truegd_hal_snoop_logger_filtering=truegd_l2cap=falsegd_link_policy=falsegd_remote_name_request=falsegd_rust=falsehci_adapter=0hfp_dynamic_version=trueirk_rotation=falseleaudio_targeted_announcement_reconnection_mode=truepass_phy_update_callback=truepbap_pse_dynamic_version_upgrade=falseperiodic_advertising_adi=trueprivate_gatt=truequeue_l2cap_coc_while_encrypting=trueread_encryption_key_size=trueredact_log=truerust_event_loop=truesco_codec_select_lc3=falsesco_codec_timeout_clear=falsesdp_serialization=truesdp_skip_rnr_if_known=truebluetooth_quality_report_callback=trueset_min_encryption=truesubrating=truetrigger_advertising_callbacks_on_first_resume_after_pause=trueuse_unified_connection_manager=falsesdp_return_classic_services_when_le_discovery_fails=truedefault_log_level=4logging_explicit_tag_settings={}
+11-27 20:07:54.835   543   568 W Looper  : Slow dispatch took 403ms android.fg h=android.os.Handler c=<recycled PooledLambda@2d9e0e4> m=0
+11-27 20:07:54.867  5241  5241 I bt_osi_allocation_tracker: packages/modules/Bluetooth/system/osi/src/allocation_tracker.cc:60 allocation_tracker_init: canary initialized
+11-27 20:07:54.986  5280  5280 E StrictMode: Tried to access the API:LayoutInflater which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9 The API:LayoutInflater needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+11-27 20:07:54.986  5280  5280 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:LayoutInflater which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2332)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.view.LayoutInflater.<init>(LayoutInflater.java:260)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.<init>(PhoneLayoutInflater.java:44)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.SystemServiceRegistry$33.createService(SystemServiceRegistry.java:560)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.SystemServiceRegistry$33.createService(SystemServiceRegistry.java:557)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1971)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1645)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2212)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:934)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.view.LayoutInflater.from(LayoutInflater.java:288)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:0)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:147)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1316)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6998)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2236)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:54.986  5280  5280 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-27 20:07:55.029   543  1034 W ActivityManager: Slow operation: 53ms so far, now at startProcess: done creating new process record
+11-27 20:07:55.029   543  1034 W ActivityManager: Slow operation: 54ms so far, now at startProcess: stepping in to startProcess
+11-27 20:07:55.037   543  1034 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10070; state: DISABLED
+11-27 20:07:55.049   543  1034 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10070; state: DISABLED
+11-27 20:07:55.051   543  1034 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10070; state: DISABLED
+11-27 20:07:55.054   543  1034 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10070; state: ENABLED
+11-27 20:07:55.056   543  1034 W ActivityManager: Slow operation: 80ms so far, now at startProcess: done starting proc!
+11-27 20:07:55.056   543  1034 W ContentProviderHelper: Slow operation: 125ms so far, now at getContentProviderImpl: after start process
+11-27 20:07:55.070   543  1034 W ContentProviderHelper: Slow operation: 139ms so far, now at getContentProviderImpl: updating data structures
+11-27 20:07:55.071   543  1034 W ContentProviderHelper: Slow operation: 140ms so far, now at getContentProviderImpl: done!
+11-27 20:07:55.075  5280  5280 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9 The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+11-27 20:07:55.075  5280  5280 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2332)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:568)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5493)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5638)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.ViewGroup.<init>(ViewGroup.java:704)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:254)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:250)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:246)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:866)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:788)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:942)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:962)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1016)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:973)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:667)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:0)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:147)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1316)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6998)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2236)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:55.075  5280  5280 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-27 20:07:55.078   543   581 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10070; state: ENABLED
+11-27 20:07:55.214   329   329 D Zygote  : Forked child process 5315
+11-27 20:07:55.240   543   581 W ActivityManager: Slow operation: 210ms so far, now at startProcess: returned from zygote!
+11-27 20:07:55.254   543   581 W ActivityManager: Slow operation: 224ms so far, now at startProcess: done updating battery stats
+11-27 20:07:55.258   543   581 W ActivityManager: Slow operation: 227ms so far, now at startProcess: building log message
+11-27 20:07:55.258   543   581 I ActivityManager: Start proc 5315:com.android.externalstorage/u0a70 for content provider {com.android.externalstorage/com.android.externalstorage.ExternalStorageProvider}
+11-27 20:07:55.258   543   581 W ActivityManager: Slow operation: 228ms so far, now at startProcess: starting to update pids map
+11-27 20:07:55.272   543   581 W ActivityManager: Slow operation: 242ms so far, now at startProcess: done updating pids map
+11-27 20:07:55.338  5241  5316 I droid.bluetooth: [1127/200755.338566:INFO:message_loop_thread.cc(184)] Run: message loop starting for thread bt_stack_manager_thread
+11-27 20:07:55.511  5241  5316 I bt_stack_manager: packages/modules/Bluetooth/system/btif/src/stack_manager.cc:277 event_init_stack: is initializing the stack
+11-27 20:07:55.581  5315  5315 I externalstorage: Using CollectorTypeCC GC.
+11-27 20:07:55.620  5315  5315 W externalstorage: Unexpected CPU variant for x86: x86_64.
+11-27 20:07:55.620  5315  5315 W externalstorage: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-27 20:07:55.663  5315  5315 E externalstorage: Not starting debugger since process cannot load the jdwp agent.
+11-27 20:07:55.735  5241  5325 I droid.bluetooth: [1127/200755.705881:INFO:message_loop_thread.cc(184)] Run: message loop starting for thread bt_main_thread
+11-27 20:07:55.755  5241  5316 I device_iot_config: packages/modules/Bluetooth/system/device/src/device_iot_config_int.cc:68 device_iot_config_module_init: 
+11-27 20:07:55.782   543   568 W Looper  : Slow dispatch took 946ms android.fg h=android.os.Handler c=<recycled PooledLambda@6db178b> m=0
+11-27 20:07:55.857  5280  5280 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9 The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+11-27 20:07:55.857  5280  5280 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2332)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:568)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5493)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5638)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.ViewGroup.<init>(ViewGroup.java:704)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:254)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:250)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:246)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:866)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:788)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:942)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:962)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1016)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:973)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1135)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1096)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:694)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:0)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:147)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1316)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6998)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2236)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:55.857  5280  5280 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-27 20:07:55.881  5048  5048 I PermissionEventCleanupJobService: Job already scheduled.
+11-27 20:07:55.901  5241  5316 E droid.bluetooth: [1127/200755.900885:ERROR:config.cc(106)] config_new: unable to open file '/data/misc/bluedroid/bt_remote_dev_info.conf': No such file or directory
+11-27 20:07:55.901  5241  5316 W device_iot_config: packages/modules/Bluetooth/system/device/src/device_iot_config_int.cc:83 device_iot_config_module_init: Unable to load config file: /data/misc/bluedroid/bt_remote_dev_info.conf; using backup.
+11-27 20:07:55.902  5241  5316 E droid.bluetooth: [1127/200755.902158:ERROR:config.cc(106)] config_new: unable to open file '/data/misc/bluedroid/bt_remote_dev_info.bak': No such file or directory
+11-27 20:07:55.902  5241  5316 E device_iot_config: packages/modules/Bluetooth/system/device/src/device_iot_config_int.cc:89 device_iot_config_module_init: Unable to load bak file; creating empty config.
+11-27 20:07:55.903  5241  5316 I device_iot_config: packages/modules/Bluetooth/system/device/src/device_iot_config_int.cc:130 device_iot_config_module_init: Devices loaded 0
+11-27 20:07:55.972  5280  5280 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9 The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+11-27 20:07:55.972  5280  5280 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2332)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:568)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5493)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5638)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.widget.ImageView.<init>(ImageView.java:196)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.widget.ImageView.<init>(ImageView.java:191)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.widget.ImageView.<init>(ImageView.java:187)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.documentsui.DropBadgeView.<init>(DropBadgeView.java:40)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:866)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1018)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.parseInclude(LayoutInflater.java:1245)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1131)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1096)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1138)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1096)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:694)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:0)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:147)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1316)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6998)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2236)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:55.972  5280  5280 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-27 20:07:56.008  5048  5048 D PersistedStoragePackageUninstalledReceiver: Received android.intent.action.PACKAGE_FULLY_REMOVED for bg.hanzi.learn.debug for u0
+11-27 20:07:56.137     0     0 I logd    : logdr: UID=2000 GID=2000 PID=5314 n tail=0 logMask=10 pid=0 start=0ns deadline=0ns
+11-27 20:07:56.154  5241  5331 I bt_osi_thread: packages/modules/Bluetooth/system/osi/src/thread.cc:210 run_thread: run_thread: thread id 5331, thread name alarm_default_ca started
+11-27 20:07:56.188  5241  5332 I bt_osi_thread: packages/modules/Bluetooth/system/osi/src/thread.cc:210 run_thread: run_thread: thread id 5332, thread name alarm_dispatcher started
+11-27 20:07:56.190  5241  5316 I bt_core_module: packages/modules/Bluetooth/system/btcore/src/module.cc:86 module_start_up: module_start_up Starting module "gd_shim_module"
+11-27 20:07:56.191  5241  5316 I bt_gd_shim: packages/modules/Bluetooth/system/main/shim/stack.cc:81 StartEverything: StartEverything Starting Gd stack
+11-27 20:07:56.262  5241  5316 I bt_gd_shim: packages/modules/Bluetooth/system/main/shim/stack.cc:160 Start: Start Starting Gd stack
+11-27 20:07:56.272  5280  5280 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9 The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+11-27 20:07:56.272  5280  5280 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@c428ea9
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2332)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:568)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5493)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.View.<init>(View.java:5638)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.widget.TextView.<init>(TextView.java:1155)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.widget.TextView.<init>(TextView.java:1149)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.widget.TextView.<init>(TextView.java:1145)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:866)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:788)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:942)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:962)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1016)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:973)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1135)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1096)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1138)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1096)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:694)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:0)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:147)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1316)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6998)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2236)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.os.Looper.loop(Looper.java:294)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-27 20:07:56.272  5280  5280 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-27 20:07:56.290  5241  5316 I BtGdWakelockNative: packages/modules/Bluetooth/system/gd/os/android/wakelock_native.cc:79 Initialize: Initializing native wake locks
+11-27 20:07:56.372  5280  5280 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10072; state: ENABLED
+11-27 20:07:56.444  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.497  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of BluetoothCounterMetrics
+11-27 20:07:56.511  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of BluetoothCounterMetrics
+11-27 20:07:56.553  5241  5335 I BluetoothCounterMetrics: packages/modules/Bluetooth/system/gd/metrics/counter_metrics.cc:40 Start: Counter metrics initialized
+11-27 20:07:56.561  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started BluetoothCounterMetrics
+11-27 20:07:56.563  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.565  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of HciHalHidl
+11-27 20:07:56.570  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.573  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:1432 GetBtSnoopMode: btsnoop_mode_empty: 1
+11-27 20:07:56.582  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:520 SnoopLogger: Snoop Logs disabled
+11-27 20:07:56.602  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:334 delete_btsnoop_files: Deleting logs if they exist
+11-27 20:07:56.620  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:340 delete_btsnoop_files: Main log file does not exist at "/data/misc/bluetooth/logs/btsnoop_hci.log.filtered"
+11-27 20:07:56.622  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:348 delete_btsnoop_files: Last log file does not exist at "/data/misc/bluetooth/logs/btsnoop_hci.log.filtered"
+11-27 20:07:56.623  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:334 delete_btsnoop_files: Deleting logs if they exist
+11-27 20:07:56.629  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:340 delete_btsnoop_files: Main log file does not exist at "/data/misc/bluetooth/logs/btsnoop_hci.log"
+11-27 20:07:56.629  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/snoop_logger.cc:348 delete_btsnoop_files: Last log file does not exist at "/data/misc/bluetooth/logs/btsnoop_hci.log"
+11-27 20:07:56.630  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of SnoopLogger
+11-27 20:07:56.636  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of SnoopLogger
+11-27 20:07:56.637  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started SnoopLogger
+11-27 20:07:56.644  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.645  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of Btaa Module
+11-27 20:07:56.646  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of Btaa Module
+11-27 20:07:56.664     0     0 E servicemanager: VINTF HALs require names in the format type/instance (e.g. some.package.foo.IFoo/default) but got: suspend_control
+11-27 20:07:56.676  5241  5335 E btaa    : packages/modules/Bluetooth/system/gd/btaa/android/activity_attribution.cc:107 impl: No suspend control service available.
+11-27 20:07:56.677  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started Btaa Module
+11-27 20:07:56.677  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of HciHalHidl
+11-27 20:07:56.704     0     0 I servicemanager: Found android.hardware.bluetooth.IBluetoothHci/default in device VINTF manifest.
+11-27 20:07:56.717  5241  5335 I bluetooth: packages/modules/Bluetooth/system/gd/hal/hci_hal_android_hidl.cc:417 start_aidl: Using the AIDL interface
+11-27 20:07:56.772   358   358 I android.hardware.bluetooth.service.default: initialize
+11-27 20:07:56.774   358   358 I android.hardware.bluetooth.service.default: opening hci interface 0
+11-27 20:07:56.775   358   358 E android.hardware.bluetooth.service.default: unable to open /dev/rfkill: Permission denied
+11-27 20:07:56.776   358   358 E android.hardware.bluetooth.service.default: rfkill unavailable
+11-27 20:07:56.777   358   358 I android.hardware.bluetooth.service.default: waiting for hci interface 0
+11-27 20:07:56.779   358   358 I android.hardware.bluetooth.service.default: hci interface 0 found
+11-27 20:07:56.804   358   358 I android.hardware.bluetooth.service.default: hci interface 0 ready
+11-27 20:07:56.837   358   358 I android.hardware.bluetooth.service.default: HCI Reset successful
+11-27 20:07:56.843   358   358 I android.hardware.bluetooth.service.default: initialization complete
+11-27 20:07:56.851  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started HciHalHidl
+11-27 20:07:56.853  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.855  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of Hci Layer
+11-27 20:07:56.857  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.858  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of Storage Module
+11-27 20:07:56.859  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of Storage Module
+11-27 20:07:56.918  5241  5335 I droid.bluetooth: [1127/200756.917932:INFO:btif_keystore.cc(61)] ConvertEncryptOrDecryptKeyIfNeeded callback isn't ready.
+11-27 20:07:56.924  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started Storage Module
+11-27 20:07:56.925  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of Hci Layer
+11-27 20:07:56.958  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started Hci Layer
+11-27 20:07:56.959  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.963  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of shim::Dumpsys
+11-27 20:07:56.969  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of shim::Dumpsys
+11-27 20:07:56.973  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started shim::Dumpsys
+11-27 20:07:56.974  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.974  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of Vendor Specific Event Manager
+11-27 20:07:56.975  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.976  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of Controller
+11-27 20:07:56.977  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:85 Start: Constructing next module
+11-27 20:07:56.978  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:89 Start: Starting dependencies of Sysprops Module
+11-27 20:07:56.979  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of Sysprops Module
+11-27 20:07:56.979  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:99 Start: Started Sysprops Module
+11-27 20:07:56.983  5241  5335 I BtGdModule: packages/modules/Bluetooth/system/gd/module.cc:93 Start: Finished starting dependencies and calling Start() of Controller
+11-27 20:07:57.073   543  2807 W system_server: Long monitor contention with owner PackageManager (605) at void com.android.server.pm.permission.LegacyPermissionSettings.writePermissionTrees(com.android.modules.utils.TypedXmlSerializer)(LegacyPermissionSettings.java:150) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.165s
+11-27 20:07:57.077   543   561 W system_server: Long monitor contention with owner binder:543_1B (2807) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=0 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.128s
+11-27 20:07:57.082   543   568 W system_server: Long monitor contention with owner binder:543_1B (2807) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=1 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 1.129s
+11-27 20:07:57.108   543  1595 W system_server: Long monitor contention with owner binder:543_1B (2807) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=2 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 931ms
+11-27 20:07:57.111   543   628 W system_server: Long monitor contention with owner binder:543_1B (2807) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=3 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 723ms
+11-27 20:07:57.118   543  1034 W system_server: Long monitor contention with owner binder:543_1B (2807) at com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean)(PackageManagerService.java:1195) waiters=4 in com.android.server.pm.Computer com.android.server.pm.PackageManagerService.snapshotComputer(boolean) for 514ms
+11-27 20:07:57.133   543  1011 W system_server: Long monitor contention with owner binder:543_3 (628) at android.content.Intent com.android.server.am.ActivityManagerService.registerReceiverWithFeature(android.app.IApplicationThread, java.lang.String, java.lang.String, java.lang.String, android.content.IIntentReceiver, android.content.IntentFilter, java.lang.String, int, int)(ActivityManagerService.java:13940) waiters=0 in void com.android.server.am.ActivityManagerService.attachApplication(android.app.IApplicationThread, long) for 693ms
+11-27 20:07:57.174   543  1011 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10070; state: DISABLED
+11-27 20:07:57.186   543  1011 D CompatibilityChangeReporter: Compat change id reported: 273564678; UID 10070; state: DISABLED
+11-27 20:07:57.195   543  1011 W ActivityManager: Slow operation: 52ms so far, now at attachApplicationLocked: immediately before bindApplication
+11-27 20:07:57.241   543  1011 W ActivityManager: Slow operation: 105ms so far, now at attachApplicationLocked: immediately after bindApplication
+11-27 20:07:57.242   543  1011 W ActivityManager: Slow operation: 107ms so far, now at attachApplicationLocked: after updateLruProcessLocked
+11-27 20:07:57.292     0     0 I logd    : logdr: UID=2000 GID=2000 PID=5337 n tail=400 logMask=99 pid=0 start=0ns deadline=0ns
